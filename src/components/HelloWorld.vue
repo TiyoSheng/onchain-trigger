@@ -26,8 +26,8 @@ import "vue3-json-viewer/dist/index.css"
 import { onMounted, computed, toRaw, ref, watch, nextTick } from 'vue'
 const { Alchemy, Network, AlchemySubscription } = require("alchemy-sdk");
 const settings = {
-  apiKey: "Ibc8Wmx-67KP8shNQs4sd9YE8Yfma2Mk",
-  network: Network.MATIC_MUMBAI,
+  apiKey: "72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G",
+  network: Network.ETH_GOERLI,
 };
 const alchemy = new Alchemy(settings);
 export default {
