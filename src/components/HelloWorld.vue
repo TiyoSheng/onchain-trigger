@@ -75,7 +75,7 @@ export default {
       })
       alchemy.ws.on(
         { method: AlchemySubscription.PENDING_TRANSACTIONS,
-        fromAddress: notifyAddresss.value },
+        toAddress: notifyAddresss.value },
         (res) => {
           msgList.value.push(res)
         }
@@ -93,9 +93,7 @@ export default {
         
       });
     }, { deep: true })
-    watch(() => address, () => {
-      notifyAddresss.value = address.value
-    }, { deep: true })
+
 
     return {
       child,
