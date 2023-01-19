@@ -45,6 +45,7 @@ export default {
   name: 'HelloWorld',
   components: { JsonViewer },
   setup() {
+    // let request = false
     const child = ref(null)
     const msgList = ref([])
     const funInputs = ref([])
@@ -75,12 +76,18 @@ export default {
         method: AlchemySubscription.PENDING_TRANSACTIONS,
         toAddress: notifyAddresss.value
       }, async (res) => {
-        if (res && res.hash && res.from != walletAddress.value) {
+        console.log(res.from.toLocaleLowerCase() != walletAddress.value.toLocaleLowerCase())
+        if (res && res.hash && (res.from.toLocaleLowerCase() != walletAddress.value.toLocaleLowerCase())) {
           msgList.value.push(res)
           let gp = ethers.utils.formatUnits(res.gasPrice, 0)
-          console.log((gp * 1.1).toFixed(0))
-          let tx = await contractValue.value[funName.value](...Object.values(inputData.value), {gasPrice: (gp * 1.1).toFixed(0)})
-          console.log(tx)
+          let mpfg = ethers.utils.formatUnits(res.maxPriorityFeePerGas, 0)
+          try {
+            let tx = await contractValue.value[funName.value](...Object.values(inputData.value), { maxFeePerGas: (gp * 1.1).toFixed(0), maxPriorityFeePerGas: (mpfg * 1.2).toFixed(0)})
+            console.log(tx)
+          } catch (error) {
+            console.log(error)
+          }
+          
         }
       })
     }
@@ -101,7 +108,7 @@ export default {
     }
 
     onMounted(() => {
-      getProvider()
+      // getProvider()
     })
     watch(() => msgList, () => {
       nextTick(() => {
@@ -125,7 +132,8 @@ export default {
       notifyAddresss,
       notifyFun,
       abiChange,
-      selectChange
+      selectChange,
+      getProvider
     }
   }
 }
