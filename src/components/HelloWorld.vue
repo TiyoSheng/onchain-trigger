@@ -1,7 +1,19 @@
 <template>
   <div class="hello">
     <div class="l">
-      <p>输入需要监听的地址：<input type="text" v-model="notifyAddresss"></p>
+      <p>合约地址：<input type="text" v-model="notifyAddresss"></p>
+      <p>合约ABI：<textarea cols="30" rows="10" v-model="abi" @change="abiChange"></textarea></p>
+      <p>选择合约：
+        <select name="languages" id="lang" placeholder="选择合约" v-model="funName" @change="selectChange">
+          <option v-for="(item, index) in abi" :key="index" :value="item.name">{{item.name}}</option>
+        </select>
+      </p>
+      <p>钱包私钥：<textarea cols="30" rows="10" v-model="privateKey"></textarea></p>
+      <div>输入覆盖内容：
+        <div>
+          <p v-for="item in funInputs" :key="item.name">{{item.name}}<input type="text" v-model="inputData[item.name]"></p>
+        </div>
+      </div>
       <button @click="notifyFun">开始监听</button>
     </div>
     <div class="r">
@@ -19,11 +31,10 @@
 
 <script>
 import { useIsActivating } from '../hooks/useIsActivating'
-import { useStore } from 'vuex'
 import { ethers } from 'ethers'
 import {JsonViewer} from "vue3-json-viewer"
 import "vue3-json-viewer/dist/index.css"
-import { onMounted, computed, toRaw, ref, watch, nextTick } from 'vue'
+import { onMounted, ref, watch, nextTick } from 'vue'
 const { Alchemy, Network, AlchemySubscription } = require("alchemy-sdk");
 const settings = {
   apiKey: "72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G",
@@ -36,58 +47,65 @@ export default {
   setup() {
     const child = ref(null)
     const msgList = ref([])
+    const funInputs = ref([])
+    const abi = ref('')
+    const privateKey = ref('')
+    const inputData = ref({})
+    const funName = ref('')
     const notifyAddresss = ref('')
-    const store = useStore()
     const { getProvider } = useIsActivating()
     const toAddress = ref('')
-    const address = computed(() => {
-      return store.state.address
-    })
-    const provider = computed(() => {
-      return store.state.provider
-    })
-    const transactions = () => {
-      let tx = {
-        from: address.value,
-        to: toAddress.value,
-        value: ethers.utils.parseEther('0.01')
-      }
-      toRaw(provider.value).getSigner().sendTransaction(tx).then(async (transaction) => {
-        console.dir(new Date().getTime(), transaction)
-        const receipt = await transaction.wait()
-        alert("发送成功")
-        console.log(new Date().getTime(), receipt)
-      }).catch(err => {
-        console.log(err)
-        if (err.message) {
-          alert(err.message)
-        }
-      })
-    }
+    const walletAddress = ref('')
+    const contractValue = ref(null)
     const notifyFun = () => {
       if (!notifyAddresss.value) {
         alert('请先输入监听地址')
         return
       }
-      alchemy.core.getTokenBalances(notifyAddresss.value).then(res => {
+      alchemy.core.getTokenBalances(notifyAddresss.value).then(async res => {
         console.log(11, res)
+        let provider = ethers.getDefaultProvider('goerli')
+        let wallet = new ethers.Wallet(privateKey.value, provider)
+        console.log(wallet.address)
+        walletAddress.value = wallet.address
+        contractValue.value = await new ethers.Contract(notifyAddresss.value, abi.value, wallet)
         alert('开始监听')
       })
-      alchemy.ws.on(
-        { method: AlchemySubscription.PENDING_TRANSACTIONS,
-        toAddress: notifyAddresss.value },
-        (res) => {
+      alchemy.ws.on({
+        method: AlchemySubscription.PENDING_TRANSACTIONS,
+        toAddress: notifyAddresss.value
+      }, async (res) => {
+        if (res && res.hash && res.from != walletAddress.value) {
           msgList.value.push(res)
+          let gp = ethers.utils.formatUnits(res.gasPrice, 0)
+          console.log((gp * 1.1).toFixed(0))
+          let tx = await contractValue.value[funName.value](...Object.values(inputData.value), {gasPrice: (gp * 1.1).toFixed(0)})
+          console.log(tx)
         }
-      );
+      })
     }
+
+    const abiChange = () => {
+      console.log(abi.value)
+      abi.value = JSON.parse(abi.value)
+    }
+
+    const selectChange = () => {
+      console.log(funName.value)
+      abi.value.forEach(e => {
+        if (e.name == funName.value) {
+          console.log(e)
+          funInputs.value = e.inputs
+        }
+      })
+    }
+
     onMounted(() => {
       getProvider()
     })
     watch(() => msgList, () => {
       nextTick(() => {
         setTimeout(() => {
-          // let child = document.querySelectorAll('.msgs')[msgList.value.length - 1]
           child.value[msgList.value.length - 1].scrollIntoView({block: "end", behavior: "smooth"})
         }, 200)
         
@@ -96,13 +114,18 @@ export default {
 
 
     return {
+      privateKey,
+      funInputs,
+      funName,
+      inputData,
+      abi,
       child,
-      address,
       toAddress,
       msgList,
       notifyAddresss,
-      transactions,
-      notifyFun
+      notifyFun,
+      abiChange,
+      selectChange
     }
   }
 }
@@ -127,6 +150,10 @@ export default {
       margin-bottom: 10px;
       input {
         width: 300px;
+        height: 30px;
+      }
+      select {
+        width: 100px;
         height: 30px;
       }
     }
