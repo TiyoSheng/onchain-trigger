@@ -77,17 +77,18 @@ export default {
         toAddress: notifyAddresss.value
       }, async (res) => {
         console.log(res.from.toLocaleLowerCase() != walletAddress.value.toLocaleLowerCase())
+        msgList.value.push(res)
         if (res && res.hash && (res.from.toLocaleLowerCase() != walletAddress.value.toLocaleLowerCase())) {
-          msgList.value.push(res)
           let gp = ethers.utils.formatUnits(res.gasPrice, 0)
           let mpfg = ethers.utils.formatUnits(res.maxPriorityFeePerGas, 0)
-          try {
-            let tx = await contractValue.value[funName.value](...Object.values(inputData.value), { maxFeePerGas: (gp * 1.1).toFixed(0), maxPriorityFeePerGas: (mpfg * 1.2).toFixed(0)})
-            console.log(tx)
-          } catch (error) {
-            console.log(error)
-          }
-          
+          setTimeout(async () => {
+            try {
+              let tx = await contractValue.value[funName.value](...Object.values(inputData.value), { maxFeePerGas: (gp * 1.1).toFixed(0), maxPriorityFeePerGas: (mpfg * 1.1).toFixed(0)})
+              console.log(tx)
+            } catch (error) {
+              console.log(error)
+            }
+          }, 1200)
         }
       })
     }
