@@ -54,9 +54,10 @@
       </n-form-item>
       <div style="margin-bottom: 24px;font-size: 14px;margin-top: -10px"><p>address: {{wallet.address}}</p><p>余额： {{wallet.balance}} <svg v-if="wallet.balance >= 0" @click="getBalance" style="margin-left: 14px;cursor: pointer;" t="1674234880352" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2699" width="12" height="12"><path d="M960 416V192l-73.056 73.056a447.712 447.712 0 0 0-373.6-201.088C265.92 63.968 65.312 264.544 65.312 512S265.92 960.032 513.344 960.032a448.064 448.064 0 0 0 415.232-279.488 38.368 38.368 0 1 0-71.136-28.896 371.36 371.36 0 0 1-344.096 231.584C308.32 883.232 142.112 717.024 142.112 512S308.32 140.768 513.344 140.768c132.448 0 251.936 70.08 318.016 179.84L736 416h224z" p-id="2700"></path></svg></p></div>
       <n-form-item label="覆盖内容：" path="formValue.inputData">
-        <n-form-item v-for="(item, index) in funInputs" :key="index" :label="item.name + '(' + item.type + ')'">
-          <n-input v-model:value="formValue.inputData[item.name]"  />
-        </n-form-item>
+        <div v-for="(item, index) in funInputs" :key="index" style="display: flex;align-items: center;justify-content: space-between;font-size: 14px;">
+          <p style="width: 150px;margin:0">{{item.name + '(' + item.type + ')'}}：</p>
+          <n-input v-model:value="formValue.inputData[item.name]" style="margin-left: 20px" />
+        </div>
       </n-form-item>
       <n-form-item>
         <n-button attr-type="button" @click="handleValidateClick">
