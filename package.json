@@ -11,6 +11,8 @@
     "alchemy-sdk": "^2.3.0",
     "core-js": "^3.6.5",
     "ethers": "^5.7.2",
+    "localforage": "^1.10.0",
+    "naive-ui": "^2.34.3",
     "vue": "^3.0.0",
     "vue-router": "^4.0.0-0",
     "vue3-json-viewer": "^2.2.2",
