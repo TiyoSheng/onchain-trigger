@@ -272,12 +272,16 @@ export default {
         method: AlchemySubscription.PENDING_TRANSACTIONS,
         toAddress: fv.address
       }, async (res) => {
+        console.log(res)
         msgList.value.push(res)
         if (res && res.hash && (res.from.toLocaleLowerCase() != walletAddress.toLocaleLowerCase())) {
           let gp = ethers.utils.formatUnits(res.maxFeePerGas, 0)
           let mpfg = ethers.utils.formatUnits(res.maxPriorityFeePerGas, 0)
+          let nonce = ethers.utils.formatUnits(res.nonce, 0)
+          let n = ((+nonce) + 1).toString()
+          console.log(n)
           try {
-            let tx = await contractValue.value[fv.funName](...Object.values(fv.inputData), { maxFeePerGas: (gp * 1.1).toFixed(0), maxPriorityFeePerGas: (mpfg * 1.1).toFixed(0)})
+            let tx = await contractValue.value[fv.funName](...Object.values(fv.inputData), { maxFeePerGas: (gp * 1.2).toFixed(0), maxPriorityFeePerGas: (mpfg * 1.2).toFixed(0), gasLimit: res.gas})
             console.log(tx)
           } catch (error) {
             console.log(error)
