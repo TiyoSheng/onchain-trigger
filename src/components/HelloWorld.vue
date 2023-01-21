@@ -219,6 +219,9 @@ export default {
     const getBalance = async () => {
       let balance = await toRaw(wallet.value).getBalance()
       wallet.value.balance = ethers.utils.formatEther(balance)
+      wallet.value.nonce = await alchemy.core.getTransactionCount(wallet.value.address)
+      
+      console.log(wallet.value.nonce)
     }
 
     const handleCreated = async () => {
@@ -277,11 +280,9 @@ export default {
         if (res && res.hash && (res.from.toLocaleLowerCase() != walletAddress.toLocaleLowerCase())) {
           let gp = ethers.utils.formatUnits(res.maxFeePerGas, 0)
           let mpfg = ethers.utils.formatUnits(res.maxPriorityFeePerGas, 0)
-          let nonce = ethers.utils.formatUnits(res.nonce, 0)
-          let n = ((+nonce) + 1).toString()
-          console.log(n)
           try {
-            let tx = await contractValue.value[fv.funName](...Object.values(fv.inputData), { maxFeePerGas: (gp * 1.2).toFixed(0), maxPriorityFeePerGas: (mpfg * 1.2).toFixed(0), gasLimit: res.gas})
+            let tx = await contractValue.value[fv.funName](...Object.values(fv.inputData), { maxFeePerGas: (gp * 1.5).toFixed(0), maxPriorityFeePerGas: (mpfg * 1.5).toFixed(0), gasLimit: res.gas, nonce: wallet.value.nonce})
+            wallet.value.nonce += 1
             console.log(tx)
           } catch (error) {
             console.log(error)
