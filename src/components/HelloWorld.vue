@@ -26,11 +26,21 @@
       :label-width="180"
       class="l"
     >
-      <n-form-item label="合约地址：" path="formValue.address">
+      <!-- <n-form-item label="合约地址：" path="formValue.address">
         <n-input v-model:value="formValue.address" placeholder="输入合约地址" />
       </n-form-item>
       <n-form-item label="合约ABI：" path="formValue.abi">
         <n-input v-model:value="formValue.abi" type="textarea" placeholder="输入abi" @change="abiChange" />
+      </n-form-item> -->
+      <n-form-item label="选择合约：" path="formValue.walletKey">
+        <n-select
+          v-model:value="formValue.address"
+          placeholder="选择合约"
+          :options="contractList"
+          @update:value="contractChange"
+          label-field="name"
+          value-field="address"
+        />
       </n-form-item>
       <n-form-item label="选择合约方法：" path="formValue.funName">
         <n-select
@@ -92,6 +102,32 @@
       </n-form-item>
       </div>
     </n-modal>
+    <n-modal
+      v-model:show="showAddModal"
+      :mask-closable="false"
+      :style="{width: '600px', 'border-radius': '10px'}"
+      preset="card"
+      title="添加合约"
+    >
+      <div>
+        <n-form-item label="合约名称" >
+          <n-input v-model:value="contractData.name" placeholder="输入合约名" />
+        </n-form-item>
+        <n-form-item label="合约地址：">
+          <n-input v-model:value="contractData.address" placeholder="输入合约地址" />
+        </n-form-item>
+        <n-form-item label="网络：">
+          <n-input v-model:value="contractData.chain.name" disabled />
+        </n-form-item>
+        <n-form-item label="合约ABI：">
+          <n-input v-model:value="contractData.abi" type="textarea" placeholder="输入abi" />
+        </n-form-item>
+        <n-form-item style="display: flex;justify-content: flex-end;">
+          <n-button attr-type="button" @click="showAddModal = false">取消</n-button>
+          <n-button style="margin-left: 20px" attr-type="button" @click="handleCreatedContractData">创建</n-button>
+      </n-form-item>
+      </div>
+    </n-modal>
   </div>
 </template>
 
@@ -114,9 +150,12 @@ export default {
   components: { JsonViewer },
   setup() {
     const formRef = ref(null);
+    const showAddModal = ref(false)
     const message = useMessage();
     const child = ref(null)
     const showModal = ref(false)
+    const contractList = ref([])
+    const contractData = ref({chain: {chainId: 5, name: 'Goerli'}})
     const msgList = ref([])
     const funInputs = ref([])
     const walletList = ref([])
@@ -133,8 +172,22 @@ export default {
     const contractValue = ref(null)
     const formValue = ref({inputData: {}})
 
-    const abiChange = () => {
-      abi.value = JSON.parse(formValue.value.abi)
+    // const abiChange = () => {
+    //   abi.value = JSON.parse(formValue.value.abi)
+    // }
+
+    const contractChange = () => {
+      if (formValue.value.address == 'add') {
+        showAddModal.value = true
+      } else {
+        let contract = contractList.value
+        contract.forEach(e => {
+          if (e.address == formValue.value.address) {
+            formValue.value.abi = e.abi
+            abi.value = JSON.parse(formValue.value.abi)
+          }
+        })
+      }
     }
 
     const selectChange = () => {
@@ -188,6 +241,18 @@ export default {
       })
     }
 
+    const handleCreatedContractData = async () => {
+      let contracts = await getLs('contracts') || []
+      contracts.push(contractData.value)
+      setLs('contracts', JSON.parse(JSON.stringify(contracts))).then(async () => {
+        showAddModal.value = false
+        contracts.push({name: '添加新合约', address: 'add'})
+        contractList.value = contracts
+        formValue.value.address = contractData.value.address
+        contractData.value = {chain: {chainId: 5, name: 'Goerli'}}
+      })
+    }
+
     const handleValidateClick = (e) => {
       e.preventDefault();
       console.log(formValue.value)
@@ -207,19 +272,16 @@ export default {
         method: AlchemySubscription.PENDING_TRANSACTIONS,
         toAddress: fv.address
       }, async (res) => {
-        console.log(res)
         msgList.value.push(res)
         if (res && res.hash && (res.from.toLocaleLowerCase() != walletAddress.toLocaleLowerCase())) {
-          let gp = ethers.utils.formatUnits(res.gasPrice, 0)
+          let gp = ethers.utils.formatUnits(res.maxFeePerGas, 0)
           let mpfg = ethers.utils.formatUnits(res.maxPriorityFeePerGas, 0)
-          setTimeout(async () => {
-            try {
-              let tx = await contractValue.value[fv.funName](...Object.values(fv.inputData), { maxFeePerGas: (gp * 1.1).toFixed(0), maxPriorityFeePerGas: (mpfg * 1.1).toFixed(0)})
-              console.log(tx)
-            } catch (error) {
-              console.log(error)
-            }
-          }, 10)
+          try {
+            let tx = await contractValue.value[fv.funName](...Object.values(fv.inputData), { maxFeePerGas: (gp * 1.1).toFixed(0), maxPriorityFeePerGas: (mpfg * 1.1).toFixed(0)})
+            console.log(tx)
+          } catch (error) {
+            console.log(error)
+          }
         }
       })
     }
@@ -227,11 +289,13 @@ export default {
     onMounted(async () => {
       // getProvider()
       let wallets = await getLs('wallet') || []
+      let contracts = await getLs('contracts') || []
       console.log(wallets)
+      console.log(contracts)
       wallets.push({name: '添加新钱包', privateKey: 'add'})
+      contracts.push({name: '添加新合约', address: 'add'})
       walletList.value = wallets
-      const latestBlock = await alchemy.core.getBlockNumber();
-      console.log(alchemy, latestBlock)
+      contractList.value= contracts
     })
     watch(() => msgList, () => {
       nextTick(() => {
@@ -241,6 +305,9 @@ export default {
       });
     }, { deep: true })
     return {
+      contractData,
+      contractList,
+      showAddModal,
       wallet,
       walletName,
       showModal,
@@ -257,13 +324,14 @@ export default {
       toAddress,
       msgList,
       notifyAddresss,
-      abiChange,
       selectChange,
       getProvider,
       walletChange,
       handleValidateClick,
       handleCreated,
-      getBalance
+      getBalance,
+      handleCreatedContractData,
+      contractChange
     }
   }
 }
