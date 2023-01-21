@@ -106,7 +106,7 @@ const { Alchemy, Network, AlchemySubscription } = require("alchemy-sdk");
 import { useMessage } from "naive-ui";
 const settings = {
   apiKey: "72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G",
-  network: Network.ETH_GOERLI,
+  network: Network.ETH_GOERLI
 };
 const alchemy = new Alchemy(settings);
 export default {
@@ -157,7 +157,7 @@ export default {
         // localStorage.setItem('wallet', wallets)
         // walletList.value = wallets
       } else {
-        let provider = ethers.getDefaultProvider('goerli')
+        let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
         wallet.value = new ethers.Wallet(formValue.value.walletKey, provider)
         getBalance()
       }
@@ -219,7 +219,7 @@ export default {
             } catch (error) {
               console.log(error)
             }
-          }, 1750)
+          }, 10)
         }
       })
     }
@@ -230,6 +230,8 @@ export default {
       console.log(wallets)
       wallets.push({name: '添加新钱包', privateKey: 'add'})
       walletList.value = wallets
+      const latestBlock = await alchemy.core.getBlockNumber();
+      console.log(alchemy, latestBlock)
     })
     watch(() => msgList, () => {
       nextTick(() => {
