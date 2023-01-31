@@ -4,7 +4,11 @@ export default createStore({
     provider: null,
     address: '',
     network: null,
-    balance: 0
+    balance: 0,
+    walletList: [],
+    contractList: [],
+    triggerList: [],
+    activateTrigger: null
   },
   mutations: {
     setAddress(state, value) {
@@ -18,6 +22,18 @@ export default createStore({
     },
     setBalance(state, value) {
       state.balance = value
+    },
+    setWallet(state, value) {
+      state.walletList = value
+    },
+    setContract(state, value) {
+      state.contractList = value
+    },
+    setTriggers(state, value) {
+      state.triggerList = value
+    },
+    setActivateTrigger(state, value) {
+      state.activateTrigger = value
     },
     init(state) {
       state.provider = null

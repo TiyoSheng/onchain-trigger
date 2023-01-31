@@ -1,133 +1,43 @@
 <template>
-  <div class="hello">
-    <!-- <div class="l">
-      <p>合约地址：<input type="text" v-model="notifyAddresss"></p>
-      <p>合约ABI：<textarea cols="30" rows="10" v-model="abi" @change="abiChange"></textarea></p>
-      <p>选择合约：
-        <select name="languages" id="lang" placeholder="选择合约" v-model="funName" @change="selectChange">
-          <option v-for="(item, index) in abi" :key="index" :value="item.name">{{item.name}}</option>
-        </select>
-      </p>
-      <p>钱包私钥：
-        <select name="languages" id="lang" placeholder="选择合约" v-model="walletKey" @change="walletChange">
-          <option v-for="(item, index) in abi" :key="index" :value="item.name">{{item.name}}</option>
-          <option :value="'add'">添加钱包</option>
-        </select>
-      </p>
-      <div>输入覆盖内容：
-        <div>
-          <p v-for="item in funInputs" :key="item.name">{{item.name}}<input type="text" v-model="inputData[item.name]"></p>
-        </div>
-      </div>
-      <button @click="notifyFun">开始监听</button>
-    </div> -->
-    <n-form
-      ref="formRef"
-      :label-width="180"
-      class="l"
-    >
-      <!-- <n-form-item label="合约地址：" path="formValue.address">
-        <n-input v-model:value="formValue.address" placeholder="输入合约地址" />
-      </n-form-item>
-      <n-form-item label="合约ABI：" path="formValue.abi">
-        <n-input v-model:value="formValue.abi" type="textarea" placeholder="输入abi" @change="abiChange" />
-      </n-form-item> -->
-      <n-form-item label="选择合约：" path="formValue.walletKey">
-        <n-select
-          v-model:value="formValue.address"
-          placeholder="选择合约"
-          :options="contractList"
-          @update:value="contractChange"
-          label-field="name"
-          value-field="address"
-        />
-      </n-form-item>
-      <n-form-item label="选择合约方法：" path="formValue.funName">
-        <n-select
-          v-model:value="formValue.funName"
-          placeholder="选择合约方法"
-          :options="abi"
-          label-field="name"
-          value-field="name"
-          @update:value="selectChange"
-        />
-      </n-form-item>
-      <n-form-item label="选择钱包：" path="formValue.walletKey">
-        <n-select
-          v-model:value="formValue.walletKey"
-          placeholder="选择钱包"
-          :options="walletList"
-          @update:value="walletChange"
-          label-field="name"
-          value-field="privateKey"
-        />
-      </n-form-item>
-      <div style="margin-bottom: 24px;font-size: 14px;margin-top: -10px"><p>address: {{wallet.address}}</p><p>余额： {{wallet.balance}} <svg v-if="wallet.balance >= 0" @click="getBalance" style="margin-left: 14px;cursor: pointer;" t="1674234880352" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2699" width="12" height="12"><path d="M960 416V192l-73.056 73.056a447.712 447.712 0 0 0-373.6-201.088C265.92 63.968 65.312 264.544 65.312 512S265.92 960.032 513.344 960.032a448.064 448.064 0 0 0 415.232-279.488 38.368 38.368 0 1 0-71.136-28.896 371.36 371.36 0 0 1-344.096 231.584C308.32 883.232 142.112 717.024 142.112 512S308.32 140.768 513.344 140.768c132.448 0 251.936 70.08 318.016 179.84L736 416h224z" p-id="2700"></path></svg></p></div>
-      <n-form-item label="覆盖内容：" path="formValue.inputData">
-        <div v-for="(item, index) in funInputs" :key="index" style="display: flex;align-items: center;justify-content: space-between;font-size: 14px;">
-          <p style="width: 150px;margin:0">{{item.name + '(' + item.type + ')'}}：</p>
-          <n-input v-model:value="formValue.inputData[item.name]" style="margin-left: 20px" />
-        </div>
-      </n-form-item>
-      <n-form-item>
-        <n-button attr-type="button" @click="handleValidateClick">
+  <div class="hello" v-if="formValue">
+    <div class="l">
+      <Form :fv="fv" ref="formRef" />
+      <n-form-item style="justify-content: flex-end;display:flex">
+        <n-button attr-type="button" @click="editForm">
+          确认
+        </n-button>
+        <n-button style="margin-left: 20px" attr-type="button" @click="handleValidateClick">
           开始监听
         </n-button>
+        <n-button v-if="fv.running" style="margin-left: 20px" attr-type="button" @click="off">
+          停止监听
+        </n-button>
       </n-form-item>
-    </n-form>
+    </div>
     <div class="r">
       <div
         class="msgs"
-        v-for="(item, index) in msgList"
+        v-for="(item, index) in fv.msgList"
         :key="index"
         ref="child"
       >
-        <JsonViewer :value="item" boxed sort expanded />
+        <JsonViewer v-if="item.from.toLocaleLowerCase() != wallet.address.toLocaleLowerCase()" :value="item" boxed sort expanded />
+        <div v-else class="cover">
+          <div class="cover-hd flex-center">
+            <p>覆盖交易</p>
+            <p>hash: {{item.hash}}</p>
+          </div>
+          <JsonViewer :value="item" boxed sort expanded />
+        </div>
+      </div>
+      <div class="status flex-center-sb">
+        <div class="flex-center">
+          <span :style="{background: fv.running ? 'green' : 'red'}"></span>
+          {{fv.running ? '监听中' : '未监听'}}
+        </div>
+        <div class="flex-center">事件数量：{{getEventLength()}} <p @click="clearMsg">clear</p></div>
       </div>
     </div>
-    <n-modal
-      v-model:show="showModal"
-      :mask-closable="false"
-      :style="{width: '600px', 'border-radius': '10px'}"
-      preset="card"
-      title="创建新钱包"
-    >
-      <div>
-        <n-form-item label="钱包名称" >
-          <n-input v-model:value="walletName" placeholder="输入钱包名" />
-        </n-form-item>
-        <n-form-item style="display: flex;justify-content: flex-end;">
-          <n-button attr-type="button" @click="showModal = false">取消</n-button>
-          <n-button style="margin-left: 20px" attr-type="button" @click="handleCreated">创建</n-button>
-      </n-form-item>
-      </div>
-    </n-modal>
-    <n-modal
-      v-model:show="showAddModal"
-      :mask-closable="false"
-      :style="{width: '600px', 'border-radius': '10px'}"
-      preset="card"
-      title="添加合约"
-    >
-      <div>
-        <n-form-item label="合约名称" >
-          <n-input v-model:value="contractData.name" placeholder="输入合约名" />
-        </n-form-item>
-        <n-form-item label="合约地址：">
-          <n-input v-model:value="contractData.address" placeholder="输入合约地址" />
-        </n-form-item>
-        <n-form-item label="网络：">
-          <n-input v-model:value="contractData.chain.name" disabled />
-        </n-form-item>
-        <n-form-item label="合约ABI：">
-          <n-input v-model:value="contractData.abi" type="textarea" placeholder="输入abi" />
-        </n-form-item>
-        <n-form-item style="display: flex;justify-content: flex-end;">
-          <n-button attr-type="button" @click="showAddModal = false">取消</n-button>
-          <n-button style="margin-left: 20px" attr-type="button" @click="handleCreatedContractData">创建</n-button>
-      </n-form-item>
-      </div>
-    </n-modal>
   </div>
 </template>
 
@@ -135,9 +45,11 @@
 import { getLs, setLs } from '@/service/service'
 import { useIsActivating } from '../hooks/useIsActivating'
 import { ethers } from 'ethers'
+import Form from '@/components/Form.vue'
 import {JsonViewer} from "vue3-json-viewer"
 import "vue3-json-viewer/dist/index.css"
-import { onMounted, ref, watch, nextTick, toRaw } from 'vue'
+import { onMounted, ref, watch, nextTick, toRaw, computed } from 'vue'
+import { useStore } from 'vuex'
 const { Alchemy, Network, AlchemySubscription } = require("alchemy-sdk");
 import { useMessage } from "naive-ui";
 const settings = {
@@ -147,18 +59,16 @@ const settings = {
 const alchemy = new Alchemy(settings);
 export default {
   name: 'HelloWorld',
-  components: { JsonViewer },
+  components: { JsonViewer, Form },
   setup() {
+    const store = useStore()
     const formRef = ref(null);
     const showAddModal = ref(false)
     const message = useMessage();
     const child = ref(null)
     const showModal = ref(false)
-    const contractList = ref([])
     const contractData = ref({chain: {chainId: 5, name: 'Goerli'}})
-    const msgList = ref([])
     const funInputs = ref([])
-    const walletList = ref([])
     const abi = ref('')
     const privateKey = ref('')
     const inputData = ref({})
@@ -170,13 +80,26 @@ export default {
     const toAddress = ref('')
     const wallet = ref({})
     const contractValue = ref(null)
-    const formValue = ref({inputData: {}})
-
+    const fv = ref({})
     // const abiChange = () => {
     //   abi.value = JSON.parse(formValue.value.abi)
     // }
 
+    const formValue = computed(() => {
+      return store.state.activateTrigger
+    })
+
+    const walletList = computed(() => {
+      return store.state.walletList
+    })
+    const contractList = computed(() => {
+      return store.state.contractList
+    })
+
     const contractChange = () => {
+      formValue.value.funName = ''
+      formValue.value.inputData = {}
+      funInputs.value = []
       if (formValue.value.address == 'add') {
         showAddModal.value = true
       } else {
@@ -256,60 +179,220 @@ export default {
       })
     }
 
-    const handleValidateClick = (e) => {
+    const editForm = async () => {
+      let f = formRef.value.formValue
+      if (f.id) {
+        let triggers = await getLs('triggers') || []
+        triggers.forEach((e) => {
+          if (e.id == f.id) {
+            e.funInputs = formRef.value.funInputs
+            e.filterFun = formRef.value.filterFun
+            e.filterValue = formRef.value.filterValue
+            e.abi = formRef.value.abi
+            e.applyAbi = formRef.value.applyAbi
+            e.applyInputs = formRef.value.applyInputs
+            e.inputFun = formRef.value.inputFun
+            e.inputValue = formRef.value.inputValue
+          }
+        })
+        console.log(triggers)
+        setLs('triggers', JSON.parse(JSON.stringify(triggers))).then(res => {
+          store.commit('setTriggers', res)
+          fv.value = f
+        })
+      }
+    }
+
+    const filter = (funInputs, filterData) => {
+      let r = true
+      funInputs.forEach(e => {
+        for(let i = 0; i < filterData.length; i++) {
+          let filterItem = filterData[i]
+          if (filterItem.name == e.name) {
+            console.log(filterItem, e)
+            switch(filterItem.filterFun) {
+              case '$gt':
+                if (!(+e.value > +filterItem.filterValue)) {
+                  r = false
+                }
+                break
+              case '$lt':
+                if (!(+e.value < +filterItem.filterValue)) {
+                  r = false
+                }
+                break
+              case '$gte':
+                if (!(+e.value >= +filterItem.filterValue)) {
+                  r = false
+                }
+                break
+              case '$lte':
+                if (!(+e.value <= +filterItem.filterValue)) {
+                  r = false
+                }
+                break
+              case '$eq':
+                if (!(+e.value == +filterItem.filterValue)) {
+                  r = false
+                }
+                break
+              case '$ne':
+                if (!(+e.value != +filterItem.filterValue)) {
+                  r = false
+                }
+                break
+              case '$in':
+                if (!(e.value.indexOf(filterItem.filterValue) > -1)) {
+                  r = false
+                }
+                break
+            }
+          }
+        }
+      })
+      return r
+    }
+
+    const handleValidateClick = async (e) => {
       e.preventDefault();
-      console.log(formValue.value)
+      off()
+      editForm()
+      let triggers = await getLs('triggers') || []
       let fv = formValue.value
-      let walletAddress = wallet.value.address
       if (!fv.address || !fv.abi || !fv.funName || !fv.walletKey) {
         message.error("请先输入配置");
         return
       }
-      console.log(fv.address)
+      let walletAddress = wallet.value.address
       alchemy.core.getTokenBalances(fv.address).then(async () => {
-        contractValue.value = await new ethers.Contract(fv.address, fv.abi, toRaw(wallet.value))
+        contractValue.value = await new ethers.Contract(fv.applyAddress, fv.applyAbi, toRaw(wallet.value))
         console.log(contractValue.value)
         message.success("开始监听");
+        triggers.forEach((e) => {
+          if (e.id == fv.id) {
+            fv.running = true
+            e.running = true
+          } else {
+            e.running = false
+          }
+        })
+        setLs('triggers', JSON.parse(JSON.stringify(triggers))).then(res => {
+          store.commit('setTriggers', res)
+          fv.value = fv
+        })
       })
       alchemy.ws.on({
         method: AlchemySubscription.PENDING_TRANSACTIONS,
         toAddress: fv.address
       }, async (res) => {
         console.log(res)
-        msgList.value.push(res)
-        if (res && res.hash && (res.from.toLocaleLowerCase() != walletAddress.toLocaleLowerCase())) {
-          let gp = ethers.utils.formatUnits(res.maxFeePerGas, 0)
-          let mpfg = ethers.utils.formatUnits(res.maxPriorityFeePerGas, 0)
-          try {
-            let tx = await contractValue.value[fv.funName](...Object.values(fv.inputData), { maxFeePerGas: (gp * 1.5).toFixed(0), maxPriorityFeePerGas: (mpfg * 1.5).toFixed(0), gasLimit: res.gas, nonce: wallet.value.nonce})
-            wallet.value.nonce += 1
-            console.log(tx)
-          } catch (error) {
-            console.log(error)
+        let funInputs = fv.funInputs
+        let filterData = fv.filterData
+        let funTypes = fv.funInputs.map(e => e.type)
+        let inputData = ethers.utils.defaultAbiCoder.decode(funTypes, ethers.utils.hexDataSlice(res.input, 4))
+        for (let i = 0; i < inputData.length; i++) {
+          if (funInputs[i].type.indexOf("uint") > -1) {
+            let data = ethers.utils.formatUnits(inputData[i], 0)
+            funInputs[i].value = data
+          } else {
+            funInputs[i].value = inputData[i]
           }
         }
+        if (filter(funInputs, filterData)) {
+          triggers.forEach((e) => {
+            if (e.running) {
+              e.msgList.push(res)
+              if (formValue.value.running) {
+                formValue.value.msgList.push(res)
+              }
+            }
+          })
+          if (res && res.hash && (res.from.toLocaleLowerCase() != walletAddress.toLocaleLowerCase())) {
+            let gp = ethers.utils.formatUnits(res.maxFeePerGas, 0)
+            let mpfg = ethers.utils.formatUnits(res.maxPriorityFeePerGas, 0)
+            let gl = ethers.utils.formatUnits(res.gas, 0)
+            try {
+              let input = []
+              funInputs.forEach((e, i) => {
+                let fvInputData = fv.inputData || []
+                let filterInput = fvInputData.filter(el => el.name == e.name)
+                if (filterInput && filterInput.length && filterInput[0].inputFun == '$ne') {
+                  input[i] = filterInput[0].inputValue
+                } else {
+                  input[i] = e.value
+                }
+              })
+              console.log(input, ...input, fv.funName, contractValue.value)
+              let tx = await contractValue.value[fv.funName](...input, { maxFeePerGas: (gp * 1.5).toFixed(0), maxPriorityFeePerGas: (mpfg * 1.5).toFixed(0), gasLimit: (gl * 1.5).toFixed(0)})
+              wallet.value.nonce += 1
+              console.log(tx)
+            } catch (error) {
+              console.log(error)
+            }
+          }
+          setLs('triggers', JSON.parse(JSON.stringify(triggers))).then(res => {
+            store.commit('setTriggers', res)
+          })
+        }
+      })
+    }
+
+    const off = async () => {
+      let fv = formValue.value
+      await alchemy.ws.off()
+      let triggers = await getLs('triggers') || []
+      triggers.forEach((e, index) => {
+        if (e.id == fv.id) {
+          fv.running = false
+          triggers[index].running = false
+        }
+      })
+      setLs('triggers', JSON.parse(JSON.stringify(triggers))).then(res => {
+        store.commit('setTriggers', res)
+        fv.value = fv
+      })
+    }
+
+    const getEventLength = () => {
+      return fv.value.msgList.filter(e => e.from.toLocaleLowerCase() != wallet.value.address.toLocaleLowerCase()).length
+    }
+
+    const clearMsg = async () => {
+      let triggers = await getLs('triggers') || []
+      triggers.forEach((e) => {
+        if (e.id == fv.value.id) {
+          e.msgList = []
+          formValue.value.msgList = []
+        }
+      })
+      setLs('triggers', JSON.parse(JSON.stringify(triggers))).then(res => {
+        store.commit('setTriggers', res)
       })
     }
 
     onMounted(async () => {
       // getProvider()
-      let wallets = await getLs('wallet') || []
-      let contracts = await getLs('contracts') || []
-      console.log(wallets)
-      console.log(contracts)
-      wallets.push({name: '添加新钱包', privateKey: 'add'})
-      contracts.push({name: '添加新合约', address: 'add'})
-      walletList.value = wallets
-      contractList.value= contracts
     })
-    watch(() => msgList, () => {
+    watch(formValue, () => {
+      console.log(formValue.value)
+      fv.value = formValue.value
+      if (fv.value.walletKey) {
+        let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
+        wallet.value = new ethers.Wallet(fv.value.walletKey, provider)
+      }
+      
+    }, { deep: true })
+    watch(() => fv.value.msgList, () => {
       nextTick(() => {
         setTimeout(() => {
-          child.value[msgList.value.length - 1].scrollIntoView({block: "end", behavior: "smooth"})
+          if (fv.value.msgList.length - 1 >= 0) {
+            child.value[fv.value.msgList.length - 1].scrollIntoView({block: "end", behavior: "smooth"})
+          }
         }, 200)
       });
     }, { deep: true })
     return {
+      fv,
       contractData,
       contractList,
       showAddModal,
@@ -327,7 +410,6 @@ export default {
       abi,
       child,
       toAddress,
-      msgList,
       notifyAddresss,
       selectChange,
       getProvider,
@@ -336,7 +418,11 @@ export default {
       handleCreated,
       getBalance,
       handleCreatedContractData,
-      contractChange
+      contractChange,
+      off,
+      editForm,
+      getEventLength,
+      clearMsg
     }
   }
 }
@@ -374,9 +460,54 @@ export default {
     height: 100%;
     overflow-y: auto;
     margin-left: 40px;
+    position: relative;
     .msgs {
       width: 100%;
       margin-bottom: 14px;
+    }
+    .cover {
+      margin-top: -14px;
+      box-sizing: border-box;
+    }
+    .cover-hd {
+      box-sizing: border-box;
+      p {
+        font-size: 12px;
+        &:first-child {
+          width: 80px;
+          height: 30px;
+          background: #f4f4f8;
+          line-height: 30px;
+          text-align: center;
+          border-radius: 5px;
+          margin-right: 10px;
+        }
+      }
+    }
+    .status {
+      position: sticky;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #E5E7EB;
+      border-radius: 8px;
+      height: 50px;
+      padding: 0 20px;
+      box-sizing: border-box;
+      font-size: 14px;
+      span {
+        width: 10px;
+        height: 10px;
+        border-radius: 10px;
+        background: red;
+        margin-right: 8px;
+      }
+      p {
+        cursor: pointer;
+        font-size: 12px;
+        margin-left: 12px;
+        color: green;
+      }
     }
   }
 }
@@ -391,6 +522,19 @@ export default {
 }
 .jv-container.boxed {
   border: none;
+  
+}
+
+.jv-container .jv-code {
+  padding: 16px;
+}
+
+.cover .jv-container.jv-light {
+  background: #f4f4f8 !important;
+}
+
+.jv-container .jv-code.open {
+  padding-bottom: 16px;
 }
 
 /* .n-form-item-feedback-wrapper {
