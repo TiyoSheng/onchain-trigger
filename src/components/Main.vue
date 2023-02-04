@@ -1,0 +1,782 @@
+<template>
+  <div class="main flex-start">
+    <div class="l">
+      <div class="card" v-if="triggerData.wallet && triggerData.wallet.address">
+        <n-spin :show="walletLoading">
+          <div class="flex-center-sb">
+            <div class="address">{{triggerData.wallet.address}}</div>
+            <div class="edit-btn" @click="showFormModal('wallet', 'edit')">切换</div>
+          </div>
+          <div class="mt12 flex-center-sb">
+            <p>余额</p>
+            <div class="flex-center">{{triggerData.wallet.balance}} ETH <svg @click="setWallet(triggerData.wallet.address)" style="margin-left: 6px;cursor: pointer;" t="1674234880352" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2699" width="12" height="12"><path fill="#2c3e50" d="M960 416V192l-73.056 73.056a447.712 447.712 0 0 0-373.6-201.088C265.92 63.968 65.312 264.544 65.312 512S265.92 960.032 513.344 960.032a448.064 448.064 0 0 0 415.232-279.488 38.368 38.368 0 1 0-71.136-28.896 371.36 371.36 0 0 1-344.096 231.584C308.32 883.232 142.112 717.024 142.112 512S308.32 140.768 513.344 140.768c132.448 0 251.936 70.08 318.016 179.84L736 416h224z" p-id="2700"></path></svg></div>
+          </div>
+        </n-spin>
+      </div>
+      <div v-else class="add-btn" @click="showFormModal('wallet')">设置钱包</div>
+      <n-divider dashed style="font-size: 12px;color:rgba(194, 194, 194, 1);margin-top: 0">附加函数</n-divider>
+      <div class="card" v-for="item in triggerData.functions" :key="item.id">
+        <n-spin :show="functionLoading == item.id">
+          <div class="flex-center-sb">
+            <div class="">{{item.name}}</div>
+            <div class="edit-btn" @click="showFormModal('function', 'edit', item)">编辑</div>
+          </div>
+          <div class="mt12 flex-center">
+            <div class="name">{{getContractName(item.contractId)}}</div>
+            <div class="line"></div>
+            <div class="name">{{item.functionName}}</div>
+          </div>
+          <div class="mt12 params">
+            <div class="params-item flex-center" v-for="(val, key) in item.args" :key="key">
+              <div class="params-item-key">{{key}}</div>
+              <div class="params-item-value">{{val}}</div>
+            </div>
+          </div>
+          <div class="apply-btn flex-center-center mt12" @click="apply(item)">执行</div>
+        </n-spin>
+      </div>
+      <div class="add-btn" @click="showFormModal('function')">添加附加函数</div>
+      <n-divider dashed style="font-size: 12px;color:rgba(194, 194, 194, 1);margin-top: 0">合约触发器</n-divider>
+      <div class="card" v-for="item in triggerData.triggers" :key="item.id">
+        <div class="flex-center-sb">
+          <div class="">触发函数</div>
+          <div class="edit-btn" @click="showFormModal('trigger', 'edit', item)">编辑</div>
+        </div>
+        <div class="mt12 flex-center">
+          <div class="name">{{getContractName(item.contractId)}}</div>
+          <div class="line"></div>
+          <div class="name">{{item.functionName}}</div>
+        </div>
+        <div class="flex-center-sb">
+          <div class="mt12">触发条件</div>
+        </div>
+        <div class="mt12 params no-border">
+          <div class="params-item flex-center" v-for="(val, key) in item.args" :key="key">
+            <div class="params-item-key">{{key}}</div>
+            <div class="params-item-type">{{getType(val.type, 0)}}</div>
+            <div class="params-item-value">{{val.value}}</div>
+          </div>
+        </div>
+        <div class="flex-center-sb">
+          <div class="mt12">执行函数</div>
+        </div>
+        <div v-for="handdle in item.handdleList" :key="handdle.id">
+          <div class="mt12 flex-center">
+            <div class="name">{{getContractName(handdle.contractId)}}</div>
+            <div class="line"></div>
+            <div class="name">{{handdle.functionName}}</div>
+          </div>
+          <div class="mt12 params no-border">
+            <div class="params-item flex-center" v-for="(val, key) in handdle.args" :key="key">
+              <div class="params-item-key">{{key}}</div>
+              <div class="params-item-type">{{getType(val.type, 1) || '相同'}}</div>
+              <div class="params-item-value">{{val.value}}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div v-if="!(triggerData.triggers && triggerData.triggers.length)" class="add-btn" @click="showFormModal('trigger')">添加触发器</div>
+      <n-divider dashed style="font-size: 12px;color:rgba(194, 194, 194, 1);margin-top: 0"></n-divider>
+      <n-form-item style="justify-content: flex-end;display:flex">
+        <n-button v-if="!triggerData.running" style="margin-left: 20px" attr-type="button" @click="on">
+          开始监听
+        </n-button>
+        <n-button v-if="triggerData.running" style="margin-left: 20px" attr-type="button" @click="off">
+          停止监听
+        </n-button>
+      </n-form-item>
+    </div>
+    <div class="r">
+      <div v-if="triggerData.msgList && triggerData.msgList.length">
+        <div
+          class="msgs"
+          v-for="(item, index) in triggerData.msgList"
+          :key="index"
+          ref="child"
+        >
+          <JsonViewer v-if="!item.isHanddle && !item.isApply" :value="item.content" boxed sort expanded theme="dark" />
+          <div v-if="item.isHanddle" class="cover">
+            <div class="cover-hd flex-center">
+              <p>覆盖交易</p>
+              <p>hash: {{item.content.hash}}</p>
+              <p @click="toEtherscan(item.content.hash)"><svg t="1675530767636" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3635" width="14" height="14"><path d="M384 128v85.333H170.667v597.334h682.666v-384h85.334v426.666A42.667 42.667 0 0 1 896 896H128a42.667 42.667 0 0 1-42.667-42.667V170.667A42.667 42.667 0 0 1 128 128h256z m298.667 85.333V42.667l298.666 256h-384A85.333 85.333 0 0 0 512 384v256h-85.333V384a170.667 170.667 0 0 1 170.666-170.667h85.334z" fill="#E5E7EB" p-id="3636"></path></svg></p>
+            </div>
+            <JsonViewer :value="item.content" boxed sort expanded />
+          </div>
+          <div v-if="item.isApply" class="cover">
+            <div class="cover-hd flex-center">
+              <p>执行附加函数</p>
+              <p>hash: {{item.content.hash}}</p>
+              <p @click="toEtherscan(item.content.hash)"><svg t="1675530767636" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3635" width="14" height="14"><path d="M384 128v85.333H170.667v597.334h682.666v-384h85.334v426.666A42.667 42.667 0 0 1 896 896H128a42.667 42.667 0 0 1-42.667-42.667V170.667A42.667 42.667 0 0 1 128 128h256z m298.667 85.333V42.667l298.666 256h-384A85.333 85.333 0 0 0 512 384v256h-85.333V384a170.667 170.667 0 0 1 170.666-170.667h85.334z" fill="#E5E7EB" p-id="3636"></path></svg></p>
+            </div>
+            <JsonViewer :value="item.content" boxed sort expanded />
+          </div>
+        </div>
+        <div class="status flex-center-sb">
+          <div class="flex-center">
+            <span :style="{background: triggerData.running ? 'green' : 'red'}"></span>
+            {{triggerData.running ? '监听中' : '未监听'}}
+          </div>
+          <div class="flex-center">事件数量：{{triggerData.msgList.length}} <p @click="clearMsg">clear</p></div>
+        </div>
+      </div>
+    </div>
+    <FormModal 
+      ref="formRef"
+      @setWallet="setWallet"
+      @addFunction="addFunction"
+      @addTrigger="addTrigger"
+    />
+  </div>
+</template>
+<script>
+import { ref, computed, watch, toRaw, nextTick } from 'vue'
+import { useStore } from 'vuex'
+import { ethers } from 'ethers'
+import { setLs } from '@/service/service'
+import { useMessage } from "naive-ui"
+import { filterFun, inputFun } from '@/libs/config'
+import { contract } from "../libs/connectWallet"
+import FormModal from '@/components/FormModal.vue'
+import {JsonViewer} from "vue3-json-viewer"
+import "vue3-json-viewer/dist/index.css"
+const { Alchemy, Network, AlchemySubscription } = require("alchemy-sdk")
+const settings = {
+  apiKey: "72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G",
+  network: Network.ETH_GOERLI
+}
+const alchemy = new Alchemy(settings)
+export default {
+  components: {
+    FormModal,
+    JsonViewer
+  },
+  setup() {
+    let contractData = []
+    const store = useStore()
+    const message = useMessage()
+    const formRef = ref(null)
+    const walletLoading = ref(false)
+    const functionLoading = ref('')
+    const triggerData = ref({})
+    const child = ref(null)
+    const activatedId = computed(() => {
+      return store.state.activatedId
+    })
+    const triggerList = computed(() => {
+      return store.state.triggerList
+    })
+    const walletList = computed(() => {
+      return store.state.walletList
+    })
+
+    const contractList = computed(() => {
+      return store.state.contractList
+    })
+
+    const getContractName = computed(() => {
+      return (id) => {
+        let contracts = toRaw(contractList.value)
+        let contract = {}
+        contracts.forEach(e => {
+          if (e.id == id) {
+            contract = e
+          }
+        })
+        return contract.name
+      }
+    })
+
+    const getType = computed(() => {
+      return (type, index) => {
+        let str = ''
+        if (index == 0) {
+          filterFun.forEach(e => {
+            if (e.value == type) {
+              str = e.label
+            }
+          })
+        } else {
+          inputFun.forEach(e => {
+            if (e.value == type) {
+              str = e.label
+            }
+          })
+        }
+        return str
+      }
+    })
+
+    const showFormModal = (type, isEdit, it) => {
+      formRef.value.isShowModal = true
+      if (type == 'wallet') {
+        formRef.value.modalTitle = '设置钱包'
+        formRef.value.modalType = 'wallet'
+        if (isEdit) {
+          console.log(triggerData.value)
+          let address = triggerData.value.wallet.address
+          let privateKey = ''
+          walletList.value.forEach(e => {
+            if (e.address == address) {
+              privateKey = e.privateKey
+            }
+          })
+          formRef.value.walletKey = privateKey
+        }
+      } else if (type == 'function') {
+        formRef.value.modalTitle = '添加函数'
+        formRef.value.modalType = 'function'
+        if (isEdit) {
+          let item = JSON.parse(JSON.stringify(it))
+          console.log(item)
+          formRef.value.dataItem = item
+          let contracts = toRaw(contractList.value)
+          contracts.forEach(e => {
+            if (e.id == item.contractId) {
+              let list = JSON.parse(e.abi)
+              list = list.filter((e) => e.type == "function")
+              formRef.value.abi = list
+              list.forEach(el => {
+                if (el.name == item.functionName) {
+                  formRef.value.inputs = el.inputs
+                }
+              })
+            }
+          })
+        }
+      } else if (type == 'trigger') {
+        formRef.value.modalTitle = '添加触发器'
+        formRef.value.modalType = 'trigger'
+        formRef.value.dataItem = {handdleList: []}
+        if (isEdit) {
+          let item = JSON.parse(JSON.stringify(it))
+          console.log(item)
+          formRef.value.dataItem = item
+          let contracts = toRaw(contractList.value)
+          contracts.forEach(e => {
+            if (e.id == item.contractId) {
+              let list = JSON.parse(e.abi)
+              list = list.filter((e) => e.type == "function")
+              formRef.value.abi = list
+              list.forEach(el => {
+                if (el.name == item.functionName) {
+                  formRef.value.inputs = el.inputs
+                }
+              })
+            }
+          })
+        }
+      }
+    }
+
+    const setTrigger = async (off) => {
+      let triggers = toRaw(triggerList.value)
+      let td = JSON.parse(JSON.stringify(toRaw(triggerData.value)))
+      triggers.forEach((e, index) => {
+        if (off) e.running = false
+        if (e.id == triggerData.value.id) {
+          triggers[index] = td
+        }
+      })
+      setLs('triggers', JSON.parse(JSON.stringify(triggers))).then(res => {
+        store.commit('setTriggers', res)
+      })
+    }
+
+    const addTrigger = (e) => {
+      console.log(e, triggerData.value)
+      let triggers = toRaw(triggerData.value.triggers)
+      if (triggers.findIndex(it => it.id == e.id) > -1) {
+        let index = triggers.findIndex(it => it.id == e.id)
+        triggers[index] = e
+      } else {
+        triggers.push(e)
+      }
+      triggerData.value.triggers = JSON.parse(JSON.stringify(triggers))
+      setTrigger()
+    }
+
+    const addFunction = (e) => {
+      console.log(e, triggerData.value)
+      let functions = toRaw(triggerData.value.functions)
+      if (functions.findIndex(it => it.id == e.id) > -1) {
+        let index = functions.findIndex(it => it.id == e.id)
+        functions[index] = e
+      } else {
+        functions.push(e)
+      }
+      triggerData.value.functions = JSON.parse(JSON.stringify(functions))
+      setTrigger()
+    }
+
+    const setWallet = (e) => {
+      console.log(e)
+      walletLoading.value = true
+      // triggerData.value.address = e
+      try {
+        walletList.value.forEach(async (el) => {
+          if (el.address == e) {
+            let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
+            let wallet = new ethers.Wallet(el.privateKey, provider)
+            console.log(wallet)
+            let balance = await wallet.getBalance()
+            wallet.balance = ethers.utils.formatEther(balance)
+            triggerData.value.wallet = toRaw(wallet)
+            console.log(triggerData.value)
+            walletLoading.value = false
+            setTrigger()
+          }
+        })
+      } catch (error) {
+        walletLoading.value = false
+      }
+    }
+
+    const setContract = async (contractId) => {
+      if (!(triggerData.value.wallet && triggerData.value.wallet.address)) {
+        message.error("请先设置钱包")
+        return
+      }
+      let contracts = toRaw(contractList.value)
+      let cd = {}
+      let wallet = null
+      contracts.forEach(e => {
+        if (e.id == contractId) {
+          cd = e
+        }
+      })
+      walletList.value.forEach(async (el) => {
+        if (el.address == triggerData.value.wallet.address) {
+          let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
+          wallet = new ethers.Wallet(el.privateKey, provider)
+        }
+      })
+      let C = await contract(cd.address, cd.abi, wallet)
+      return C
+    }
+
+    const apply = async (item) => {
+      console.log(item)
+      functionLoading.value = item.id
+      try {
+        let C = await setContract(item.contractId)
+        let res = await C[item.functionName](...Object.values(item.args))
+        if (item.methodType == 'read') {
+          if (res._isBigNumber) {
+            console.log(res.toNumber())
+            message.success('执行结果：' + res.toNumber())
+          } else {
+            message.success('执行结果：' + res)
+          }
+        } else {
+          console.log(res)
+          let txData = {
+            isApply: true,
+            content: res
+          }
+          triggerData.value.msgList.push(txData)
+          setTrigger()
+        }
+        functionLoading.value = ''
+      } catch (error) {
+        console.log(error)
+        functionLoading.value = ''
+      }
+    }
+
+    const filter = (funInputs, filterData) => {
+      let r = true
+      funInputs.forEach((e, i) => {
+        let filter = filterData[funInputs[i].name] || null
+        if (filter) {
+          console.log(filter)
+          switch(filter.type) {
+            case '$gt':
+              if (!(+e.value > +filter.value)) {
+                r = false
+              }
+              break
+            case '$lt':
+              if (!(+e.value < +filter.value)) {
+                r = false
+              }
+              break
+            case '$gte':
+              if (!(+e.value >= +filter.value)) {
+                r = false
+              }
+              break
+            case '$lte':
+              if (!(+e.value <= +filter.value)) {
+                r = false
+              }
+              break
+            case '$eq':
+              if (!(+e.value == +filter.value)) {
+                r = false
+              }
+              break
+            case '$ne':
+              if (!(+e.value != +filter.value)) {
+                r = false
+              }
+              break
+            case '$in':
+              if (!(e.value.indexOf(+filter.value) > -1)) {
+                r = false
+              }
+              break
+          }
+        }
+      })
+      return r
+    }
+
+    const handdleFun = async (list, res, inputData, index) => {
+      if (list && list.length) {
+        let item = list.shift()
+        let input = []
+        let inputs = item.inputs
+        let C = contractData[index]
+        let gp = ethers.utils.formatUnits(res.maxFeePerGas, 0)
+        let mpfg = ethers.utils.formatUnits(res.maxPriorityFeePerGas, 0)
+        let gl = ethers.utils.formatUnits(res.gas, 0)
+        inputs.forEach((e, i) => {
+          let data = item.args[e.name] || null
+          if (data && data.value) {
+            input[i] = data.value
+          } else {
+            input[i] = inputData[i]
+          }
+        })
+        let tx = await C[item.functionName](...input, { maxFeePerGas: (gp * 1.5).toFixed(0), maxPriorityFeePerGas: (mpfg * 1.5).toFixed(0), gasLimit: (gl * 1.5).toFixed(0)})
+        console.log(tx)
+        let txData = {
+          isHanddle: true,
+          content: tx
+        }
+        triggerData.value.msgList.push(txData)
+        setTrigger()
+        if (item.methodType == 'write') {
+          await tx.wait()
+        }
+        index += 1
+        handdleFun(list, res, inputData, index)
+      }
+    }
+
+    const on = () => {
+      if (!(triggerData.value.wallet && triggerData.value.wallet.address)) {
+        message.error("请先设置钱包");
+        return
+      }
+      if (!(triggerData.value.triggers && triggerData.value.triggers.length)) {
+        message.error("请先添加触发器");
+        return
+      }
+      off()
+      let contractId = triggerData.value.triggers[0].contractId
+      let contractAddress = ''
+      let contractInputs = []
+      contractList.value.forEach(e => {
+        if (e.id == contractId) {
+          contractAddress = e.address
+          let abi = JSON.parse(e.abi)
+          abi.forEach(el => {
+            if (el.name == triggerData.value.triggers[0].functionName) {
+              contractInputs = el.inputs    
+            }
+          })
+        }
+      })
+      alchemy.core.getTokenBalances(triggerData.value.wallet.address).then(async () => {
+        if (triggerData.value.triggers[0].handdleList) {
+          for (let i = 0; i < triggerData.value.triggers[0].handdleList.length; i++) {
+            let item = triggerData.value.triggers[0].handdleList[i]
+            contractData[i] = await setContract(item.contractId)
+          }
+        }
+        message.success("开始监听")
+        triggerList.value.forEach((e) => {
+          if (e.id == triggerData.value.id) {
+            triggerData.value.running = true
+            e.running = true
+          } else {
+            e.running = false
+          }
+        })
+        store.commit('setTriggers', toRaw(triggerList.value))
+      })
+      alchemy.ws.on({
+        method: AlchemySubscription.PENDING_TRANSACTIONS,
+        toAddress: contractAddress
+      }, async (res) => {
+        console.log(res)
+        let funTypes = contractInputs.map(e => e.type)
+        let inputData = ethers.utils.defaultAbiCoder.decode(funTypes, ethers.utils.hexDataSlice(res.input, 4))
+        for (let i = 0; i < inputData.length; i++) {
+          if (contractInputs[i].type.indexOf("uint") > -1) {
+            let data = ethers.utils.formatUnits(inputData[i], 0)
+            contractInputs[i].value = data
+          } else {
+            contractInputs[i].value = inputData[i]
+          }
+        }
+        console.log(triggerData.value.triggers[0].args, contractInputs)
+        if (filter(contractInputs, triggerData.value.triggers[0].args) && res && res.hash && (res.from.toLocaleLowerCase() != triggerData.value.wallet.address.toLocaleLowerCase())) {
+          console.log(0)
+          triggerData.value.msgList.push({content: res})
+          try {
+            let list = JSON.parse(JSON.stringify(toRaw(triggerData.value).triggers[0].handdleList))
+            handdleFun(list, res, inputData, 0)
+          } catch (error) {
+            console.log(error)
+          }
+        } else {
+          console.log(1)
+        }
+        setTrigger()
+      })
+    }
+
+    const off = async () => {
+      await alchemy.ws.off()
+      triggerData.value.running = false
+      setTrigger('off')
+    }
+
+    const clearMsg = async () => {
+      triggerData.value.msgList = []
+      setTrigger()
+    }
+    
+    const toEtherscan = (hash) => {
+      window.open(`https://goerli.etherscan.io/tx/${hash}`)
+    }
+    watch(() => activatedId.value, async () => {
+      triggerList.value.forEach(e => {
+        if (e.id == activatedId.value) {
+          console.log(e)
+          triggerData.value = e
+        }
+      })
+    })
+    watch(() => triggerData.value.msgList, () => {
+      nextTick(() => {
+        setTimeout(() => {
+          if (triggerData.value.msgList.length - 1 >= 0) {
+            child.value[triggerData.value.msgList.length - 1].scrollIntoView({block: "end", behavior: "smooth"})
+          }
+        }, 200)
+      });
+    }, { deep: true })
+    return {
+      functionLoading,
+      walletLoading,
+      child,
+      triggerData,
+      formRef,
+      showFormModal,
+      setWallet,
+      addFunction,
+      addTrigger,
+      getContractName,
+      apply,
+      getType,
+      on,
+      off,
+      toEtherscan,
+      clearMsg
+    }
+  },
+}
+</script>
+<style lang="scss" scoped>
+.main {
+  flex: 1;
+  background: #ffffff;
+}
+.l {
+  height: 100vh;
+  overflow-y: auto;
+  width: 400px;
+  padding: 24px 12px;
+  box-sizing: border-box;
+  scrollbar-width: none;
+  -ms-overflow-style: none; 
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  .add-btn {
+    height: 40px;
+    width: 100%;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    border: 1px solid rgb(239, 239, 245);
+    margin-bottom: 24px;
+    cursor: pointer;
+  }
+  .card {
+    border: 1px solid rgb(239, 239, 245);
+    border-radius: 6px;
+    width: 100%;
+    font-size: 12px;
+    padding: 16px;
+    box-sizing: border-box;
+    margin-bottom: 24px;
+    &:hover {
+      // box-shadow: 0 1px 2px -2px rgba(0, 0, 0, 0.08), 0 3px 6px 0 rgba(0, 0, 0, 0.06), 0 5px 12px 4px rgba(0, 0, 0, 0.04);
+    }
+    .mt12 {
+      margin-top: 12px;
+    }
+    .edit-btn {
+      cursor: pointer;
+    }
+    .line {
+      width: 20px;
+      height: 1px;
+      background: rgb(194, 194, 197);
+      margin: 0 10px;
+    }
+    .name {
+      padding: 8px 14px;
+      box-sizing: border-box;
+      border: 1px solid rgb(239, 239, 245);
+      border-radius: 6px;
+    }
+    .no-border {
+      .params-item {
+        border: none;
+        .params-item-key {
+          border: none;
+        }
+      }
+    }
+    .params-item {
+      border: 1px solid rgb(239, 239, 245);
+      margin-top: -1px;
+      .params-item-key {
+        flex: 0 0 80px;
+        border-right: 1px solid rgb(239, 239, 245);
+        padding: 8px 10px;
+        box-sizing: border-box;
+        word-break: break-all;
+      }
+      .params-item-type {
+        flex: 0 0 40px;
+      }
+      .params-item-value {
+        flex: 1;
+        padding: 8px 10px;
+        box-sizing: border-box;
+        word-break: break-all;
+      }
+    }
+    .apply-btn {
+      width: 100px;
+      height: 30px;
+      border: 1px solid rgb(239, 239, 245);
+      margin-left: auto;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+  }
+}
+.r {
+  flex: 1;
+  height: 100vh;
+  width: 100%;
+  overflow-y: auto;
+  margin-left: 40px;
+  position: relative;
+  background: #1f1e27;
+  padding: 24px;
+  box-sizing: border-box;
+  .msgs {
+    width: 100%;
+    margin-bottom: 14px;
+  }
+  .cover {
+    box-sizing: border-box;
+  }
+  .cover-hd {
+    box-sizing: border-box;
+    p {
+      font-size: 12px;
+      color: #E5E7EB;
+      &:first-child {
+        width: 80px;
+        height: 30px;
+        background: #282c34;
+        line-height: 30px;
+        text-align: center;
+        border-radius: 5px;
+        margin-right: 10px;
+      }
+      &:last-child {
+        margin-left: 10px;
+        cursor: pointer;
+      }
+    }
+  }
+  .status {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #E5E7EB;
+    border-radius: 8px;
+    height: 50px;
+    padding: 0 20px;
+    box-sizing: border-box;
+    font-size: 14px;
+    span {
+      width: 10px;
+      height: 10px;
+      border-radius: 10px;
+      background: red;
+      margin-right: 8px;
+    }
+    p {
+      cursor: pointer;
+      font-size: 12px;
+      margin-left: 12px;
+      color: green;
+    }
+  }
+}
+</style>
+<style>
+.jv-more {
+  display: none;
+}
+
+.jv-container.boxed:hover {
+  box-shadow: none
+}
+.jv-container.boxed {
+  border: none;
+  
+}
+
+.jv-container .jv-code {
+  padding: 16px;
+}
+
+.cover .jv-container.jv-light {
+  background: #f4f4f8 !important;
+}
+
+.jv-container .jv-code.open {
+  padding-bottom: 16px;
+}
+
+/* .n-form-item-feedback-wrapper {
+  display: none;
+} */
+  
+</style>

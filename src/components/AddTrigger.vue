@@ -6,7 +6,12 @@
       :style="{width: '600px', 'border-radius': '10px'}"
       preset="card"
       title="新增触发器">
-      <Form ref="form" />
+      <n-form-item label="触发器名称：">
+        <n-input v-model:value="triggerName" placeholder="输入触发器名称" />
+      </n-form-item>
+      <n-form-item label="备注：">
+        <n-input v-model:value="triggerNote" type="textarea" placeholder="输入备注" />
+      </n-form-item>
       <n-form-item style="justify-content: flex-end;display:flex">
         <n-button attr-type="button" @click="cancel">
           取消
@@ -20,31 +25,31 @@
 </template>
 <script>
 import { ref } from 'vue'
-import Form from '@/components/Form.vue'
 import { getLs, setLs } from '@/service/service'
 import { useStore } from 'vuex'
 export default {
-  components: {
-    Form
-  },
   setup() {
     const store = useStore()
     const showModal = ref(false)
-    const form = ref(null)
+    const triggerName = ref('')
+    const triggerNote = ref('')
     const handleAddClick = async () => {
-      let formValue = form.value.formValue
-      formValue.funInputs = form.value.funInputs
-      formValue.filterFun = form.value.filterFun
-      formValue.filterValue = form.value.filterValue
-      formValue.abi = form.value.abi
-      formValue.applyAbi = form.value.applyAbi
-      formValue.applyInputs = form.value.applyInputs
-      formValue.inputFun = form.value.inputFun
-      formValue.inputValue = form.value.inputValue
-      formValue.msgList = []
-      formValue.id = new Date().getTime()
+      let triggerData = {
+        name: triggerName.value,
+        note: triggerNote.value,
+        id: crypto.randomUUID(),
+        functions: [],
+        triggers: []
+      }
+      // triggers: [{
+      //     contractId: '',
+      //     filterArgs: [],
+      //     functionName: '',
+      //     methodType: '',
+      //     handleList: [],
+      //   }]
       let triggers = await getLs('triggers') || []
-      triggers.push(formValue)
+      triggers.push(triggerData)
       console.log(triggers)
       setLs('triggers', JSON.parse(JSON.stringify(triggers))).then(res => {
         console.log(res)
@@ -53,11 +58,13 @@ export default {
       })
     }
     const cancel = () => {
-      form.value.cancel()
+      triggerName.value = ''
+      triggerNote.value = ''
       showModal.value = false
     }
     return {
-      form,
+      triggerName,
+      triggerNote,
       showModal,
       cancel,
       handleAddClick

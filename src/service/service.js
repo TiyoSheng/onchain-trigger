@@ -1,6 +1,6 @@
 import localforage from "localforage";
 localforage.config({
-  name: 'DappReader'
+  name: 'Trigger'
 });
 export const getLs = (itemName) => {
   return new Promise((resolve) => {

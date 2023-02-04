@@ -1,13 +1,13 @@
 <template>
-  <div class="home flex-center">
+  <div class="home flex-start">
     <Menu />
-    <HelloWorld />
+    <Main />
   </div>
 </template>
 
 <script>
 // @ is an alias to /src
-import HelloWorld from '@/components/HelloWorld.vue'
+import Main from '@/components/Main.vue'
 import Menu from '@/components/Menu.vue'
 import { useStore } from 'vuex'
 import { onMounted } from 'vue'
@@ -15,7 +15,7 @@ import { getLs } from '@/service/service'
 export default {
   name: 'Home',
   components: {
-    HelloWorld,
+    Main,
     Menu
   },
   setup() {
@@ -25,8 +25,9 @@ export default {
       let wallets = await getLs('wallet') || []
       let contracts = await getLs('contracts') || []
       let triggers = await getLs('triggers') || []
+      let activatedId = await getLs('activatedId') || ''
       wallets.push({name: '添加新钱包', privateKey: 'add'})
-      contracts.push({name: '添加新合约', address: 'add'})
+      contracts.push({name: '添加新合约', id: 'add'})
       triggers.forEach(e => {
         e.running = false
         e.msgList = e.msgList || []
@@ -34,6 +35,7 @@ export default {
       store.commit('setWallet', wallets)
       store.commit('setContract', contracts)
       store.commit('setTriggers', triggers)
+      store.commit('setActivatedId', activatedId)
     })
   }
 }
@@ -41,6 +43,7 @@ export default {
 <style lang="scss" scoped>
 .home {
   width: 100%;
+  max-width: 1440px;
   height: 100vh;
   overflow: hidden;
 }

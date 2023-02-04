@@ -37,15 +37,13 @@ export default {
     const contractData = ref({chain: {chainId: 5, name: 'Goerli'}})
     const handleCreatedContractData = async () => {
       let contracts = await getLs('contracts') || []
+      contractData.value.id = crypto.randomUUID()
       contracts.push(contractData.value)
       setLs('contracts', JSON.parse(JSON.stringify(contracts))).then(async () => {
         showAddModal.value = false
-        contracts.push({name: '添加新合约', address: 'add'})
+        contracts.push({name: '添加新合约', id: 'add'})
         store.commit('setContract', contracts)
         emit('addContractSuccess', contractData.value)
-        // contractList.value = contracts
-        // formValue.value.address = contractData.value.address
-        // contractData.value = {chain: {chainId: 5, name: 'Goerli'}}
       })
     }
     return {

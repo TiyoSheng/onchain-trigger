@@ -1,6 +1,6 @@
 <template>
   <div class="menu">
-    <div v-for="(item, index) in triggerList" :key="index" :class="['menu-item', 'flex-center', formValue.id == item.id ? 'menu-item-a' : '']" @click="selectTriggrt(item)">{{item.name}}</div>
+    <div v-for="(item, index) in triggerList" :key="index" :class="['menu-item', 'flex-center', activatedId == item.id ? 'menu-item-a' : '']" @click="selectTriggrt(item.id)">{{item.name}}</div>
     <div class="menu-item flex-center" @click="showAddTrigger">
       <svg t="1675055009990" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2701" width="18" height="18"><path d="M512 832a32 32 0 0 0 32-32v-256h256a32 32 0 0 0 0-64h-256V224a32 32 0 0 0-64 0v256H224a32 32 0 0 0 0 64h256v256a32 32 0 0 0 32 32" fill="#3E3A39" p-id="2702"></path></svg>
       新增
@@ -11,30 +11,43 @@
 <script>
 import AddTrigger from './AddTrigger.vue'
 import { useStore } from 'vuex'
-import { computed, ref } from 'vue'
+import { setLs } from '@/service/service'
+import { computed, ref, watch } from 'vue'
 export default {
   components: {
     AddTrigger
   },
   setup() {
     const store = useStore()
+    const triggerData = ref({})
     const addTrigger = ref(null)
+    const activatedId = computed(() => {
+      return store.state.activatedId || ''
+    })
     const triggerList = computed(() => {
-      return store.state.triggerList
+      return store.state.triggerList || []
     })
     const showAddTrigger = () => {
       addTrigger.value.showModal = true
     }
-    const formValue = computed(() => {
-      return store.state.activateTrigger || {}
-    })
-    const selectTriggrt = (item) => {
-      store.commit('setActivateTrigger', item)
+    const selectTriggrt = (id) => {
+      console.log(id)
+      setLs('activatedId', id).then(() => {
+        store.commit('setActivatedId', id)
+      })
     }
+    watch(() => activatedId.value, async () => {
+      triggerList.value.forEach(e => {
+        if (e.id == activatedId.value) {
+          triggerData.value = e
+        }
+      })
+    }, {immediate: true})
     return {
-      formValue,
+      triggerData,
       triggerList,
       addTrigger,
+      activatedId,
       selectTriggrt,
       showAddTrigger
     }
@@ -46,9 +59,10 @@ export default {
   flex: 0 0 180px;
   width: 180px;
   height: 100vh;
-  padding: 24px 24px 10px;
+  padding: 24px 24px;
   box-sizing: border-box;
   border-right: 1px solid rgba(133, 141, 153, 0.1);
+  background: #ffffff;
   .menu-item {
     height: 30px;
     cursor: pointer;

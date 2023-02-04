@@ -8,7 +8,7 @@ export default createStore({
     walletList: [],
     contractList: [],
     triggerList: [],
-    activateTrigger: null
+    activatedId: null
   },
   mutations: {
     setAddress(state, value) {
@@ -32,8 +32,8 @@ export default createStore({
     setTriggers(state, value) {
       state.triggerList = value
     },
-    setActivateTrigger(state, value) {
-      state.activateTrigger = value
+    setActivatedId(state, value) {
+      state.activatedId = value
     },
     init(state) {
       state.provider = null
