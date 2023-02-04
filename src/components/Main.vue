@@ -1,5 +1,5 @@
 <template>
-  <div class="main flex-start">
+  <div class="main flex-start" v-if="triggerData.id">
     <div class="l">
       <div class="card" v-if="triggerData.wallet && triggerData.wallet.address">
         <n-spin :show="walletLoading">
