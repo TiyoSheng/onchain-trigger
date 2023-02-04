@@ -77,14 +77,16 @@
       </div>
       <div v-if="!(triggerData.triggers && triggerData.triggers.length)" class="add-btn" @click="showFormModal('trigger')">添加触发器</div>
       <n-divider dashed style="font-size: 12px;color:rgba(194, 194, 194, 1);margin-top: 0"></n-divider>
-      <n-form-item style="justify-content: flex-end;display:flex">
-        <n-button v-if="!triggerData.running" style="margin-left: 20px" attr-type="button" @click="on">
-          开始监听
-        </n-button>
-        <n-button v-if="triggerData.running" style="margin-left: 20px" attr-type="button" @click="off">
-          停止监听
-        </n-button>
-      </n-form-item>
+      <div class="btn-list">
+        <n-form-item style="justify-content: flex-end;display:flex">
+          <n-button v-if="!triggerData.running" style="margin-left: 20px" attr-type="button" @click="on">
+            开始监听
+          </n-button>
+          <n-button v-if="triggerData.running" style="margin-left: 20px" attr-type="button" @click="off">
+            停止监听
+          </n-button>
+        </n-form-item>
+      </div>
     </div>
     <div class="r">
       <div v-if="triggerData.msgList && triggerData.msgList.length">
@@ -604,6 +606,7 @@ export default {
   box-sizing: border-box;
   scrollbar-width: none;
   -ms-overflow-style: none; 
+  position: relative;
   &::-webkit-scrollbar {
     display: none;
   }
@@ -684,6 +687,13 @@ export default {
       border-radius: 6px;
       cursor: pointer;
     }
+  }
+  .btn-list {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #FFFFFF;
   }
 }
 .r {
