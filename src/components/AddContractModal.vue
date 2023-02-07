@@ -44,6 +44,7 @@ export default {
         contracts.push({name: '添加新合约', id: 'add'})
         store.commit('setContract', contracts)
         emit('addContractSuccess', contractData.value)
+        contractData.value= {chain: {chainId: 5, name: 'Goerli'}}
       })
     }
     return {

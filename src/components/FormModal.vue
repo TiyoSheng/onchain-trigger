@@ -78,19 +78,31 @@
         />
       </n-form-item>
       <n-form-item v-if="inputs && inputs.length" label="过滤逻辑：" >
-        <div v-for="(item, index) in inputs" :key="index" class="input-item flex-center"  >
-          <p style="width: 140px;flex:0 0 140px;margin:0">{{item.name + '(' + item.type + ')'}}：</p>
+        <div v-for="(item, index) in dataItem.filter" :key="index" class="input-item flex-center"  >
           <n-select
-            v-model:value="dataItem.args[item.name].type"
+            v-model:value="dataItem.filter[index].name"
+            style="margin-left: 20px;width: 150px"
+            placeholder="选择"
+            :options="filterInputs"
+            label-field="oName"
+            value-field="name"
+            @update:value="filterChange"
+          />
+          <n-select
+            v-model:value="dataItem.filter[index].type"
             style="margin-left: 20px;width: 150px"
             placeholder="选择"
             :options="filterFunList"
           />
           <div style="margin-left: 20px;flex:1;width: 100%">
-            <n-input v-if="item.type == 'uint256'" :allow-input="onlyAllowNumber" v-model:value="dataItem.args[item.name].value" />
-            <n-input v-else v-model:value="dataItem.args[item.name].value" />
+            <n-input v-if="item.type == 'uint256'" :allow-input="onlyAllowNumber" v-model:value="dataItem.filter[index].value" />
+            <n-input v-else v-model:value="dataItem.filter[index].value" />
+          </div>
+          <div class="del" @click="delFilter(index)">
+            <svg t="1675512681148" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2711" width="18" height="18"><path d="M789.333333 343.466667c-12.8 0-21.333333 8.533333-21.333333 21.333333v490.666667c0 23.466667-19.2 42.666667-42.666667 42.666666H298.666667c-23.466667 0-42.666667-19.2-42.666667-42.666666V362.666667c0-12.8-8.533333-21.333333-21.333333-21.333334s-21.333333 8.533333-21.333334 21.333334v490.666666c0 46.933333 38.4 85.333333 85.333334 85.333334h426.666666c46.933333 0 85.333333-38.4 85.333334-85.333334V362.666667c0-10.666667-10.666667-19.2-21.333334-19.2zM915.2 234.666667H746.666667V170.666667c0-46.933333-38.4-85.333333-85.333334-85.333334H362.666667c-46.933333 0-85.333333 38.4-85.333334 85.333334v64H106.666667c-12.8 0-21.333333 8.533333-21.333334 21.333333s8.533333 21.333333 21.333334 21.333333h808.533333c12.8 0 21.333333-8.533333 21.333333-21.333333s-8.533333-21.333333-21.333333-21.333333zM320 170.666667c0-23.466667 19.2-42.666667 42.666667-42.666667h298.666666c23.466667 0 42.666667 19.2 42.666667 42.666667v64H320V170.666667z" fill="#666666" p-id="2712"></path><path d="M640 704V364.8c0-12.8-8.533333-21.333333-21.333333-21.333333s-21.333333 8.533333-21.333334 21.333333V704c0 12.8 8.533333 21.333333 21.333334 21.333333s21.333333-10.666667 21.333333-21.333333zM426.666667 704V362.666667c0-12.8-8.533333-21.333333-21.333334-21.333334s-21.333333 8.533333-21.333333 21.333334v341.333333c0 12.8 8.533333 21.333333 21.333333 21.333333s21.333333-10.666667 21.333334-21.333333z" fill="#666666" p-id="2713"></path></svg>
           </div>
         </div>
+        <div class="add-btn" @click="addFilter">添加过滤条件</div>
       </n-form-item>
       <n-divider dashed style="font-size: 12px;color:rgba(194, 194, 194, 1);margin-top: 0">监听后执行</n-divider>
       <div v-if="dataItem.handdleList && dataItem.handdleList.length">
@@ -156,6 +168,7 @@
 import { ref, computed, toRaw } from 'vue'
 import { useStore } from 'vuex'
 import { ethers } from 'ethers'
+import { useMessage } from "naive-ui"
 import { filterFun, inputFun } from '@/libs/config'
 import AddWalletModal from '@/components/AddWalletModal.vue'
 import AddContractModal from '@/components/AddContractModal.vue'
@@ -166,6 +179,7 @@ export default {
   },
   setup(props, { emit }) {
     let handdleIndex = -1
+    const message = useMessage()
     const store = useStore()
     const isShowModal = ref(false)
     const modalTitle = ref('')
@@ -177,9 +191,9 @@ export default {
     const dataItem = ref({})
     const abi = ref([])
     const inputs = ref([])
+    const filterInputs = ref([])
     const filterFunList = ref(filterFun)
     const inputFunList = ref(inputFun)
-
     const walletList = computed(() => {
       return store.state.walletList
     })
@@ -205,7 +219,6 @@ export default {
     }
 
     const contractChange = async () => {
-      console.log(dataItem.value)
       if (dataItem.value.contractId == 'add') {
         addContractModal.value.showAddModal = true
       } else {
@@ -224,8 +237,14 @@ export default {
       abi.value.forEach(e => {
         console.log(e)
         if (e.name == dataItem.value.functionName) {
+          e.inputs.forEach(el => {
+            el.oName = `${el.name}(${el.type})`
+          })
+          console.log(e.inputs)
           inputs.value = e.inputs
+          filterInputs.value = e.inputs
           dataItem.value.args = {}
+          dataItem.value.filter = []
           if (modalType.value == 'trigger') {
             e.inputs.forEach(el => {
               dataItem.value.args[el.name] = {}
@@ -239,6 +258,30 @@ export default {
           }
         }
       })
+    }
+
+    const filterChange = (e) => {
+      // filterInputs.value = filterInputs.value.filter(el => el.name != e)
+      console.log(e)
+    }
+
+    const addFilter = () => {
+      console.log(dataItem.value, filterInputs.value.length)
+      if (filterInputs.value.length) {
+        dataItem.value.filter.push({})
+      } else {
+        message.error('没有可添加项')
+      }
+    }
+
+    const delFilter = (index) => {
+      // let name = dataItem.value.filter[index].name
+      dataItem.value.filter.splice(index, 1)
+      // inputs.value.forEach(e => {
+      //   if (e.name == name) {
+      //     filterInputs.value.push(e)
+      //   }
+      // })
     }
 
     const handdleContractChange = async (index) => {
@@ -285,10 +328,10 @@ export default {
     const addContractSuccess = (e) => {
       console.log(e)
       if (handdleIndex >= 0) {
-        dataItem.value.handdleList[handdleIndex].contractId = e
+        dataItem.value.handdleList[handdleIndex].contractId = e.id
         handdleContractChange()
       } else {
-        dataItem.value.contractId = e
+        dataItem.value.contractId = e.id
         contractChange()
       }
     }
@@ -317,6 +360,18 @@ export default {
         emit('addFunction', toRaw(dataItem.value))
       } else if (modalType.value == 'trigger') {
         if (!dataItem.value.id) dataItem.value.id = crypto.randomUUID()
+        let filters = dataItem.value.filter
+        let args = JSON.parse(JSON.stringify(dataItem.value.args))
+        for (let key in args) {
+          let arr = filters.filter(e => e.name == key)
+          if (arr && arr.length) {
+            args[key] = arr[0]
+          } else {
+            args[key] = {}
+          }
+        }
+        console.log(args)
+        dataItem.value.args = args
         emit('addTrigger', toRaw(dataItem.value))
       }
       cancel()
@@ -328,6 +383,7 @@ export default {
       modalType.value = ''
       dataItem.value = {}
       inputs.value = []
+      filterInputs.value = []
       abi.value = []
       isShowModal.value = false
       wallet.value = null
@@ -342,6 +398,7 @@ export default {
     return {
       abi,
       inputs,
+      filterInputs,
       wallet,
       walletList,
       isShowModal,
@@ -365,7 +422,10 @@ export default {
       addHanddle,
       handdleContractChange,
       handdleFunctionChange,
-      delHanddle
+      delHanddle,
+      addFilter,
+      filterChange,
+      delFilter
     }
   },
 }
@@ -392,7 +452,13 @@ export default {
     position: absolute;
     top: 0;
     right: 0;
-    cursor: pointer;
   }
+}
+.del {
+  margin-left: 6px;
+  cursor: pointer;
+}
+.input-item {
+  margin-bottom: 10px;
 }
 </style>

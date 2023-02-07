@@ -25,6 +25,7 @@
             <div class="name">{{getContractName(item.contractId)}}</div>
             <div class="line"></div>
             <div class="name">{{item.functionName}}</div>
+            <div class="type">（{{item.methodType}}）</div>
           </div>
           <div class="mt12 params">
             <div class="params-item flex-center" v-for="(val, key) in item.args" :key="key">
@@ -51,10 +52,13 @@
           <div class="mt12">触发条件</div>
         </div>
         <div class="mt12 params no-border">
-          <div class="params-item flex-center" v-for="(val, key) in item.args" :key="key">
-            <div class="params-item-key">{{key}}</div>
-            <div class="params-item-type">{{getType(val.type, 0)}}</div>
-            <div class="params-item-value">{{val.value}}</div>
+          <div class="params-item " v-for="(val, key) in item.args" :key="key">
+            <div v-if="val.value" class="flex-center">
+              <div class="params-item-key">{{key}}</div>
+              <div class="params-item-type">{{getType(val.type, 0)}}</div>
+              <div class="params-item-value">{{val.value}}</div>
+            </div>
+            
           </div>
         </div>
         <div class="flex-center-sb">
@@ -253,6 +257,18 @@ export default {
         if (isEdit) {
           let item = JSON.parse(JSON.stringify(it))
           console.log(item)
+          item.filter = []
+          for(let key in item.args) {
+            console.log(key)
+            if (item.args[key].type) {
+              let ele = {
+                name: key,
+                type: item.args[key].type,
+                value: item.args[key].value
+              }
+              item.filter.push(ele)
+            }
+          }
           formRef.value.dataItem = item
           let contracts = toRaw(contractList.value)
           contracts.forEach(e => {
@@ -262,7 +278,12 @@ export default {
               formRef.value.abi = list
               list.forEach(el => {
                 if (el.name == item.functionName) {
+                  console.log(el.inputs)
+                  el.inputs.forEach(x => {
+                    x.oName = `${x.name}(${x.type})`
+                  })
                   formRef.value.inputs = el.inputs
+                  formRef.value.filterInputs = el.inputs
                 }
               })
             }
@@ -376,8 +397,15 @@ export default {
             isApply: true,
             content: res
           }
-          triggerData.value.msgList.push(txData)
-          setTrigger()
+          try {
+            if (!triggerData.value.msgList) {
+              triggerData.value.msgList = []
+            }
+            triggerData.value.msgList.push(txData)
+            setTrigger()
+          } catch (error) {
+            console.log(triggerData.value, error)
+          }
         }
         functionLoading.value = ''
       } catch (error) {
@@ -559,6 +587,7 @@ export default {
       triggerList.value.forEach(e => {
         if (e.id == activatedId.value) {
           console.log(e)
+          if (!e.msgList) e.msgList = []
           triggerData.value = e
         }
       })
@@ -670,7 +699,7 @@ export default {
         word-break: break-all;
       }
       .params-item-type {
-        flex: 0 0 40px;
+        flex: 0 0 50px;
       }
       .params-item-value {
         flex: 1;
@@ -693,7 +722,6 @@ export default {
     bottom: 0;
     left: 0;
     right: 0;
-    background: #FFFFFF;
   }
 }
 .r {
