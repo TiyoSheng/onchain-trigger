@@ -507,6 +507,7 @@ export default {
           triggerData.value.msgList.push(txData)
           setTrigger()
           if (item.methodType == 'write') {
+            triggerData.value.wallet.nonce = tx.nonce
             await tx.wait()
           }
           index += 1
