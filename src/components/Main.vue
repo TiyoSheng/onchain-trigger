@@ -83,10 +83,10 @@
       <n-divider dashed style="font-size: 12px;color:rgba(194, 194, 194, 1);margin-top: 0"></n-divider>
       <div class="btn-list">
         <n-form-item style="justify-content: flex-end;display:flex">
-          <n-button v-if="!triggerData.running" style="margin-left: 20px" attr-type="button" @click="on">
+          <n-button v-if="!triggerData.running" style="margin-left: 20px;background:#FFF" attr-type="button" @click="on">
             开始监听
           </n-button>
-          <n-button v-if="triggerData.running" style="margin-left: 20px" attr-type="button" @click="off">
+          <n-button v-if="triggerData.running" style="margin-left: 20px;background:#FFF" attr-type="button" @click="off">
             停止监听
           </n-button>
         </n-form-item>
@@ -343,7 +343,9 @@ export default {
             let wallet = new ethers.Wallet(el.privateKey, provider)
             console.log(wallet)
             let balance = await wallet.getBalance()
+            let nonce = await wallet.getTransactionCount()
             wallet.balance = ethers.utils.formatEther(balance)
+            wallet.nonce = nonce - 1
             triggerData.value.wallet = toRaw(wallet)
             console.log(triggerData.value)
             walletLoading.value = false
@@ -383,7 +385,18 @@ export default {
       functionLoading.value = item.id
       try {
         let C = await setContract(item.contractId)
-        let res = await C[item.functionName](...Object.values(item.args))
+        let p = []
+        if (item.inputs) {
+          item.inputs.forEach(e => {
+            if (item.args[e.name]) {
+              p.push(item.args[e.name])
+            } else {
+              p.push('')
+            }
+          })
+        }
+        let res = await C[item.functionName](...p)
+        
         if (item.methodType == 'read') {
           if (res._isBigNumber) {
             console.log(res.toNumber())
@@ -406,6 +419,10 @@ export default {
           } catch (error) {
             console.log(triggerData.value, error)
           }
+          let tx = await res.wait()
+          setWallet(triggerData.value.wallet.address)
+          console.log(tx)
+          message.success('confirmed transaction')
         }
         functionLoading.value = ''
       } catch (error) {
@@ -422,7 +439,7 @@ export default {
           console.log(filter)
           switch(filter.type) {
             case '$gt':
-              if (!(+e.value > +filter.value)) {
+              if (!(e.value > +filter.value)) {
                 r = false
               }
               break
@@ -442,17 +459,17 @@ export default {
               }
               break
             case '$eq':
-              if (!(+e.value == +filter.value)) {
+              if (!(e.value == filter.value)) {
                 r = false
               }
               break
             case '$ne':
-              if (!(+e.value != +filter.value)) {
+              if (!(e.value != filter.value)) {
                 r = false
               }
               break
             case '$in':
-              if (!(e.value.indexOf(+filter.value) > -1)) {
+              if (!(e.value.indexOf(filter.value) > -1)) {
                 r = false
               }
               break
@@ -479,19 +496,24 @@ export default {
             input[i] = inputData[i]
           }
         })
-        let tx = await C[item.functionName](...input, { maxFeePerGas: (gp * 1.5).toFixed(0), maxPriorityFeePerGas: (mpfg * 1.5).toFixed(0), gasLimit: (gl * 1.5).toFixed(0)})
-        console.log(tx)
-        let txData = {
-          isHanddle: true,
-          content: tx
+        try {
+          let nonce = triggerData.value.wallet.nonce + 1
+          let tx = await C[item.functionName](...input, { maxFeePerGas: (gp * 1.5).toFixed(0), maxPriorityFeePerGas: (mpfg * 1.5).toFixed(0), gasLimit: (gl * 1.5).toFixed(0), nonce})
+          triggerData.value.wallet.nonce = tx.nonce
+          let txData = {
+            isHanddle: true,
+            content: tx
+          }
+          triggerData.value.msgList.push(txData)
+          setTrigger()
+          if (item.methodType == 'write') {
+            await tx.wait()
+          }
+          index += 1
+          handdleFun(list, res, inputData, index)
+        } catch (error) {
+          message.error('transaction failed')
         }
-        triggerData.value.msgList.push(txData)
-        setTrigger()
-        if (item.methodType == 'write') {
-          await tx.wait()
-        }
-        index += 1
-        handdleFun(list, res, inputData, index)
       }
     }
 
@@ -541,31 +563,34 @@ export default {
         method: AlchemySubscription.PENDING_TRANSACTIONS,
         toAddress: contractAddress
       }, async (res) => {
-        console.log(res)
-        let funTypes = contractInputs.map(e => e.type)
-        let inputData = ethers.utils.defaultAbiCoder.decode(funTypes, ethers.utils.hexDataSlice(res.input, 4))
-        for (let i = 0; i < inputData.length; i++) {
-          if (contractInputs[i].type.indexOf("uint") > -1) {
-            let data = ethers.utils.formatUnits(inputData[i], 0)
-            contractInputs[i].value = data
+        try {
+          let funTypes = contractInputs.map(e => e.type)
+          let inputData = ethers.utils.defaultAbiCoder.decode(funTypes, ethers.utils.hexDataSlice(res.input, 4))
+          for (let i = 0; i < inputData.length; i++) {
+            if (contractInputs[i].type.indexOf("uint") > -1) {
+              let data = ethers.utils.formatUnits(inputData[i], 0)
+              contractInputs[i].value = data
+            } else {
+              contractInputs[i].value = inputData[i]
+            }
+          }
+          console.log(triggerData.value.triggers[0].args, contractInputs)
+          if (filter(contractInputs, triggerData.value.triggers[0].args) && res && res.hash && (res.from.toLocaleLowerCase() != triggerData.value.wallet.address.toLocaleLowerCase())) {
+            console.log(0)
+            triggerData.value.msgList.push({content: res})
+            try {
+              let list = JSON.parse(JSON.stringify(toRaw(triggerData.value).triggers[0].handdleList))
+              handdleFun(list, res, inputData, 0)
+            } catch (error) {
+              console.log(error)
+            }
           } else {
-            contractInputs[i].value = inputData[i]
+            console.log(1)
           }
+          setTrigger()
+        } catch (error) {
+          console.log(error)
         }
-        console.log(triggerData.value.triggers[0].args, contractInputs)
-        if (filter(contractInputs, triggerData.value.triggers[0].args) && res && res.hash && (res.from.toLocaleLowerCase() != triggerData.value.wallet.address.toLocaleLowerCase())) {
-          console.log(0)
-          triggerData.value.msgList.push({content: res})
-          try {
-            let list = JSON.parse(JSON.stringify(toRaw(triggerData.value).triggers[0].handdleList))
-            handdleFun(list, res, inputData, 0)
-          } catch (error) {
-            console.log(error)
-          }
-        } else {
-          console.log(1)
-        }
-        setTrigger()
       })
     }
 

@@ -5,6 +5,7 @@
     :style="{width: '600px', 'border-radius': '10px'}"
     preset="card"
     :title="modalTitle"
+    @afterLeave="cancel"
   >
     <div v-if="modalType == 'wallet'" class="modal-content">
       <n-form-item label="选择钱包：" path="walletKey">
@@ -357,6 +358,7 @@ export default {
         })
       } else if (modalType.value == 'function') {
         if (!dataItem.value.id) dataItem.value.id = crypto.randomUUID()
+        dataItem.value.inputs = toRaw(inputs.value)
         emit('addFunction', toRaw(dataItem.value))
       } else if (modalType.value == 'trigger') {
         if (!dataItem.value.id) dataItem.value.id = crypto.randomUUID()
