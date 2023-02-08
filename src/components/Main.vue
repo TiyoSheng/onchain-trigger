@@ -435,9 +435,9 @@ export default {
         let res = await C[item.functionName](...p)
         if (res._isBigNumber) {
           console.log(res.toNumber())
-          message.success('执行结果：' + res.toNumber())
+          // message.success('执行结果：' + res.toNumber())
         } else {
-          message.success('执行结果：' + res)
+          // message.success('执行结果：' + res)
         }
         let txData = {
           isApply: true,
