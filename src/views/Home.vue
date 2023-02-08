@@ -24,6 +24,11 @@ export default {
       // getProvider()
       let wallets = await getLs('wallet') || []
       let contracts = await getLs('contracts') || []
+      console.log(contracts)
+      contracts.forEach(e => {
+        let abi = JSON.parse(e.abi)
+        console.log(abi)
+      })
       let triggers = await getLs('triggers') || []
       let activatedId = await getLs('activatedId') || ''
       wallets.push({name: '添加新钱包', privateKey: 'add'})

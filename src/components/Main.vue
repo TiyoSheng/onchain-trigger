@@ -15,11 +15,20 @@
       </div>
       <div v-else class="add-btn" @click="showFormModal('wallet')">设置钱包</div>
       <n-divider dashed style="font-size: 12px;color:rgba(194, 194, 194, 1);margin-top: 0">附加函数</n-divider>
-      <div class="card" v-for="item in triggerData.functions" :key="item.id">
+      <div class="card" v-for="(item, index) in triggerData.functions" :key="item.id">
         <n-spin :show="functionLoading == item.id">
           <div class="flex-center-sb">
             <div class="">{{item.name}}</div>
-            <div class="edit-btn" @click="showFormModal('function', 'edit', item)">编辑</div>
+            <div class="flex-center">
+              <div class="edit-btn" @click="showFormModal('function', 'edit', item)">编辑</div>
+              <n-popconfirm :show-icon="false" positive-text="确认" negative-text="取消" @positiveClick="del('function', index)">
+                <template #trigger>
+                  <div class="edit-btn">删除</div>
+                </template>
+                <p style="margin: 10px 0">是否确认删除{{item.name}}?</p>
+              </n-popconfirm>
+            </div>
+            
           </div>
           <div class="mt12 flex-center">
             <div class="name">{{getContractName(item.contractId)}}</div>
@@ -38,10 +47,19 @@
       </div>
       <div class="add-btn" @click="showFormModal('function')">添加附加函数</div>
       <n-divider dashed style="font-size: 12px;color:rgba(194, 194, 194, 1);margin-top: 0">合约触发器</n-divider>
-      <div class="card" v-for="item in triggerData.triggers" :key="item.id">
+      <div class="card" v-for="(item, index) in triggerData.triggers" :key="item.id">
         <div class="flex-center-sb">
           <div class="">触发函数</div>
-          <div class="edit-btn" @click="showFormModal('trigger', 'edit', item)">编辑</div>
+          <div class="flex-center">
+            <div class="edit-btn" @click="showFormModal('trigger', 'edit', item)">编辑</div>
+            <n-popconfirm :show-icon="false" positive-text="确认" negative-text="取消" @positiveClick="del('trigger', index)">
+              <template #trigger>
+                <div class="edit-btn">删除</div>
+              </template>
+              <p style="margin: 10px 0">是否确认删除{{item.name}}?</p>
+            </n-popconfirm>
+          </div>
+          
         </div>
         <div class="mt12 flex-center">
           <div class="name">{{getContractName(item.contractId)}}</div>
@@ -244,7 +262,13 @@ export default {
               formRef.value.abi = list
               list.forEach(el => {
                 if (el.name == item.functionName) {
-                  formRef.value.inputs = el.inputs
+                  console.log(el)
+                  formRef.value.dataItem.methodType = el.stateMutability
+                  formRef.value.inputs = JSON.parse(JSON.stringify(el.inputs))
+                  formRef.value.filterInputs = JSON.parse(JSON.stringify(el.inputs))
+                  if (el.stateMutability == 'payable') {
+                    formRef.value.filterInputs.push({name: "value", type: "ETH"})
+                  }
                 }
               })
             }
@@ -278,12 +302,16 @@ export default {
               formRef.value.abi = list
               list.forEach(el => {
                 if (el.name == item.functionName) {
-                  console.log(el.inputs)
+                  console.log(el)
                   el.inputs.forEach(x => {
                     x.oName = `${x.name}(${x.type})`
                   })
-                  formRef.value.inputs = el.inputs
-                  formRef.value.filterInputs = el.inputs
+                  formRef.value.dataItem.methodType = el.stateMutability
+                  formRef.value.inputs = JSON.parse(JSON.stringify(el.inputs))
+                  formRef.value.filterInputs = JSON.parse(JSON.stringify(el.inputs))
+                  if (el.stateMutability == 'payable') {
+                    formRef.value.filterInputs.push({name: "value", type: "uint256", oName: 'value(ETH)'})
+                  }
                 }
               })
             }
@@ -291,7 +319,14 @@ export default {
         }
       }
     }
-
+    const del = (type, index) => {
+      if (type == 'function') {
+        triggerData.value.functions.splice(index, 1)
+      } if (type == 'trigger') {
+        triggerData.value.triggers.splice(index, 1)
+      }
+      setTrigger()
+    }
     const setTrigger = async (off) => {
       let triggers = toRaw(triggerList.value)
       let td = JSON.parse(JSON.stringify(toRaw(triggerData.value)))
@@ -396,34 +431,29 @@ export default {
           })
         }
         let res = await C[item.functionName](...p)
-        
-        if (item.methodType == 'read') {
-          if (res._isBigNumber) {
-            console.log(res.toNumber())
-            message.success('执行结果：' + res.toNumber())
-          } else {
-            message.success('执行结果：' + res)
-          }
+        if (res._isBigNumber) {
+          console.log(res.toNumber())
+          message.success('执行结果：' + res.toNumber())
         } else {
-          console.log(res)
-          let txData = {
-            isApply: true,
-            content: res
-          }
-          try {
-            if (!triggerData.value.msgList) {
-              triggerData.value.msgList = []
-            }
-            triggerData.value.msgList.push(txData)
-            setTrigger()
-          } catch (error) {
-            console.log(triggerData.value, error)
-          }
-          let tx = await res.wait()
-          setWallet(triggerData.value.wallet.address)
-          console.log(tx)
-          message.success('confirmed transaction')
+          message.success('执行结果：' + res)
         }
+        let txData = {
+          isApply: true,
+          content: res
+        }
+        try {
+          if (!triggerData.value.msgList) {
+            triggerData.value.msgList = []
+          }
+          triggerData.value.msgList.push(txData)
+          setTrigger()
+        } catch (error) {
+          console.log(triggerData.value, error)
+        }
+        let tx = await res.wait()
+        setWallet(triggerData.value.wallet.address)
+        console.log(tx)
+        message.success('confirmed transaction')
         functionLoading.value = ''
       } catch (error) {
         console.log(error)
@@ -488,6 +518,21 @@ export default {
         let gp = ethers.utils.formatUnits(res.maxFeePerGas, 0)
         let mpfg = ethers.utils.formatUnits(res.maxPriorityFeePerGas, 0)
         let gl = ethers.utils.formatUnits(res.gas, 0)
+        let value = ethers.utils.formatUnits(res.value, 0)
+        let nonce = triggerData.value.wallet.nonce + 1
+        let sendInfo = {
+          maxFeePerGas: (gp * 1.5).toFixed(0),
+          maxPriorityFeePerGas: (mpfg * 1.5).toFixed(0),
+          gasLimit: (gl * 1.5).toFixed(0),
+          nonce
+        }
+        if (value) {
+          if (item.args.value && item.args.value.value) {
+            sendInfo.value = item.args.value.value
+          } else {
+            sendInfo.value = value
+          }
+        }
         inputs.forEach((e, i) => {
           let data = item.args[e.name] || null
           if (data && data.value) {
@@ -496,9 +541,9 @@ export default {
             input[i] = inputData[i]
           }
         })
+        console.log(...input, sendInfo)
         try {
-          let nonce = triggerData.value.wallet.nonce + 1
-          let tx = await C[item.functionName](...input, { maxFeePerGas: (gp * 1.5).toFixed(0), maxPriorityFeePerGas: (mpfg * 1.5).toFixed(0), gasLimit: (gl * 1.5).toFixed(0), nonce})
+          let tx = await C[item.functionName](...input, sendInfo)
           triggerData.value.wallet.nonce = tx.nonce
           let txData = {
             isHanddle: true,
@@ -506,13 +551,14 @@ export default {
           }
           triggerData.value.msgList.push(txData)
           setTrigger()
-          if (item.methodType == 'write') {
+          if (tx.hash) {
             triggerData.value.wallet.nonce = tx.nonce
             await tx.wait()
           }
           index += 1
           handdleFun(list, res, inputData, index)
         } catch (error) {
+          console.log(error)
           message.error('transaction failed')
         }
       }
@@ -537,7 +583,7 @@ export default {
           let abi = JSON.parse(e.abi)
           abi.forEach(el => {
             if (el.name == triggerData.value.triggers[0].functionName) {
-              contractInputs = el.inputs    
+              contractInputs = JSON.parse(JSON.stringify(el.inputs))
             }
           })
         }
@@ -643,7 +689,8 @@ export default {
       on,
       off,
       toEtherscan,
-      clearMsg
+      clearMsg,
+      del
     }
   },
 }
@@ -656,7 +703,7 @@ export default {
 .l {
   height: 100vh;
   overflow-y: auto;
-  width: 400px;
+  width: 600px;
   padding: 24px 12px;
   box-sizing: border-box;
   scrollbar-width: none;
@@ -693,6 +740,7 @@ export default {
     }
     .edit-btn {
       cursor: pointer;
+      margin-right: 10px;
     }
     .line {
       width: 20px;

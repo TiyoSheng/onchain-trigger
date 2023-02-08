@@ -44,8 +44,8 @@
           @update:value="functionChange"
         />
       </n-form-item>
-      <n-form-item v-if="inputs && inputs.length" label="参数：" path="formValue.inputData">
-        <div v-for="(item, index) in inputs" :key="index" class="input-item flex-center" >
+      <n-form-item v-if="filterInputs && filterInputs.length" label="参数：" path="formValue.inputData">
+        <div v-for="(item, index) in filterInputs" :key="index" class="input-item flex-center" >
           <p style="width: 140px;flex:0 0 140px;margin:0">{{item.name + '(' + item.type + ')'}}：</p>
           <div style="margin-left: 20px;flex:1;width: 100%">
             <n-input v-if="item.type == 'uint256'" :allow-input="onlyAllowNumber" v-model:value="dataItem.args[item.name]" />
@@ -134,8 +134,8 @@
               @update:value="handdleFunctionChange(index)"
             />
           </n-form-item>
-          <n-form-item v-if="handdle.inputs && handdle.inputs.length" label="覆盖内容：">
-            <div v-for="(item, index) in handdle.inputs" :key="index" class="input-item flex-center" >
+          <n-form-item v-if="handdle.params && handdle.params.length" label="覆盖内容：">
+            <div v-for="(item, index) in handdle.params" :key="index" class="input-item flex-center" >
               <p style="width: 250px;flex:0 0 140px;margin:0">{{item.name + '(' + item.type + ')'}}：</p>
               <n-select
                 v-model:value="handdle.args[item.name].type"
@@ -242,8 +242,11 @@ export default {
             el.oName = `${el.name}(${el.type})`
           })
           console.log(e.inputs)
-          inputs.value = e.inputs
-          filterInputs.value = e.inputs
+          inputs.value = JSON.parse(JSON.stringify(e.inputs))
+          filterInputs.value = JSON.parse(JSON.stringify(e.inputs))
+          if (e.stateMutability == 'payable') {
+            filterInputs.value.push({name: "value", type: "ETH"})
+          }
           dataItem.value.args = {}
           dataItem.value.filter = []
           if (modalType.value == 'trigger') {
@@ -252,11 +255,7 @@ export default {
             })
           }
           console.log(dataItem.value)
-          if (e.stateMutability == 'view') {
-            dataItem.value.methodType = 'read'
-          } else {
-            dataItem.value.methodType = 'write'
-          }
+          dataItem.value.methodType = e.stateMutability
         }
       })
     }
@@ -304,18 +303,20 @@ export default {
     }
 
     const handdleFunctionChange = (index) => {
+      console.log(1)
       dataItem.value.handdleList[index].abi.forEach(e => {
         if (e.name == dataItem.value.handdleList[index].functionName) {
-          dataItem.value.handdleList[index].inputs = e.inputs
+          console.log(e.inputs)
+          dataItem.value.handdleList[index].inputs = JSON.parse(JSON.stringify(e.inputs))
+          dataItem.value.handdleList[index].params = JSON.parse(JSON.stringify(e.inputs))
           dataItem.value.handdleList[index].args = {}
-          e.inputs.forEach(el => {
+          if (e.stateMutability == 'payable') {
+            dataItem.value.handdleList[index].params.push({name: "value", type: "ETH"})
+          }
+          dataItem.value.handdleList[index].params.forEach(el => {
             dataItem.value.handdleList[index].args[el.name] = {}
           })
-          if (e.stateMutability == 'view') {
-            dataItem.value.handdleList[index].methodType = 'read'
-          } else {
-            dataItem.value.handdleList[index].methodType = 'write'
-          }
+          dataItem.value.handdleList[index].methodType = e.stateMutability
         }
       })
       console.log(dataItem.value)
@@ -365,13 +366,12 @@ export default {
         let filters = dataItem.value.filter
         let args = JSON.parse(JSON.stringify(dataItem.value.args))
         for (let key in args) {
-          let arr = filters.filter(e => e.name == key)
-          if (arr && arr.length) {
-            args[key] = arr[0]
-          } else {
-            args[key] = {}
-          }
+          args[key] = {}
         }
+        filters.forEach(e => {
+          let key = e.name
+          args[key] = e
+        })
         console.log(args)
         dataItem.value.args = args
         emit('addTrigger', toRaw(dataItem.value))
