@@ -39,7 +39,9 @@
           <div class="mt12 params">
             <div class="params-item flex-center" v-for="(val, key) in item.args" :key="key">
               <div class="params-item-key">{{key}}</div>
-              <div class="params-item-value">{{val}}</div>
+              <div class="params-item-value">
+                <n-input v-model:value="item.args[key]" />
+              </div>
             </div>
           </div>
           <div class="apply-btn flex-center-center mt12" @click="apply(item)">执行</div>
