@@ -4,7 +4,7 @@
       <div class="card" v-if="triggerData.wallet && triggerData.wallet.address">
         <n-spin :show="walletLoading">
           <div class="flex-center-sb">
-            <div class="address">{{triggerData.wallet.address}}</div>
+            <div class="address" @click="copy(triggerData.wallet.address)">{{triggerData.wallet.address}}</div>
             <div class="edit-btn" @click="showFormModal('wallet', 'edit')">切换</div>
           </div>
           <div class="mt12 flex-center-sb">
@@ -77,6 +77,9 @@
           <div class="add-btn" @click="showFormModal('function')">添加附加函数</div>
         </n-collapse-item>
         <n-collapse-item title="合约触发器" name="3">
+          <template #header-extra>
+            触发器数量：{{triggerData.triggers && triggerData.triggers.length}}
+          </template>
           <div class="card" v-for="(item, index) in triggerData.triggers" :key="item.id">
             <div class="flex-center-sb">
               <div class="">触发函数</div>
@@ -197,6 +200,7 @@ import { filterFun, inputFun } from '@/libs/config'
 import { contract } from "../libs/connectWallet"
 import FormModal from '@/components/FormModal.vue'
 import {JsonViewer} from "vue3-json-viewer"
+import { useUtils } from '../hooks/useUtils'
 import "vue3-json-viewer/dist/index.css"
 const { Alchemy, Network, AlchemySubscription } = require("alchemy-sdk")
 const settings = {
@@ -211,6 +215,7 @@ export default {
   },
   setup() {
     let contractData = []
+    const {copy} = useUtils()
     const store = useStore()
     const message = useMessage()
     const formRef = ref(null)
@@ -741,7 +746,8 @@ export default {
       clearMsg,
       del,
       setParams,
-      setTrigger
+      setTrigger,
+      copy
     }
   },
 }

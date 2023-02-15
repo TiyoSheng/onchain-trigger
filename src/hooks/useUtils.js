@@ -1,8 +1,6 @@
 import { useMessage } from 'naive-ui'
-import { useStore } from 'vuex'
 
 export const useUtils = () => {
-  const store = useStore()
   const message = useMessage()
   const copy = (value, type) => {
     if (type == 'abi') {
@@ -46,7 +44,6 @@ export const useUtils = () => {
 
   return {
     toEtherscanAddress,
-    copy,
-    setData
+    copy
   }
 }
