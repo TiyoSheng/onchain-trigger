@@ -39,8 +39,10 @@ export default {
         note: triggerNote.value,
         id: crypto.randomUUID(),
         functions: [],
-        triggers: []
+        triggers: [],
+        globalParams: []
       }
+
       // triggers: [{
       //     contractId: '',
       //     filterArgs: [],

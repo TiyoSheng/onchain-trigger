@@ -14,93 +14,124 @@
         </n-spin>
       </div>
       <div v-else class="add-btn" @click="showFormModal('wallet')">设置钱包</div>
-      <n-divider dashed style="font-size: 12px;color:rgba(194, 194, 194, 1);margin-top: 0">附加函数</n-divider>
-      <div class="card" v-for="(item, index) in triggerData.functions" :key="item.id">
-        <n-spin :show="functionLoading == item.id">
-          <div class="flex-center-sb">
-            <div class="">{{item.name}}</div>
-            <div class="flex-center">
-              <div class="edit-btn" @click="showFormModal('function', 'edit', item)">编辑</div>
-              <n-popconfirm :show-icon="false" positive-text="确认" negative-text="取消" @positiveClick="del('function', index)">
-                <template #trigger>
-                  <div class="edit-btn">删除</div>
-                </template>
-                <p style="margin: 10px 0">是否确认删除{{item.name}}?</p>
-              </n-popconfirm>
+      <n-collapse>
+        <n-collapse-item title="全局变量" name="1">
+          <template #header-extra>
+            变量数量：{{triggerData.globalParams && triggerData.globalParams.length}}
+          </template>
+          <div class="card" v-if="triggerData.globalParams && triggerData.globalParams.length">
+            <div class="flex-center-sb">
+              <div class="">全局变量</div>
+              <div class="flex-center">
+                <div class="edit-btn" @click="showFormModal('params', 'edit')">编辑</div>
+              </div>
             </div>
-            
+            <div class="mt12 params">
+              <div class="params-item flex-center" v-for="(item, index) in triggerData.globalParams" :key="index">
+                <div class="params-item-key">{{item.key}}</div>
+                <div class="params-item-value">
+                  <n-input v-model:value="item.value" />
+                </div>
+              </div>
+            </div>
+            <div class="apply-btn flex-center-center mt12" @click="setTrigger">保存</div>
           </div>
-          <div class="mt12 flex-center">
-            <div class="name">{{getContractName(item.contractId)}}</div>
-            <div class="line"></div>
-            <div class="name">{{item.functionName}}</div>
-            <div class="type">（{{item.methodType}}）</div>
+          <div v-else class="add-btn" @click="showFormModal('params')">设置全局变量</div>
+        </n-collapse-item>
+        <n-collapse-item title="附加函数" name="2">
+          <template #header-extra>
+            函数数量：{{triggerData.functions && triggerData.functions.length}}
+          </template>
+          <div class="card" v-for="(item, index) in triggerData.functions" :key="item.id">
+            <n-spin :show="functionLoading == item.id">
+              <div class="flex-center-sb">
+                <div class="">{{item.name}}</div>
+                <div class="flex-center">
+                  <div class="edit-btn" @click="showFormModal('function', 'edit', item)">编辑</div>
+                  <n-popconfirm :show-icon="false" positive-text="确认" negative-text="取消" @positiveClick="del('function', index)">
+                    <template #trigger>
+                      <div class="edit-btn">删除</div>
+                    </template>
+                    <p style="margin: 10px 0">是否确认删除{{item.name}}?</p>
+                  </n-popconfirm>
+                </div>
+                
+              </div>
+              <div class="mt12 flex-center">
+                <div class="name">{{getContractName(item.contractId)}}</div>
+                <div class="line"></div>
+                <div class="name">{{item.functionName}}</div>
+                <div class="type">（{{item.methodType}}）</div>
+              </div>
+              <div class="mt12 params">
+                <div class="params-item flex-center" v-for="(val, key) in item.args" :key="key">
+                  <div class="params-item-key">{{key}}</div>
+                  <div class="params-item-value">
+                    <n-input v-model:value="item.args[key]" />
+                  </div>
+                </div>
+              </div>
+              <div class="apply-btn flex-center-center mt12" @click="apply(item)">执行</div>
+            </n-spin>
           </div>
-          <div class="mt12 params">
-            <div class="params-item flex-center" v-for="(val, key) in item.args" :key="key">
-              <div class="params-item-key">{{key}}</div>
-              <div class="params-item-value">
-                <n-input v-model:value="item.args[key]" />
+          <div class="add-btn" @click="showFormModal('function')">添加附加函数</div>
+        </n-collapse-item>
+        <n-collapse-item title="合约触发器" name="3">
+          <div class="card" v-for="(item, index) in triggerData.triggers" :key="item.id">
+            <div class="flex-center-sb">
+              <div class="">触发函数</div>
+              <div class="flex-center">
+                <div class="edit-btn" @click="showFormModal('trigger', 'edit', item)">编辑</div>
+                <n-popconfirm :show-icon="false" positive-text="确认" negative-text="取消" @positiveClick="del('trigger', index)">
+                  <template #trigger>
+                    <div class="edit-btn">删除</div>
+                  </template>
+                  <p style="margin: 10px 0">是否确认删除{{item.name}}?</p>
+                </n-popconfirm>
+              </div>
+              
+            </div>
+            <div class="mt12 flex-center">
+              <div class="name">{{getContractName(item.contractId)}}</div>
+              <div class="line"></div>
+              <div class="name">{{item.functionName}}</div>
+            </div>
+            <div class="flex-center-sb">
+              <div class="mt12">触发条件</div>
+            </div>
+            <div class="mt12 params no-border">
+              <div class="params-item " v-for="(val, key) in item.args" :key="key">
+                <div v-if="val.value" class="flex-center">
+                  <div class="params-item-key">{{key}}</div>
+                  <div class="params-item-type">{{getType(val.type, 0)}}</div>
+                  <div class="params-item-value">{{val.value}}</div>
+                </div>
+                
+              </div>
+            </div>
+            <div class="flex-center-sb">
+              <div class="mt12">执行函数</div>
+            </div>
+            <div v-for="handdle in item.handdleList" :key="handdle.id">
+              <div class="mt12 flex-center">
+                <div class="name">{{getContractName(handdle.contractId)}}</div>
+                <div class="line"></div>
+                <div class="name">{{handdle.functionName}}</div>
+              </div>
+              <div class="mt12 params no-border">
+                <div class="params-item flex-center" v-for="(val, key) in handdle.args" :key="key">
+                  <div class="params-item-key">{{key}}</div>
+                  <div class="params-item-type">{{getType(val.type, 1) || '相同'}}</div>
+                  <div class="params-item-value">{{val.value}}</div>
+                </div>
               </div>
             </div>
           </div>
-          <div class="apply-btn flex-center-center mt12" @click="apply(item)">执行</div>
-        </n-spin>
-      </div>
-      <div class="add-btn" @click="showFormModal('function')">添加附加函数</div>
-      <n-divider dashed style="font-size: 12px;color:rgba(194, 194, 194, 1);margin-top: 0">合约触发器</n-divider>
-      <div class="card" v-for="(item, index) in triggerData.triggers" :key="item.id">
-        <div class="flex-center-sb">
-          <div class="">触发函数</div>
-          <div class="flex-center">
-            <div class="edit-btn" @click="showFormModal('trigger', 'edit', item)">编辑</div>
-            <n-popconfirm :show-icon="false" positive-text="确认" negative-text="取消" @positiveClick="del('trigger', index)">
-              <template #trigger>
-                <div class="edit-btn">删除</div>
-              </template>
-              <p style="margin: 10px 0">是否确认删除{{item.name}}?</p>
-            </n-popconfirm>
-          </div>
-          
-        </div>
-        <div class="mt12 flex-center">
-          <div class="name">{{getContractName(item.contractId)}}</div>
-          <div class="line"></div>
-          <div class="name">{{item.functionName}}</div>
-        </div>
-        <div class="flex-center-sb">
-          <div class="mt12">触发条件</div>
-        </div>
-        <div class="mt12 params no-border">
-          <div class="params-item " v-for="(val, key) in item.args" :key="key">
-            <div v-if="val.value" class="flex-center">
-              <div class="params-item-key">{{key}}</div>
-              <div class="params-item-type">{{getType(val.type, 0)}}</div>
-              <div class="params-item-value">{{val.value}}</div>
-            </div>
-            
-          </div>
-        </div>
-        <div class="flex-center-sb">
-          <div class="mt12">执行函数</div>
-        </div>
-        <div v-for="handdle in item.handdleList" :key="handdle.id">
-          <div class="mt12 flex-center">
-            <div class="name">{{getContractName(handdle.contractId)}}</div>
-            <div class="line"></div>
-            <div class="name">{{handdle.functionName}}</div>
-          </div>
-          <div class="mt12 params no-border">
-            <div class="params-item flex-center" v-for="(val, key) in handdle.args" :key="key">
-              <div class="params-item-key">{{key}}</div>
-              <div class="params-item-type">{{getType(val.type, 1) || '相同'}}</div>
-              <div class="params-item-value">{{val.value}}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div v-if="!(triggerData.triggers && triggerData.triggers.length)" class="add-btn" @click="showFormModal('trigger')">添加触发器</div>
-      <n-divider dashed style="font-size: 12px;color:rgba(194, 194, 194, 1);margin-top: 0"></n-divider>
+          <div v-if="!(triggerData.triggers && triggerData.triggers.length)" class="add-btn" @click="showFormModal('trigger')">添加触发器</div>
+        </n-collapse-item>
+      </n-collapse>
+      
+      <n-divider dashed style="font-size: 12px;color:rgba(194, 194, 194, 1);margin-top: 16px"></n-divider>
       <div class="btn-list">
         <n-form-item style="justify-content: flex-end;display:flex">
           <n-button v-if="!triggerData.running" style="margin-left: 20px;background:#FFF" attr-type="button" @click="on">
@@ -152,6 +183,7 @@
       @setWallet="setWallet"
       @addFunction="addFunction"
       @addTrigger="addTrigger"
+      @setParams="setParams"
     />
   </div>
 </template>
@@ -249,6 +281,14 @@ export default {
           })
           formRef.value.walletKey = privateKey
         }
+      } else if (type == 'params') {
+        formRef.value.modalTitle = '设置全局变量'
+        formRef.value.modalType = 'params'
+        formRef.value.dataItem = []
+        if (isEdit) {
+          let it = triggerData.value.globalParams
+          formRef.value.dataItem = JSON.parse(JSON.stringify(it))
+        }
       } else if (type == 'function') {
         formRef.value.modalTitle = '添加函数'
         formRef.value.modalType = 'function'
@@ -341,6 +381,12 @@ export default {
       setLs('triggers', JSON.parse(JSON.stringify(triggers))).then(res => {
         store.commit('setTriggers', res)
       })
+    }
+
+    const setParams = (e) => {
+      console.log(e, triggerData.value)
+      triggerData.value.globalParams = JSON.parse(JSON.stringify(e))
+      setTrigger()
     }
 
     const addTrigger = (e) => {
@@ -662,6 +708,7 @@ export default {
         if (e.id == activatedId.value) {
           console.log(e)
           if (!e.msgList) e.msgList = []
+          if (!e.globalParams) e.globalParams = []
           triggerData.value = e
         }
       })
@@ -692,7 +739,9 @@ export default {
       off,
       toEtherscan,
       clearMsg,
-      del
+      del,
+      setParams,
+      setTrigger
     }
   },
 }

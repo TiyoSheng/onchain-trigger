@@ -20,6 +20,19 @@
       </n-form-item>
       <div v-if="wallet && wallet.address" style="margin-bottom: 24px;font-size: 14px;margin-top: -10px"><p>address: {{wallet.address}}</p><p>余额： {{wallet.balance}} <svg v-if="wallet.balance >= 0" @click="getBalance" style="margin-left: 14px;cursor: pointer;" t="1674234880352" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2699" width="12" height="12"><path d="M960 416V192l-73.056 73.056a447.712 447.712 0 0 0-373.6-201.088C265.92 63.968 65.312 264.544 65.312 512S265.92 960.032 513.344 960.032a448.064 448.064 0 0 0 415.232-279.488 38.368 38.368 0 1 0-71.136-28.896 371.36 371.36 0 0 1-344.096 231.584C308.32 883.232 142.112 717.024 142.112 512S308.32 140.768 513.344 140.768c132.448 0 251.936 70.08 318.016 179.84L736 416h224z" p-id="2700"></path></svg></p></div>
     </div>
+    <div v-if="modalType == 'params'" class="modal-content">
+      <n-form-item label="全局变量：" >
+        <div v-for="(item, index) in dataItem" :key="index" class="input-item flex-center"  >
+          <n-input v-model:value="item.key" placeholder="输入变量名" />
+          <div style="margin: 10px">=</div>
+          <n-input v-model:value="item.value" placeholder="输入变量" />
+          <div class="del" @click="delParams(index)">
+            <svg t="1675512681148" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2711" width="18" height="18"><path d="M789.333333 343.466667c-12.8 0-21.333333 8.533333-21.333333 21.333333v490.666667c0 23.466667-19.2 42.666667-42.666667 42.666666H298.666667c-23.466667 0-42.666667-19.2-42.666667-42.666666V362.666667c0-12.8-8.533333-21.333333-21.333333-21.333334s-21.333333 8.533333-21.333334 21.333334v490.666666c0 46.933333 38.4 85.333333 85.333334 85.333334h426.666666c46.933333 0 85.333333-38.4 85.333334-85.333334V362.666667c0-10.666667-10.666667-19.2-21.333334-19.2zM915.2 234.666667H746.666667V170.666667c0-46.933333-38.4-85.333333-85.333334-85.333334H362.666667c-46.933333 0-85.333333 38.4-85.333334 85.333334v64H106.666667c-12.8 0-21.333333 8.533333-21.333334 21.333333s8.533333 21.333333 21.333334 21.333333h808.533333c12.8 0 21.333333-8.533333 21.333333-21.333333s-8.533333-21.333333-21.333333-21.333333zM320 170.666667c0-23.466667 19.2-42.666667 42.666667-42.666667h298.666666c23.466667 0 42.666667 19.2 42.666667 42.666667v64H320V170.666667z" fill="#666666" p-id="2712"></path><path d="M640 704V364.8c0-12.8-8.533333-21.333333-21.333333-21.333333s-21.333333 8.533333-21.333334 21.333333V704c0 12.8 8.533333 21.333333 21.333334 21.333333s21.333333-10.666667 21.333333-21.333333zM426.666667 704V362.666667c0-12.8-8.533333-21.333333-21.333334-21.333334s-21.333333 8.533333-21.333333 21.333334v341.333333c0 12.8 8.533333 21.333333 21.333333 21.333333s21.333333-10.666667 21.333334-21.333333z" fill="#666666" p-id="2713"></path></svg>
+          </div>
+        </div>
+        <div class="add-btn" @click="addParams">添加全局变量</div>
+      </n-form-item>
+    </div>
     <div v-if="modalType == 'function'" class="modal-content">
       <n-form-item label="备注名称：">
         <n-input v-model:value="dataItem.name" placeholder="输入备注名称" />
@@ -350,6 +363,14 @@ export default {
       dataItem.value.handdleList.splice(index, 1)
     }
 
+    const addParams = () => {
+      dataItem.value.push({key: '', value: ''})
+    }
+
+    const delParams = (index) => {
+      dataItem.value.splice(index, 1)
+    }
+
     const ok = () => {
       if (modalType.value == 'wallet') {
         walletList.value.forEach(e => {
@@ -357,6 +378,8 @@ export default {
             emit('setWallet', e.address)
           }
         })
+      } else if (modalType.value == 'params') {
+        emit('setParams', toRaw(dataItem.value))
       } else if (modalType.value == 'function') {
         if (!dataItem.value.id) dataItem.value.id = crypto.randomUUID()
         dataItem.value.inputs = toRaw(inputs.value)
@@ -427,7 +450,9 @@ export default {
       delHanddle,
       addFilter,
       filterChange,
-      delFilter
+      delFilter,
+      addParams,
+      delParams
     }
   },
 }
