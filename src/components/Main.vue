@@ -30,11 +30,11 @@
               <div class="params-item flex-center" v-for="(item, index) in triggerData.globalParams" :key="index">
                 <div class="params-item-key">{{item.key}}</div>
                 <div class="params-item-value">
-                  <n-input v-model:value="item.value" />
+                  <n-input v-model:value="item.value" @blur="setTrigger" />
                 </div>
               </div>
             </div>
-            <div class="apply-btn flex-center-center mt12" @click="setTrigger">保存</div>
+            <!-- <div class="apply-btn flex-center-center mt12" @click="setTrigger">保存</div> -->
           </div>
           <div v-else class="add-btn" @click="showFormModal('params')">设置全局变量</div>
         </n-collapse-item>
@@ -67,7 +67,8 @@
                 <div class="params-item flex-center" v-for="(val, key) in item.args" :key="key">
                   <div class="params-item-key">{{key}}</div>
                   <div class="params-item-value">
-                    <n-input v-model:value="item.args[key]" />
+                    <n-select v-model:value="item.args[key]" filterable tag :options="triggerData.globalParams" label-field="key" value-field="key" />
+                    <!-- <n-input v-model:value="item.args[key]" /> -->
                   </div>
                 </div>
               </div>
@@ -272,6 +273,7 @@ export default {
 
     const showFormModal = (type, isEdit, it) => {
       formRef.value.isShowModal = true
+      formRef.value.globalParams = triggerData.value.globalParams
       if (type == 'wallet') {
         formRef.value.modalTitle = '设置钱包'
         formRef.value.modalType = 'wallet'
@@ -477,13 +479,22 @@ export default {
         if (item.inputs) {
           item.inputs.forEach(e => {
             if (item.args[e.name]) {
-              p.push(item.args[e.name])
+              let val = item.args[e.name]
+              for (let i = 0; i < triggerData.value.globalParams.length; i++) {
+                let param = triggerData.value.globalParams[i]
+                if (param.key == item.args[e.name]) {
+                  val = param.value
+                }
+              }
+              p.push(val)
             } else {
               p.push('')
             }
           })
         }
+        console.log(p)
         let res = await C[item.functionName](...p)
+        console.log(res)
         if (res._isBigNumber) {
           console.log(res.toNumber())
           // message.success('执行结果：' + res.toNumber())
@@ -520,39 +531,46 @@ export default {
         let filter = filterData[funInputs[i].name] || null
         if (filter) {
           console.log(filter)
+          let val = filter.value
+          for (let i = 0; i < triggerData.value.globalParams.length; i++) {
+            let param = triggerData.value.globalParams[i]
+            if (param.key == filter.value) {
+              val = param.value
+            }
+          }
           switch(filter.type) {
             case '$gt':
-              if (!(e.value > +filter.value)) {
+              if (!(e.value > +val)) {
                 r = false
               }
               break
             case '$lt':
-              if (!(+e.value < +filter.value)) {
+              if (!(+e.value < +val)) {
                 r = false
               }
               break
             case '$gte':
-              if (!(+e.value >= +filter.value)) {
+              if (!(+e.value >= +val)) {
                 r = false
               }
               break
             case '$lte':
-              if (!(+e.value <= +filter.value)) {
+              if (!(+e.value <= +val)) {
                 r = false
               }
               break
             case '$eq':
-              if (!(e.value == filter.value)) {
+              if (!(e.value == val)) {
                 r = false
               }
               break
             case '$ne':
-              if (!(e.value != filter.value)) {
+              if (!(e.value != val)) {
                 r = false
               }
               break
             case '$in':
-              if (!(e.value.indexOf(filter.value) > -1)) {
+              if (!(e.value.indexOf(val) > -1)) {
                 r = false
               }
               break
@@ -572,12 +590,11 @@ export default {
         let mpfg = ethers.utils.formatUnits(res.maxPriorityFeePerGas, 0)
         let gl = ethers.utils.formatUnits(res.gas, 0)
         let value = ethers.utils.formatUnits(res.value, 0)
-        let nonce = triggerData.value.wallet.nonce + 1
+        // let nonce = triggerData.value.wallet.nonce + 1
         let sendInfo = {
           maxFeePerGas: (gp * 1.5).toFixed(0),
           maxPriorityFeePerGas: (mpfg * 1.5).toFixed(0),
-          gasLimit: (gl * 1.5).toFixed(0),
-          nonce
+          gasLimit: (gl * 1.5).toFixed(0)
         }
         if (value) {
           if (item.args.value && item.args.value.value) {
@@ -589,7 +606,14 @@ export default {
         inputs.forEach((e, i) => {
           let data = item.args[e.name] || null
           if (data && data.value) {
-            input[i] = data.value
+            let val = data.value
+            for (let i = 0; i < triggerData.value.globalParams.length; i++) {
+              let param = triggerData.value.globalParams[i]
+              if (param.key == data.value) {
+                val = param.value
+              }
+            }
+            input[i] = val
           } else {
             input[i] = inputData[i]
           }
