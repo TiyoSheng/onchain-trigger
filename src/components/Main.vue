@@ -791,6 +791,7 @@ export default {
       let info = {}
       let data = JSON.parse(JSON.stringify(toRaw(triggerData.value)))
       let {functions, globalParams, triggers, name, note, id} = data
+      globalParams = globalParams.filter(e => e.key != 'currentWalletAddress')
       functions = functions.map(e => {
         return {
           args: e.args,
