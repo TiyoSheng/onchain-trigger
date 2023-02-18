@@ -27,11 +27,14 @@
               </div>
             </div>
             <div class="mt12 params">
-              <div class="params-item flex-center" v-for="(item, index) in triggerData.globalParams" :key="index">
-                <div class="params-item-key">{{item.key}}</div>
-                <div class="params-item-value">
-                  <n-input v-model:value="item.value" @blur="setParams(triggerData.globalParams)" />
+              <div v-for="(item, index) in triggerData.globalParams" :key="index">
+                <div v-if="item.key != 'currentWalletAddress'" class="params-item flex-center">
+                  <div class="params-item-key">{{item.key}}</div>
+                  <div class="params-item-value">
+                    <n-input v-model:value="item.value" @blur="setParams(triggerData.globalParams)" />
+                  </div>
                 </div>
+                
               </div>
             </div>
             <!-- <div class="apply-btn flex-center-center mt12" @click="setTrigger">保存</div> -->
@@ -138,6 +141,9 @@
       <n-divider dashed style="font-size: 12px;color:rgba(194, 194, 194, 1);margin-top: 16px"></n-divider>
       <div class="btn-list">
         <n-form-item style="justify-content: flex-end;display:flex">
+          <n-button style="margin-left: 20px;background:#FFF" attr-type="button" @click="showData">
+            导出
+          </n-button>
           <n-button v-if="!triggerData.running" style="margin-left: 20px;background:#FFF" attr-type="button" @click="on">
             开始监听
           </n-button>
@@ -147,6 +153,7 @@
         </n-form-item>
       </div>
     </div>
+    <!-- <div class="resize" title="收缩侧边栏">⋮</div> -->
     <div class="r">
       <div v-if="triggerData.msgList && triggerData.msgList.length">
         <div
@@ -189,10 +196,11 @@
       @addTrigger="addTrigger"
       @setParams="setParams"
     />
+    <DataInfoModal ref="dataInfoModal" />
   </div>
 </template>
 <script>
-import { ref, computed, watch, toRaw, nextTick } from 'vue'
+import { ref, computed, watch, toRaw, nextTick, toRefs, reactive } from 'vue'
 import { useStore } from 'vuex'
 import { ethers } from 'ethers'
 import { setLs } from '@/service/service'
@@ -200,6 +208,7 @@ import { useMessage } from "naive-ui"
 import { filterFun, inputFun } from '@/libs/config'
 import { contract } from "../libs/connectWallet"
 import FormModal from '@/components/FormModal.vue'
+import DataInfoModal from '@/components/DataInfoModal.vue'
 import {JsonViewer} from "vue3-json-viewer"
 import { useUtils } from '../hooks/useUtils'
 import "vue3-json-viewer/dist/index.css"
@@ -212,14 +221,19 @@ const alchemy = new Alchemy(settings)
 export default {
   components: {
     FormModal,
+    DataInfoModal,
     JsonViewer
   },
   setup() {
     let contractData = []
+    const state = reactive({
+      activeTabs: 1
+    })
     const {copy} = useUtils()
     const store = useStore()
     const message = useMessage()
     const formRef = ref(null)
+    const dataInfoModal = ref(null)
     const walletLoading = ref(false)
     const functionLoading = ref('')
     const triggerData = ref({})
@@ -474,7 +488,7 @@ export default {
             let globalParams = triggerData.value.globalParams
             wallet.balance = ethers.utils.formatEther(balance)
             wallet.nonce = nonce - 1
-            if (!globalParams.some(e => e.key == 'currentWalletAddress')) globalParams.push({label: '当前钱包地址', key: 'currentWalletAddress', value: wallet.address})
+            if (!globalParams.some(e => e.key == 'currentWalletAddress')) globalParams.push({label: `当前钱包地址 (${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}})`, key: 'currentWalletAddress', value: wallet.address})
             triggerData.value.wallet = toRaw(wallet)
             triggerData.value.globalParams = globalParams
             walletLoading.value = false
@@ -771,6 +785,96 @@ export default {
     const toEtherscan = (hash) => {
       window.open(`https://goerli.etherscan.io/tx/${hash}`)
     }
+
+    const showData = () => {
+      dataInfoModal.value.showModal = true
+      let info = {}
+      let data = JSON.parse(JSON.stringify(toRaw(triggerData.value)))
+      let {functions, globalParams, triggers, name, note, id} = data
+      functions = functions.map(e => {
+        return {
+          args: e.args,
+          contractId: e.contractId,
+          functionName: e.functionName,
+          id: e.id,
+          methodType: e.methodType,
+          name: e.name
+        }
+      })
+      triggers = triggers.map(e => {
+        let handdleList = e.handdleList
+        handdleList = handdleList.map(el => {
+          return {
+            args: el.args,
+            contractId: el.contractId,
+            functionName: el.functionName,
+            id: el.id,
+            methodType: el.methodType,
+            name: el.name,
+          }
+        })
+        return {
+          args: e.args,
+          contractId: e.contractId,
+          functionName: e.functionName,
+          id: e.id,
+          methodType: e.methodType,
+          name: e.name,
+          handdleList: handdleList
+        }
+      })
+      info = {functions, globalParams, triggers, name, note, id}
+      dataInfoModal.value.triggerData = info
+      console.log(dataInfoModal.value.triggerData)
+    }
+
+    // const dragControllerDiv = () => {
+    //   let resize = document.querySelector('.resize')
+    //   let box = document.querySelector('.main')
+    //   let left = document.querySelector('.l')
+    //   let mid = document.querySelector('.r') 
+    //   console.log(resize)
+    //     // 鼠标按下事件
+    //     resize.onmousedown = function (e) {
+    //       console.log(1)
+    //       //颜色改变提醒
+    //       resize.style.background = '#818181'
+    //       let startX = e.clientX
+    //       resize.left = resize.offsetLeft
+    //       // 鼠标拖动事件
+    //       document.onmousemove = function (e) {
+    //           let endX = e.clientX
+    //           let moveLen = resize.left + (endX - startX)
+    //           let maxT = box.clientWidth - resize.offsetWidth
+
+    //           if (moveLen < 32) moveLen = 32
+    //           if (moveLen > maxT - 150) moveLen = maxT - 150
+
+    //           resize.style.left = moveLen
+    //           console.log(left)
+    //           left.style.width = moveLen + 'px'
+    //           mid.style.width = (box.clientWidth - moveLen - 10) + 'px'
+    //       }
+    //       // 鼠标松开事件
+    //       document.onmouseup = function () {
+    //         //颜色恢复
+    //         resize.style.background = '#d6d6d6'
+    //         document.onmousemove = null
+    //         document.onmouseup = null
+    //         resize.releaseCapture && resize.releaseCapture()
+    //       }
+    //       resize.setCapture && resize.setCapture()
+    //       return false
+    //     }
+    // }
+
+    // onMounted(() => {
+    //   setTimeout(() => {
+    //     dragControllerDiv()
+    //   }, 500);
+    //   // dragControllerDiv()
+    // })
+
     watch(() => activatedId.value, async () => {
       triggerList.value.forEach(e => {
         if (e.id == activatedId.value) {
@@ -791,6 +895,8 @@ export default {
       });
     }, { deep: true })
     return {
+      ...toRefs(state),
+      dataInfoModal,
       functionLoading,
       walletLoading,
       child,
@@ -811,7 +917,8 @@ export default {
       setParams,
       setTrigger,
       getParams,
-      copy
+      copy,
+      showData
     }
   },
 }
@@ -820,6 +927,7 @@ export default {
 .main {
   flex: 1;
   background: #ffffff;
+  height: 100vh;
 }
 .l {
   height: 100vh;
@@ -980,6 +1088,24 @@ export default {
       margin-left: 12px;
       color: green;
     }
+  }
+}
+.resize {
+  cursor: col-resize;
+  float: left;
+  position: relative;
+  top: 45%;
+  background: #d6d6d6;
+  border-radius: 5px;
+  margin-top: -10px;
+  width: 10px;
+  height: 50px;
+  background-size: cover;
+  background-position: center;
+  font-size: 32px;
+  color: white;
+  &:hover {
+    color: #444444;
   }
 }
 </style>
