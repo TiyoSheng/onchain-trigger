@@ -30,7 +30,7 @@
               <div class="params-item flex-center" v-for="(item, index) in triggerData.globalParams" :key="index">
                 <div class="params-item-key">{{item.key}}</div>
                 <div class="params-item-value">
-                  <n-input v-model:value="item.value" @blur="setTrigger" />
+                  <n-input v-model:value="item.value" @blur="setParams(triggerData.globalParams)" />
                 </div>
               </div>
             </div>
@@ -67,7 +67,7 @@
                 <div class="params-item flex-center" v-for="(val, key) in item.args" :key="key">
                   <div class="params-item-key">{{key}}</div>
                   <div class="params-item-value">
-                    <n-select v-model:value="item.args[key]" filterable tag :options="triggerData.globalParams" label-field="key" value-field="key" />
+                    <n-select v-model:value="item.args[key]" filterable tag :options="triggerData.globalParams" label-field="label" value-field="key" />
                     <!-- <n-input v-model:value="item.args[key]" /> -->
                   </div>
                 </div>
@@ -108,7 +108,7 @@
                 <div v-if="val.value" class="flex-center">
                   <div class="params-item-key">{{key}}</div>
                   <div class="params-item-type">{{getType(val.type, 0)}}</div>
-                  <div class="params-item-value">{{val.value}}</div>
+                  <div class="params-item-value">{{getParams(val.value)}}</div>
                 </div>
                 
               </div>
@@ -126,7 +126,7 @@
                 <div class="params-item flex-center" v-for="(val, key) in handdle.args" :key="key">
                   <div class="params-item-key">{{key}}</div>
                   <div class="params-item-type">{{getType(val.type, 1) || '相同'}}</div>
-                  <div class="params-item-value">{{val.value}}</div>
+                  <div class="params-item-value">{{getParams(val.value)}}</div>
                 </div>
               </div>
             </div>
@@ -248,6 +248,19 @@ export default {
           }
         })
         return contract.name
+      }
+    })
+
+    const getParams = computed(() => {
+      return (value) => {
+        let str = ''
+        let globalParams = triggerData.value.globalParams
+        globalParams.forEach(e => {
+          if (e.key == value) {
+            str = `${e.label}`
+          }
+        })
+        return str
       }
     })
 
@@ -391,8 +404,33 @@ export default {
     }
 
     const setParams = (e) => {
+      if (!e) e = triggerData.value.globalParams
       console.log(e, triggerData.value)
-      triggerData.value.globalParams = JSON.parse(JSON.stringify(e))
+      let args = e.map(e => {
+        let item = {}
+        let val = e.value
+        if (val.length > 22) {
+          val = `${val.slice(0, 6)}...${val.slice(-4)}`
+        }
+        if (e.key != 'currentWalletAddress') {
+          item =  {
+            key: e.key,
+            value: e.value,
+            label: `${e.key} (${val})`
+          }
+        } else {
+          item =  {
+            key: e.key,
+            value: e.value,
+            label: `当前钱包地址 (${val})`
+          }
+        }
+        return item
+      })
+      const res = new Map()
+      args = args.filter((e) => !res.has(e['key']) && res.set(e['key'], 1));
+
+      triggerData.value.globalParams = JSON.parse(JSON.stringify(args))
       setTrigger()
     }
 
@@ -431,13 +469,14 @@ export default {
           if (el.address == e) {
             let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
             let wallet = new ethers.Wallet(el.privateKey, provider)
-            console.log(wallet)
             let balance = await wallet.getBalance()
             let nonce = await wallet.getTransactionCount()
+            let globalParams = triggerData.value.globalParams
             wallet.balance = ethers.utils.formatEther(balance)
             wallet.nonce = nonce - 1
+            if (!globalParams.some(e => e.key == 'currentWalletAddress')) globalParams.push({label: '当前钱包地址', key: 'currentWalletAddress', value: wallet.address})
             triggerData.value.wallet = toRaw(wallet)
-            console.log(triggerData.value)
+            triggerData.value.globalParams = globalParams
             walletLoading.value = false
             setTrigger()
           }
@@ -771,6 +810,7 @@ export default {
       del,
       setParams,
       setTrigger,
+      getParams,
       copy
     }
   },

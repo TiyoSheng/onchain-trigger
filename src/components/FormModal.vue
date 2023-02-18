@@ -23,9 +23,9 @@
     <div v-if="modalType == 'params'" class="modal-content">
       <n-form-item label="全局变量：" >
         <div v-for="(item, index) in dataItem" :key="index" class="input-item flex-center"  >
-          <n-input v-model:value="item.key" placeholder="输入变量名" />
+          <n-input v-model:value="item.key" placeholder="输入变量名" autocomplete="off" />
           <div style="margin: 10px">=</div>
-          <n-input v-model:value="item.value" placeholder="输入变量" />
+          <n-input v-model:value="item.value" placeholder="输入变量" autocomplete="off" />
           <div class="del" @click="delParams(index)">
             <svg t="1675512681148" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2711" width="18" height="18"><path d="M789.333333 343.466667c-12.8 0-21.333333 8.533333-21.333333 21.333333v490.666667c0 23.466667-19.2 42.666667-42.666667 42.666666H298.666667c-23.466667 0-42.666667-19.2-42.666667-42.666666V362.666667c0-12.8-8.533333-21.333333-21.333333-21.333334s-21.333333 8.533333-21.333334 21.333334v490.666666c0 46.933333 38.4 85.333333 85.333334 85.333334h426.666666c46.933333 0 85.333333-38.4 85.333334-85.333334V362.666667c0-10.666667-10.666667-19.2-21.333334-19.2zM915.2 234.666667H746.666667V170.666667c0-46.933333-38.4-85.333333-85.333334-85.333334H362.666667c-46.933333 0-85.333333 38.4-85.333334 85.333334v64H106.666667c-12.8 0-21.333333 8.533333-21.333334 21.333333s8.533333 21.333333 21.333334 21.333333h808.533333c12.8 0 21.333333-8.533333 21.333333-21.333333s-8.533333-21.333333-21.333333-21.333333zM320 170.666667c0-23.466667 19.2-42.666667 42.666667-42.666667h298.666666c23.466667 0 42.666667 19.2 42.666667 42.666667v64H320V170.666667z" fill="#666666" p-id="2712"></path><path d="M640 704V364.8c0-12.8-8.533333-21.333333-21.333333-21.333333s-21.333333 8.533333-21.333334 21.333333V704c0 12.8 8.533333 21.333333 21.333334 21.333333s21.333333-10.666667 21.333333-21.333333zM426.666667 704V362.666667c0-12.8-8.533333-21.333333-21.333334-21.333334s-21.333333 8.533333-21.333333 21.333334v341.333333c0 12.8 8.533333 21.333333 21.333333 21.333333s21.333333-10.666667 21.333334-21.333333z" fill="#666666" p-id="2713"></path></svg>
           </div>
@@ -35,7 +35,7 @@
     </div>
     <div v-if="modalType == 'function'" class="modal-content">
       <n-form-item label="备注名称：">
-        <n-input v-model:value="dataItem.name" placeholder="输入备注名称" />
+        <n-input v-model:value="dataItem.name" placeholder="输入备注名称" autocomplete="off" />
       </n-form-item>
       <n-form-item label="选择合约：" path="formValue.walletKey">
         <n-select
@@ -61,14 +61,14 @@
         <div v-for="(item, index) in filterInputs" :key="index" class="input-item flex-center" >
           <p style="width: 140px;flex:0 0 140px;margin:0">{{item.name + '(' + item.type + ')'}}：</p>
           <div style="margin-left: 20px;flex:1;width: 100%">
-            <n-select v-model:value="dataItem.args[item.name]" filterable tag :options="globalParams" label-field="key" value-field="key" />
+            <n-select v-model:value="dataItem.args[item.name]" filterable tag :options="globalParams" label-field="label" value-field="key" />
           </div>
         </div>
       </n-form-item>
     </div>
     <div v-if="modalType == 'trigger'" class="modal-content">
       <n-form-item label="备注名称：">
-        <n-input v-model:value="dataItem.name" placeholder="输入备注名称" />
+        <n-input v-model:value="dataItem.name" placeholder="输入备注名称" autocomplete="off" />
       </n-form-item>
       <n-form-item label="选择合约：" >
         <n-select
@@ -108,7 +108,7 @@
             :options="filterFunList"
           />
           <div style="margin-left: 20px;flex:1;width: 100%">
-            <n-select v-model:value="dataItem.filter[index].value" filterable tag :options="globalParams" label-field="key" value-field="key" />
+            <n-select v-model:value="dataItem.filter[index].value" filterable tag :options="globalParams" label-field="label" value-field="key" />
           </div>
           <div class="del" @click="delFilter(index)">
             <svg t="1675512681148" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2711" width="18" height="18"><path d="M789.333333 343.466667c-12.8 0-21.333333 8.533333-21.333333 21.333333v490.666667c0 23.466667-19.2 42.666667-42.666667 42.666666H298.666667c-23.466667 0-42.666667-19.2-42.666667-42.666666V362.666667c0-12.8-8.533333-21.333333-21.333333-21.333334s-21.333333 8.533333-21.333334 21.333334v490.666666c0 46.933333 38.4 85.333333 85.333334 85.333334h426.666666c46.933333 0 85.333333-38.4 85.333334-85.333334V362.666667c0-10.666667-10.666667-19.2-21.333334-19.2zM915.2 234.666667H746.666667V170.666667c0-46.933333-38.4-85.333333-85.333334-85.333334H362.666667c-46.933333 0-85.333333 38.4-85.333334 85.333334v64H106.666667c-12.8 0-21.333333 8.533333-21.333334 21.333333s8.533333 21.333333 21.333334 21.333333h808.533333c12.8 0 21.333333-8.533333 21.333333-21.333333s-8.533333-21.333333-21.333333-21.333333zM320 170.666667c0-23.466667 19.2-42.666667 42.666667-42.666667h298.666666c23.466667 0 42.666667 19.2 42.666667 42.666667v64H320V170.666667z" fill="#666666" p-id="2712"></path><path d="M640 704V364.8c0-12.8-8.533333-21.333333-21.333333-21.333333s-21.333333 8.533333-21.333334 21.333333V704c0 12.8 8.533333 21.333333 21.333334 21.333333s21.333333-10.666667 21.333333-21.333333zM426.666667 704V362.666667c0-12.8-8.533333-21.333333-21.333334-21.333334s-21.333333 8.533333-21.333333 21.333334v341.333333c0 12.8 8.533333 21.333333 21.333333 21.333333s21.333333-10.666667 21.333334-21.333333z" fill="#666666" p-id="2713"></path></svg>
@@ -123,7 +123,7 @@
             <svg t="1675512681148" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2711" width="18" height="18"><path d="M789.333333 343.466667c-12.8 0-21.333333 8.533333-21.333333 21.333333v490.666667c0 23.466667-19.2 42.666667-42.666667 42.666666H298.666667c-23.466667 0-42.666667-19.2-42.666667-42.666666V362.666667c0-12.8-8.533333-21.333333-21.333333-21.333334s-21.333333 8.533333-21.333334 21.333334v490.666666c0 46.933333 38.4 85.333333 85.333334 85.333334h426.666666c46.933333 0 85.333333-38.4 85.333334-85.333334V362.666667c0-10.666667-10.666667-19.2-21.333334-19.2zM915.2 234.666667H746.666667V170.666667c0-46.933333-38.4-85.333333-85.333334-85.333334H362.666667c-46.933333 0-85.333333 38.4-85.333334 85.333334v64H106.666667c-12.8 0-21.333333 8.533333-21.333334 21.333333s8.533333 21.333333 21.333334 21.333333h808.533333c12.8 0 21.333333-8.533333 21.333333-21.333333s-8.533333-21.333333-21.333333-21.333333zM320 170.666667c0-23.466667 19.2-42.666667 42.666667-42.666667h298.666666c23.466667 0 42.666667 19.2 42.666667 42.666667v64H320V170.666667z" fill="#666666" p-id="2712"></path><path d="M640 704V364.8c0-12.8-8.533333-21.333333-21.333333-21.333333s-21.333333 8.533333-21.333334 21.333333V704c0 12.8 8.533333 21.333333 21.333334 21.333333s21.333333-10.666667 21.333333-21.333333zM426.666667 704V362.666667c0-12.8-8.533333-21.333333-21.333334-21.333334s-21.333333 8.533333-21.333333 21.333334v341.333333c0 12.8 8.533333 21.333333 21.333333 21.333333s21.333333-10.666667 21.333334-21.333333z" fill="#666666" p-id="2713"></path></svg>
           </div>
           <n-form-item label="备注名称：">
-            <n-input v-model:value="handdle.name" placeholder="输入备注名称" />
+            <n-input v-model:value="handdle.name" placeholder="输入备注名称" autocomplete="off" />
           </n-form-item>
           <n-form-item label="选择合约：">
             <n-select
@@ -155,7 +155,7 @@
                 :options="inputFunList"
               />
               <div v-if="handdle.args[item.name].type == '$ne'" style="margin-left: 20px;flex:1;width: 100%">
-                <n-select v-model:value="handdle.args[item.name].value" filterable tag :options="globalParams" label-field="key" value-field="key" />
+                <n-select v-model:value="handdle.args[item.name].value" filterable tag :options="globalParams" label-field="label" value-field="key" />
               </div>
             </div>
           </n-form-item>
