@@ -54,8 +54,10 @@ export default {
       triggers.push(triggerData)
       console.log(triggers)
       setLs('triggers', JSON.parse(JSON.stringify(triggers))).then(res => {
-        console.log(res)
         store.commit('setTriggers', res)
+        setLs('activatedId', triggerData.id).then(() => {
+          store.commit('setActivatedId', triggerData.id)
+        })
         cancel()
       })
     }
