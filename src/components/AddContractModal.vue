@@ -37,7 +37,7 @@ export default {
     const contractData = ref({chain: {chainId: 5, name: 'Goerli'}})
     const handleCreatedContractData = async () => {
       let contracts = await getLs('contracts') || []
-      contractData.value.id = crypto.randomUUID()
+      contractData.value.id = `${contractData.value.address}-${contractData.value.chain.chainId}`
       contracts.push(contractData.value)
       setLs('contracts', JSON.parse(JSON.stringify(contracts))).then(async () => {
         showAddModal.value = false

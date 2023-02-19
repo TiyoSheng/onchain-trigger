@@ -786,13 +786,32 @@ export default {
       window.open(`https://goerli.etherscan.io/tx/${hash}`)
     }
 
+    const getContract = (id) => {
+      let contract = contractList.value.filter(e => e.id == id)
+      contract = contract[0] || null
+      return contract
+    }
+
     const showData = () => {
       dataInfoModal.value.showModal = true
       let info = {}
       let data = JSON.parse(JSON.stringify(toRaw(triggerData.value)))
       let {functions, globalParams, triggers, name, note, id} = data
+      let contracts = []
       globalParams = globalParams.filter(e => e.key != 'currentWalletAddress')
+      globalParams = globalParams.map(e => {
+        return {
+          key: e.key,
+          value: e.value
+        }
+      })
       functions = functions.map(e => {
+        if (!contracts.some(el => el.id == e.contractId)) {
+          let contract = getContract(e.contractId)
+          if (contract) {
+            contracts.push(contract)
+          }
+        }
         return {
           args: e.args,
           contractId: e.contractId,
@@ -803,8 +822,20 @@ export default {
         }
       })
       triggers = triggers.map(e => {
+        if (!contracts.some(el => el.id == e.contractId)) {
+          let contract = getContract(e.contractId)
+          if (contract) {
+            contracts.push(contract)
+          }
+        }
         let handdleList = e.handdleList
         handdleList = handdleList.map(el => {
+          if (!contracts.some(ele => ele.id == el.contractId)) {
+            let contract = getContract(el.contractId)
+            if (contract) {
+              contracts.push(contract)
+            }
+          }
           return {
             args: el.args,
             contractId: el.contractId,
@@ -824,7 +855,7 @@ export default {
           handdleList: handdleList
         }
       })
-      info = {functions, globalParams, triggers, name, note, id}
+      info = {functions, globalParams, triggers, name, note, id, contracts}
       dataInfoModal.value.triggerData = info
       console.log(dataInfoModal.value.triggerData)
     }

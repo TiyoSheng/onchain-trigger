@@ -13,7 +13,7 @@
       <n-form-item style="display: flex;justify-content: flex-end;">
         <n-button attr-type="button" @click="showModal = false">取消</n-button>
         <n-button style="margin-left: 20px" attr-type="button" @click="handleCreated">创建</n-button>
-    </n-form-item>
+      </n-form-item>
     </div>
   </n-modal>
 </template>
