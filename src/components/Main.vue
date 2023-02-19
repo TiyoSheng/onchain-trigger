@@ -796,7 +796,7 @@ export default {
       dataInfoModal.value.showModal = true
       let info = {}
       let data = JSON.parse(JSON.stringify(toRaw(triggerData.value)))
-      let {functions, globalParams, triggers, name, note, id} = data
+      let {functions, globalParams, triggers, name, note} = data
       let contracts = []
       globalParams = globalParams.filter(e => e.key != 'currentWalletAddress')
       globalParams = globalParams.map(e => {
@@ -855,7 +855,7 @@ export default {
           handdleList: handdleList
         }
       })
-      info = {functions, globalParams, triggers, name, note, id, contracts}
+      info = {functions, globalParams, triggers, name, note, contracts}
       dataInfoModal.value.triggerData = info
       console.log(dataInfoModal.value.triggerData)
     }
