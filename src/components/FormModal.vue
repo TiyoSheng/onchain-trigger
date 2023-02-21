@@ -235,6 +235,11 @@ export default {
         addContractModal.value.showAddModal = true
       } else {
         let contracts = toRaw(contractList.value)
+        dataItem.value.functionName = ''
+        dataItem.value.filter = []
+        dataItem.value.inputs = []
+        dataItem.value.args = {}
+        filterInputs.value = []
         contracts.forEach(e => {
           if (e.id == dataItem.value.contractId) {
             let list = JSON.parse(e.abi)
@@ -252,7 +257,6 @@ export default {
           e.inputs.forEach(el => {
             el.oName = `${el.name}(${el.type})`
           })
-          console.log(e.inputs)
           inputs.value = JSON.parse(JSON.stringify(e.inputs))
           filterInputs.value = JSON.parse(JSON.stringify(e.inputs))
           if (e.stateMutability == 'payable') {
@@ -269,7 +273,6 @@ export default {
               dataItem.value.args[el.name] = ''
             })
           }
-          console.log(dataItem.value)
           dataItem.value.methodType = e.stateMutability
         }
       })
@@ -309,6 +312,10 @@ export default {
         let contracts = toRaw(contractList.value)
         contracts.forEach(e => {
           if (e.id == dataItem.value.handdleList[index].contractId) {
+            dataItem.value.handdleList[index].args = {}
+            dataItem.value.handdleList[index].inputs = []
+            dataItem.value.handdleList[index].params = []
+            dataItem.value.handdleList[index].functionName = ''
             let list = JSON.parse(e.abi)
             list = list.filter((e) => e.type == "function")
             dataItem.value.handdleList[index].abi = list

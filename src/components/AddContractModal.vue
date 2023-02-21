@@ -22,7 +22,7 @@
       <n-form-item style="display: flex;justify-content: flex-end;">
         <n-button attr-type="button" @click="showAddModal = false">取消</n-button>
         <n-button style="margin-left: 20px" attr-type="button" @click="handleCreatedContractData">创建</n-button>
-    </n-form-item>
+      </n-form-item>
     </div>
   </n-modal>
 </template>
@@ -37,7 +37,7 @@ export default {
     const contractData = ref({chain: {chainId: 5, name: 'Goerli'}})
     const handleCreatedContractData = async () => {
       let contracts = await getLs('contracts') || []
-      contractData.value.id = `${contractData.value.address}-${contractData.value.chain.chainId}`
+      contractData.value.id = crypto.randomUUID()
       contracts.push(contractData.value)
       setLs('contracts', JSON.parse(JSON.stringify(contracts))).then(async () => {
         showAddModal.value = false

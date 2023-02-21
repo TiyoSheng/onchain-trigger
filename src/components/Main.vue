@@ -142,7 +142,7 @@
       <div class="btn-list">
         <n-form-item style="justify-content: flex-end;display:flex">
           <n-button style="margin-left: 20px;background:#FFF" attr-type="button" @click="showData">
-            导出
+            分享
           </n-button>
           <n-button v-if="!triggerData.running" style="margin-left: 20px;background:#FFF" attr-type="button" @click="on">
             开始监听
@@ -197,10 +197,11 @@
       @setParams="setParams"
     />
     <DataInfoModal ref="dataInfoModal" />
+    <ShareModal ref="shareModal" @share="shareSuccess" />
   </div>
 </template>
 <script>
-import { ref, computed, watch, toRaw, nextTick, toRefs, reactive } from 'vue'
+import { ref, computed, watch, toRaw, nextTick } from 'vue'
 import { useStore } from 'vuex'
 import { ethers } from 'ethers'
 import { setLs } from '@/service/service'
@@ -208,9 +209,11 @@ import { useMessage } from "naive-ui"
 import { filterFun, inputFun } from '@/libs/config'
 import { contract } from "../libs/connectWallet"
 import FormModal from '@/components/FormModal.vue'
+import ShareModal from '@/components/ShareModal.vue'
 import DataInfoModal from '@/components/DataInfoModal.vue'
 import {JsonViewer} from "vue3-json-viewer"
 import { useUtils } from '../hooks/useUtils'
+
 import "vue3-json-viewer/dist/index.css"
 const { Alchemy, Network, AlchemySubscription } = require("alchemy-sdk")
 const settings = {
@@ -222,17 +225,16 @@ export default {
   components: {
     FormModal,
     DataInfoModal,
+    ShareModal,
     JsonViewer
   },
   setup() {
     let contractData = []
-    const state = reactive({
-      activeTabs: 1
-    })
     const {copy} = useUtils()
     const store = useStore()
     const message = useMessage()
     const formRef = ref(null)
+    const shareModal = ref(null)
     const dataInfoModal = ref(null)
     const walletLoading = ref(false)
     const functionLoading = ref('')
@@ -298,6 +300,29 @@ export default {
       }
     })
 
+    const getHanddleListData = (list) => {
+      let contracts = toRaw(contractList.value)
+      list.forEach(item => {
+        contracts.forEach(e => {
+          if (e.id == item.contractId) {
+            let list = JSON.parse(e.abi)
+            list = list.filter((e) => e.type == "function")
+            item.abi = list
+            list.forEach(el => {
+              if (el.name == item.functionName) {
+                item.inputs = JSON.parse(JSON.stringify(el.inputs))
+                item.params = JSON.parse(JSON.stringify(el.inputs))
+                if (el.stateMutability == 'payable') {
+                  item.params.push({name: "value", type: "ETH"})
+                }
+              }
+            })
+          }
+        })
+      })
+      return list
+    }
+
     const showFormModal = (type, isEdit, it) => {
       formRef.value.isShowModal = true
       formRef.value.globalParams = triggerData.value.globalParams
@@ -356,10 +381,8 @@ export default {
         formRef.value.dataItem = {handdleList: []}
         if (isEdit) {
           let item = JSON.parse(JSON.stringify(it))
-          console.log(item)
           item.filter = []
           for(let key in item.args) {
-            console.log(key)
             if (item.args[key].type) {
               let ele = {
                 name: key,
@@ -369,6 +392,7 @@ export default {
               item.filter.push(ele)
             }
           }
+          item.handdleList = getHanddleListData(item.handdleList)
           formRef.value.dataItem = item
           let contracts = toRaw(contractList.value)
           contracts.forEach(e => {
@@ -523,10 +547,27 @@ export default {
       return C
     }
 
+    const getInputs = (contractId, funName) => {
+      let contracts = toRaw(contractList.value)
+      let inputs = []
+      contracts.forEach(e => {
+        if (e.id == contractId) {
+          let abi = JSON.parse(e.abi)
+          abi.forEach(el => {
+            if (el.name == funName) {
+              inputs = el.inputs
+            }
+          })
+        }
+      })
+      return inputs
+    }
+
     const apply = async (item) => {
       console.log(item)
       functionLoading.value = item.id
       try {
+        item.inputs = getInputs(item.contractId, item.functionName)
         let C = await setContract(item.contractId)
         let p = []
         if (item.inputs) {
@@ -757,6 +798,7 @@ export default {
             triggerData.value.msgList.push({content: res})
             try {
               let list = JSON.parse(JSON.stringify(toRaw(triggerData.value).triggers[0].handdleList))
+              list = getHanddleListData(list)
               handdleFun(list, res, inputData, 0)
             } catch (error) {
               console.log(error)
@@ -793,10 +835,10 @@ export default {
     }
 
     const showData = () => {
-      dataInfoModal.value.showModal = true
+      // dataInfoModal.value.showModal = true
       let info = {}
       let data = JSON.parse(JSON.stringify(toRaw(triggerData.value)))
-      let {functions, globalParams, triggers, name, note} = data
+      let {functions, globalParams, triggers, name, note, triggerId = ''} = data
       let contracts = []
       globalParams = globalParams.filter(e => e.key != 'currentWalletAddress')
       globalParams = globalParams.map(e => {
@@ -855,57 +897,18 @@ export default {
           handdleList: handdleList
         }
       })
-      info = {functions, globalParams, triggers, name, note, contracts}
-      dataInfoModal.value.triggerData = info
-      console.log(dataInfoModal.value.triggerData)
+      info = {functions, globalParams, triggers, name, note, contracts, triggerId}
+      shareModal.value.showModal = true
+      shareModal.value.info = info
+      // dataInfoModal.value.triggerData = info
+      // console.log(dataInfoModal.value.triggerData)
     }
 
-    // const dragControllerDiv = () => {
-    //   let resize = document.querySelector('.resize')
-    //   let box = document.querySelector('.main')
-    //   let left = document.querySelector('.l')
-    //   let mid = document.querySelector('.r') 
-    //   console.log(resize)
-    //     // 鼠标按下事件
-    //     resize.onmousedown = function (e) {
-    //       console.log(1)
-    //       //颜色改变提醒
-    //       resize.style.background = '#818181'
-    //       let startX = e.clientX
-    //       resize.left = resize.offsetLeft
-    //       // 鼠标拖动事件
-    //       document.onmousemove = function (e) {
-    //           let endX = e.clientX
-    //           let moveLen = resize.left + (endX - startX)
-    //           let maxT = box.clientWidth - resize.offsetWidth
-
-    //           if (moveLen < 32) moveLen = 32
-    //           if (moveLen > maxT - 150) moveLen = maxT - 150
-
-    //           resize.style.left = moveLen
-    //           console.log(left)
-    //           left.style.width = moveLen + 'px'
-    //           mid.style.width = (box.clientWidth - moveLen - 10) + 'px'
-    //       }
-    //       // 鼠标松开事件
-    //       document.onmouseup = function () {
-    //         //颜色恢复
-    //         resize.style.background = '#d6d6d6'
-    //         document.onmousemove = null
-    //         document.onmouseup = null
-    //         resize.releaseCapture && resize.releaseCapture()
-    //       }
-    //       resize.setCapture && resize.setCapture()
-    //       return false
-    //     }
-    // }
-
-    // onMounted(() => {
-    //   setTimeout(() => {
-    //     dragControllerDiv()
-    //   }, 500);
-    //   // dragControllerDiv()
-    // })
+    const shareSuccess = (e) => {
+      console.log(e)
+      triggerData.value.triggerId = e
+      setTrigger()
+    }
 
     watch(() => activatedId.value, async () => {
       triggerList.value.forEach(e => {
@@ -927,7 +930,7 @@ export default {
       });
     }, { deep: true })
     return {
-      ...toRefs(state),
+      shareModal,
       dataInfoModal,
       functionLoading,
       walletLoading,
@@ -950,7 +953,8 @@ export default {
       setTrigger,
       getParams,
       copy,
-      showData
+      showData,
+      shareSuccess
     }
   },
 }
