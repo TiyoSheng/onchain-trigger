@@ -54,7 +54,7 @@ export default {
         store.commit('setContract', contractList)
       })
     }
-    const setTrigger = async (res) => {
+    const setTrigger = async (res, password) => {
       let { functions, globalParams, name, note, trigger_id, triggers, version } = res.trigger
       globalParams = globalParams.map(e => {
         let item = {}
@@ -77,7 +77,7 @@ export default {
         }
         return item
       })
-      let triggerData = {functions, globalParams, name, note, triggerId: trigger_id, triggers, version, message: [],  running: false, id: crypto.randomUUID()}
+      let triggerData = {functions, globalParams, name, note, triggerId: trigger_id, triggers, version, message: [],  running: false, id: crypto.randomUUID(), isImprot: true, password }
       console.log(triggerData)
       let triggerList = await getLs('triggers') || []
       triggerList.push(triggerData)
@@ -105,7 +105,7 @@ export default {
             })
           } else {
             setContract(res)
-            setTrigger(res)
+            setTrigger(res, password)
           }
           getTriggerModal.value.showModal = false
           router.replace('/')

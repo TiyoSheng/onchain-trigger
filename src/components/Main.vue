@@ -15,6 +15,10 @@
       </div>
       <div v-else class="add-btn" @click="showFormModal('wallet')">设置钱包</div>
       <n-collapse>
+        <!-- <n-collapse-item title="描述" name="1">
+          <v-md-editor v-model="triggerData.note" height="400px"></v-md-editor>
+          <div class="apply-btn flex-center-center mt12" @click="saveNote">保存</div>
+        </n-collapse-item> -->
         <n-collapse-item title="全局变量" name="1">
           <template #header-extra>
             变量数量：{{triggerData.globalParams && triggerData.globalParams.length}}
@@ -141,6 +145,12 @@
       <n-divider dashed style="font-size: 12px;color:rgba(194, 194, 194, 1);margin-top: 16px"></n-divider>
       <div class="btn-list">
         <n-form-item style="justify-content: flex-end;display:flex">
+          <n-button v-if="triggerData.isImprot" style="margin-left: 20px;background:#FFF" attr-type="button" >
+            同步版本
+          </n-button>
+          <n-button v-if="triggerData.updated" style="margin-left: 20px;background:#FFF" attr-type="button" @click="updateFun">
+            更新版本
+          </n-button>
           <n-button style="margin-left: 20px;background:#FFF" attr-type="button" @click="showData">
             分享
           </n-button>
@@ -467,8 +477,10 @@ export default {
       })
       const res = new Map()
       args = args.filter((e) => !res.has(e['key']) && res.set(e['key'], 1));
-
       triggerData.value.globalParams = JSON.parse(JSON.stringify(args))
+      if (!triggerData.value.isImport) {
+        triggerData.value.updated = true
+      }
       setTrigger()
     }
 
@@ -482,6 +494,9 @@ export default {
         triggers.push(e)
       }
       triggerData.value.triggers = JSON.parse(JSON.stringify(triggers))
+      if (!triggerData.value.isImport) {
+        triggerData.value.updated = true
+      }
       setTrigger()
     }
 
@@ -495,6 +510,9 @@ export default {
         functions.push(e)
       }
       triggerData.value.functions = JSON.parse(JSON.stringify(functions))
+      if (!triggerData.value.isImport) {
+        triggerData.value.updated = true
+      }
       setTrigger()
     }
 
@@ -586,7 +604,7 @@ export default {
             }
           })
         }
-        console.log(p)
+        console.log(item.functionName, C)
         let res = await C[item.functionName](...p)
         console.log(res)
         if (res._isBigNumber) {
@@ -792,9 +810,7 @@ export default {
               contractInputs[i].value = inputData[i]
             }
           }
-          console.log(triggerData.value.triggers[0].args, contractInputs)
           if (filter(contractInputs, triggerData.value.triggers[0].args) && res && res.hash && (res.from.toLocaleLowerCase() != triggerData.value.wallet.address.toLocaleLowerCase())) {
-            console.log(0)
             triggerData.value.msgList.push({content: res})
             try {
               let list = JSON.parse(JSON.stringify(toRaw(triggerData.value).triggers[0].handdleList))
@@ -910,6 +926,14 @@ export default {
       setTrigger()
     }
 
+    const updateFun = () => {
+      console.log(1)
+    }
+
+    const saveNote = () => {
+      console.log(triggerData.value.note)
+    }
+
     watch(() => activatedId.value, async () => {
       triggerList.value.forEach(e => {
         if (e.id == activatedId.value) {
@@ -954,7 +978,9 @@ export default {
       getParams,
       copy,
       showData,
-      shareSuccess
+      shareSuccess,
+      updateFun,
+      saveNote
     }
   },
 }
