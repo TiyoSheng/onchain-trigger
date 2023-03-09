@@ -20,7 +20,7 @@
 <script>
 import { ref } from 'vue'
 import { useStore } from 'vuex'
-import { setLs } from '@/service/service'
+import { setLs, getLs } from '@/service/service'
 import { ethers } from 'ethers'
 export default {
   setup(props, {emit}) {
@@ -34,7 +34,7 @@ export default {
       newWallet.privateKey = lbcWallet.privateKey
       newWallet.address = lbcWallet.address
       newWallet.name = walletName.value
-      let wallets = []
+      let wallets = await getLs('wallet') || []
       wallets.push(newWallet)
       setLs('wallet', JSON.parse(JSON.stringify(wallets))).then(async () => {
         showModal.value = false
