@@ -9,6 +9,9 @@
       <n-form-item label="触发器名称：">
         <n-input v-model:value="triggerName" placeholder="输入触发器名称" />
       </n-form-item>
+      <n-form-item label="备注：">
+        <n-input v-model:value="triggerNote" type="textarea" placeholder="输入备注" />
+      </n-form-item>
       <n-form-item style="justify-content: flex-end;display:flex">
         <n-button attr-type="button" @click="cancel">
           取消
@@ -29,14 +32,16 @@ export default {
     const store = useStore()
     const showModal = ref(false)
     const triggerName = ref('')
+    const triggerNote = ref('')
     const handleAddClick = async () => {
       let triggerData = {
         name: triggerName.value,
-        note: '',
+        note: triggerNote.value,
         id: crypto.randomUUID(),
         functions: [],
         triggers: [],
-        globalParams: []
+        globalParams: [],
+        remark: {}
       }
 
       // triggers: [{
@@ -59,10 +64,12 @@ export default {
     }
     const cancel = () => {
       triggerName.value = ''
+      triggerNote.value = ''
       showModal.value = false
     }
     return {
       triggerName,
+      triggerNote,
       showModal,
       cancel,
       handleAddClick

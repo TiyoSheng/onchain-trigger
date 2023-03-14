@@ -29,16 +29,18 @@ export default {
     const isShowModal = ref(false)
     const modalTitle = ref('')
     const value = ref('')
+    const modalType = ref('')
     const cancel = () => {
       isShowModal.value = false
       value.value = ''
     }
     const ok = () => {
-      emit('setNote', value.value)
+      emit('setRemark', {data: value.value, type: modalType.value})
       // isShowModal.value = false
       // value.value = ''
     }
     return {
+      modalType,
       isShowModal,
       modalTitle,
       value,
@@ -49,5 +51,4 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-
 </style>

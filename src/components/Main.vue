@@ -15,25 +15,17 @@
       </div>
       <div v-else class="add-btn" @click="showFormModal('wallet')">设置钱包</div>
       <n-collapse>
-        <n-collapse-item title="描述" name="1">
-          <div v-if="triggerData.note" class="card">
-            <div class="flex-center-sb">
-              <div class="">描述</div>
-              <div class="flex-center">
-                <div class="edit-btn" @click="showEditNote(triggerData.note)">编辑</div>
-              </div>
-            </div>
-            <div class="mt12 params">
-              <v-md-preview :text="triggerData.note"></v-md-preview>
-            </div>
-            <!-- <div class="apply-btn flex-center-center mt12" @click="setTrigger">保存</div> -->
-          </div>
-          <div v-else class="add-btn" @click="showEditNote('')">添加触发器描述</div>
-        </n-collapse-item>
         <n-collapse-item title="全局变量" name="1">
           <template #header-extra>
+            <div class="edit-btn" @click.stop="showEditNote('params', triggerData.remark.params)" style="margin-right: 20px;text-decoration: underline;">编辑描述</div>
             变量数量：{{triggerData.globalParams && triggerData.globalParams.length}}
           </template>
+          <div v-if="triggerData.remark.params" class="card card-no-border">
+            <div class="mt12 remark">
+              <v-md-preview :text="triggerData.remark.params"></v-md-preview>
+            </div>
+          </div>
+          <div v-else class="add-btn" @click="showEditNote('params', '')">编辑变量描述</div>
           <div class="card" v-if="triggerData.globalParams && triggerData.globalParams.length">
             <div class="flex-center-sb">
               <div class="">全局变量</div>
@@ -52,14 +44,20 @@
                 
               </div>
             </div>
-            <!-- <div class="apply-btn flex-center-center mt12" @click="setTrigger">保存</div> -->
           </div>
           <div v-else class="add-btn" @click="showFormModal('params')">设置全局变量</div>
         </n-collapse-item>
         <n-collapse-item title="附加函数" name="2">
           <template #header-extra>
+            <div class="edit-btn" @click.stop="showEditNote('function', triggerData.remark.function)" style="margin-right: 20px;text-decoration: underline;">编辑描述</div>
             函数数量：{{triggerData.functions && triggerData.functions.length}}
           </template>
+          <div v-if="triggerData.remark.function" class="card card-no-border">
+            <div class="mt12 remark">
+              <v-md-preview :text="triggerData.remark.function"></v-md-preview>
+            </div>
+          </div>
+          <div v-else class="add-btn" @click="showEditNote('function', '')">编辑函数描述</div>
           <div class="card" v-for="(item, index) in triggerData.functions" :key="item.id">
             <n-spin :show="functionLoading == item.id">
               <div class="flex-center-sb">
@@ -97,8 +95,15 @@
         </n-collapse-item>
         <n-collapse-item title="合约触发器" name="3">
           <template #header-extra>
+            <div class="edit-btn" @click.stop="showEditNote('trigger', triggerData.remark.trigger)" style="margin-right: 20px;text-decoration: underline;">编辑描述</div>
             触发器数量：{{triggerData.triggers && triggerData.triggers.length}}
           </template>
+          <div v-if="triggerData.remark.trigger" class="card card-no-border">
+            <div class="mt12 remark">
+              <v-md-preview :text="triggerData.remark.trigger"></v-md-preview>
+            </div>
+          </div>
+          <div v-else class="add-btn" @click="showEditNote('trigger', '')">编辑触发器描述</div>
           <div class="card" v-for="(item, index) in triggerData.triggers" :key="item.id">
             <div class="flex-center-sb">
               <div class="">触发函数</div>
@@ -219,7 +224,7 @@
     />
     <DataInfoModal ref="dataInfoModal" />
     <ShareModal ref="shareModal" @share="shareSuccess" />
-    <EditNoteModal ref="editNoteModal" @setNote="setNote" />
+    <EditNoteModal ref="editNoteModal" @setRemark="setRemark" />
   </div>
 </template>
 <script>
@@ -348,21 +353,21 @@ export default {
       return list
     }
 
-    const setNote = (e) => {
-      triggerData.value.note = e
+    const setRemark = (e) => {
+      triggerData.value.remark[e.type] = e.data
       setTrigger()
       editNoteModal.value.cancel()
     }
 
-    const showEditNote = (it) => {
-      console.log(it)
+    const showEditNote = (type, it) => {
       editNoteModal.value.isShowModal = true
+        editNoteModal.value.modalType = type
+        editNoteModal.value.modalTitle = '添加描述'
       if (it) {
         editNoteModal.value.value = JSON.parse(JSON.stringify(it))
       } else {
         editNoteModal.value.value = ''
       }
-      editNoteModal.value.modalTitle = '添加描述'
     }
 
     const showFormModal = (type, isEdit, it) => {
@@ -969,9 +974,9 @@ export default {
     watch(() => activatedId.value, async () => {
       triggerList.value.forEach(e => {
         if (e.id == activatedId.value) {
-          console.log(e)
           if (!e.msgList) e.msgList = []
           if (!e.globalParams) e.globalParams = []
+          if (!e.remark) e.remark = {}
           triggerData.value = e
         }
       })
@@ -1015,7 +1020,7 @@ export default {
       updateFun,
       saveNote,
       showEditNote,
-      setNote
+      setRemark
     }
   },
 }
@@ -1058,11 +1063,21 @@ export default {
     padding: 16px;
     box-sizing: border-box;
     margin-bottom: 24px;
+    &.card-no-border {
+      border: none;
+      padding: 0;
+    }
     &:hover {
       // box-shadow: 0 1px 2px -2px rgba(0, 0, 0, 0.08), 0 3px 6px 0 rgba(0, 0, 0, 0.06), 0 5px 12px 4px rgba(0, 0, 0, 0.04);
     }
     .mt12 {
       margin-top: 12px;
+    }
+    .remark {
+      padding: 12px 14px;
+      box-sizing: border-box;
+      border: 1px solid rgb(239, 239, 245);
+      border-radius: 6px;
     }
     .edit-btn {
       cursor: pointer;
@@ -1234,5 +1249,15 @@ export default {
 /* .n-form-item-feedback-wrapper {
   display: none;
 } */
+.github-markdown-body {
+  font-size: 12px !important;
+  padding: 0 !important;
+  box-sizing: border-box;
+}
+
+.github-markdown-body h1, .github-markdown-body h2, .github-markdown-body h3, .github-markdown-body h4, .github-markdown-body h5, .github-markdown-body h6 {
+  margin-top: 12px !important;
+  margin-bottom: 12px !important;
+}
   
 </style>
