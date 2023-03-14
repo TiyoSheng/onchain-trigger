@@ -14,10 +14,10 @@
         </n-spin>
       </div>
       <div v-else class="add-btn" @click="showFormModal('wallet')">设置钱包</div>
-      <n-collapse>
+      <n-collapse @update:expanded-names="expandedNamesChange">
         <n-collapse-item title="全局变量" name="1">
           <template #header-extra>
-            <div class="edit-btn" @click.stop="showEditNote('params', triggerData.remark.params)" style="margin-right: 20px;text-decoration: underline;">编辑描述</div>
+            <div v-if="isOpen('1')" class="edit-btn" @click.stop="showEditNote('params', triggerData.remark.params)" style="margin-right: 20px;">编辑描述</div>
             变量数量：{{triggerData.globalParams && triggerData.globalParams.length}}
           </template>
           <div v-if="triggerData.remark.params" class="card card-no-border">
@@ -25,7 +25,6 @@
               <v-md-preview :text="triggerData.remark.params"></v-md-preview>
             </div>
           </div>
-          <div v-else class="add-btn" @click="showEditNote('params', '')">编辑变量描述</div>
           <div class="card" v-if="triggerData.globalParams && triggerData.globalParams.length">
             <div class="flex-center-sb">
               <div class="">全局变量</div>
@@ -49,7 +48,7 @@
         </n-collapse-item>
         <n-collapse-item title="附加函数" name="2">
           <template #header-extra>
-            <div class="edit-btn" @click.stop="showEditNote('function', triggerData.remark.function)" style="margin-right: 20px;text-decoration: underline;">编辑描述</div>
+            <div v-if="isOpen('2')" class="edit-btn" @click.stop="showEditNote('function', triggerData.remark.function)" style="margin-right: 20px;">编辑描述</div>
             函数数量：{{triggerData.functions && triggerData.functions.length}}
           </template>
           <div v-if="triggerData.remark.function" class="card card-no-border">
@@ -57,7 +56,6 @@
               <v-md-preview :text="triggerData.remark.function"></v-md-preview>
             </div>
           </div>
-          <div v-else class="add-btn" @click="showEditNote('function', '')">编辑函数描述</div>
           <div class="card" v-for="(item, index) in triggerData.functions" :key="item.id">
             <n-spin :show="functionLoading == item.id">
               <div class="flex-center-sb">
@@ -95,7 +93,7 @@
         </n-collapse-item>
         <n-collapse-item title="合约触发器" name="3">
           <template #header-extra>
-            <div class="edit-btn" @click.stop="showEditNote('trigger', triggerData.remark.trigger)" style="margin-right: 20px;text-decoration: underline;">编辑描述</div>
+            <div v-if="isOpen('3')" class="edit-btn" @click.stop="showEditNote('trigger', triggerData.remark.trigger)" style="margin-right: 20px;">编辑描述</div>
             触发器数量：{{triggerData.triggers && triggerData.triggers.length}}
           </template>
           <div v-if="triggerData.remark.trigger" class="card card-no-border">
@@ -103,7 +101,6 @@
               <v-md-preview :text="triggerData.remark.trigger"></v-md-preview>
             </div>
           </div>
-          <div v-else class="add-btn" @click="showEditNote('trigger', '')">编辑触发器描述</div>
           <div class="card" v-for="(item, index) in triggerData.triggers" :key="item.id">
             <div class="flex-center-sb">
               <div class="">触发函数</div>
@@ -263,6 +260,7 @@ export default {
     const store = useStore()
     const message = useMessage()
     const formRef = ref(null)
+    const expandedNames = ref([])
     const shareModal = ref(null)
     const dataInfoModal = ref(null)
     const walletLoading = ref(false)
@@ -294,6 +292,12 @@ export default {
           }
         })
         return contract.name
+      }
+    })
+
+    const isOpen = computed(() => {
+      return (name) => {
+        return expandedNames.value.includes(name)
       }
     })
 
@@ -971,6 +975,10 @@ export default {
       console.log(triggerData.value.note)
     }
 
+    const expandedNamesChange = (e) => {
+      expandedNames.value = e
+    }
+
     watch(() => activatedId.value, async () => {
       triggerList.value.forEach(e => {
         if (e.id == activatedId.value) {
@@ -991,6 +999,7 @@ export default {
       });
     }, { deep: true })
     return {
+      expandedNames,
       editNoteModal,
       shareModal,
       dataInfoModal,
@@ -1020,7 +1029,9 @@ export default {
       updateFun,
       saveNote,
       showEditNote,
-      setRemark
+      setRemark,
+      isOpen,
+      expandedNamesChange
     }
   },
 }
