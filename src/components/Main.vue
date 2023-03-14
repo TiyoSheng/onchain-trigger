@@ -15,10 +15,21 @@
       </div>
       <div v-else class="add-btn" @click="showFormModal('wallet')">设置钱包</div>
       <n-collapse>
-        <!-- <n-collapse-item title="描述" name="1">
-          <v-md-editor v-model="triggerData.note" height="400px"></v-md-editor>
-          <div class="apply-btn flex-center-center mt12" @click="saveNote">保存</div>
-        </n-collapse-item> -->
+        <n-collapse-item title="描述" name="1">
+          <div v-if="triggerData.note" class="card">
+            <div class="flex-center-sb">
+              <div class="">描述</div>
+              <div class="flex-center">
+                <div class="edit-btn" @click="showEditNote(triggerData.note)">编辑</div>
+              </div>
+            </div>
+            <div class="mt12 params">
+              <v-md-preview :text="triggerData.note"></v-md-preview>
+            </div>
+            <!-- <div class="apply-btn flex-center-center mt12" @click="setTrigger">保存</div> -->
+          </div>
+          <div v-else class="add-btn" @click="showEditNote('')">添加触发器描述</div>
+        </n-collapse-item>
         <n-collapse-item title="全局变量" name="1">
           <template #header-extra>
             变量数量：{{triggerData.globalParams && triggerData.globalParams.length}}
@@ -208,6 +219,7 @@
     />
     <DataInfoModal ref="dataInfoModal" />
     <ShareModal ref="shareModal" @share="shareSuccess" />
+    <EditNoteModal ref="editNoteModal" @setNote="setNote" />
   </div>
 </template>
 <script>
@@ -221,6 +233,7 @@ import { contract } from "../libs/connectWallet"
 import FormModal from '@/components/FormModal.vue'
 import ShareModal from '@/components/ShareModal.vue'
 import DataInfoModal from '@/components/DataInfoModal.vue'
+import EditNoteModal from '@/components/EditNoteModal.vue'
 import {JsonViewer} from "vue3-json-viewer"
 import { useUtils } from '../hooks/useUtils'
 
@@ -236,7 +249,8 @@ export default {
     FormModal,
     DataInfoModal,
     ShareModal,
-    JsonViewer
+    JsonViewer,
+    EditNoteModal
   },
   setup() {
     let contractData = []
@@ -247,6 +261,7 @@ export default {
     const shareModal = ref(null)
     const dataInfoModal = ref(null)
     const walletLoading = ref(false)
+    const editNoteModal = ref(null)
     const functionLoading = ref('')
     const triggerData = ref({})
     const child = ref(null)
@@ -331,6 +346,23 @@ export default {
         })
       })
       return list
+    }
+
+    const setNote = (e) => {
+      triggerData.value.note = e
+      setTrigger()
+      editNoteModal.value.cancel()
+    }
+
+    const showEditNote = (it) => {
+      console.log(it)
+      editNoteModal.value.isShowModal = true
+      if (it) {
+        editNoteModal.value.value = JSON.parse(JSON.stringify(it))
+      } else {
+        editNoteModal.value.value = ''
+      }
+      editNoteModal.value.modalTitle = '添加描述'
     }
 
     const showFormModal = (type, isEdit, it) => {
@@ -954,6 +986,7 @@ export default {
       });
     }, { deep: true })
     return {
+      editNoteModal,
       shareModal,
       dataInfoModal,
       functionLoading,
@@ -980,7 +1013,9 @@ export default {
       showData,
       shareSuccess,
       updateFun,
-      saveNote
+      saveNote,
+      showEditNote,
+      setNote
     }
   },
 }
