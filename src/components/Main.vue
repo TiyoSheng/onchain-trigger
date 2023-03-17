@@ -18,7 +18,7 @@
         <n-collapse-item title="全局变量" name="1">
           <template #header-extra>
             <div v-if="isOpen('1')" class="edit-btn" @click.stop="showEditNote('params', triggerData.remark.params)" style="margin-right: 20px;">编辑描述</div>
-            变量数量：{{triggerData.globalParams && triggerData.globalParams.length}}
+            变量数量：{{getParamsLength(triggerData.globalParams)}}
           </template>
           <div v-if="triggerData.remark.params" class="card card-no-border">
             <div class="mt12 remark">
@@ -224,20 +224,28 @@
           :key="index"
           ref="child"
         >
-          <JsonViewer v-if="!item.isHanddle && !item.isApply" :value="item.content" boxed sort expanded theme="dark" />
+          <JsonViewer v-if="!item.isHanddle && !item.isApply && !item.isFlow" :value="item.content" boxed sort expanded theme="dark" />
           <div v-if="item.isHanddle" class="cover">
             <div class="cover-hd flex-center">
               <p>覆盖交易</p>
               <p>hash: {{item.content.hash}}</p>
-              <p @click="toEtherscan(item.content.hash)"><svg t="1675530767636" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3635" width="14" height="14"><path d="M384 128v85.333H170.667v597.334h682.666v-384h85.334v426.666A42.667 42.667 0 0 1 896 896H128a42.667 42.667 0 0 1-42.667-42.667V170.667A42.667 42.667 0 0 1 128 128h256z m298.667 85.333V42.667l298.666 256h-384A85.333 85.333 0 0 0 512 384v256h-85.333V384a170.667 170.667 0 0 1 170.666-170.667h85.334z" fill="#E5E7EB" p-id="3636"></path></svg></p>
+              <p @click="toEtherscan(item.content?.hash)"><svg t="1675530767636" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3635" width="14" height="14"><path d="M384 128v85.333H170.667v597.334h682.666v-384h85.334v426.666A42.667 42.667 0 0 1 896 896H128a42.667 42.667 0 0 1-42.667-42.667V170.667A42.667 42.667 0 0 1 128 128h256z m298.667 85.333V42.667l298.666 256h-384A85.333 85.333 0 0 0 512 384v256h-85.333V384a170.667 170.667 0 0 1 170.666-170.667h85.334z" fill="#E5E7EB" p-id="3636"></path></svg></p>
             </div>
             <JsonViewer :value="item.content" boxed sort expanded />
           </div>
           <div v-if="item.isApply" class="cover">
             <div class="cover-hd flex-center">
               <p>执行附加函数</p>
-              <p>hash: {{item.content.hash}}</p>
+              <p>hash: {{item.content?.hash}}</p>
               <p @click="toEtherscan(item.content.hash)"><svg t="1675530767636" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3635" width="14" height="14"><path d="M384 128v85.333H170.667v597.334h682.666v-384h85.334v426.666A42.667 42.667 0 0 1 896 896H128a42.667 42.667 0 0 1-42.667-42.667V170.667A42.667 42.667 0 0 1 128 128h256z m298.667 85.333V42.667l298.666 256h-384A85.333 85.333 0 0 0 512 384v256h-85.333V384a170.667 170.667 0 0 1 170.666-170.667h85.334z" fill="#E5E7EB" p-id="3636"></path></svg></p>
+            </div>
+            <JsonViewer :value="item.content" boxed sort expanded />
+          </div>
+          <div v-if="item.isFlow" class="cover">
+            <div class="cover-hd flex-center">
+              <p>执行{{item.title}}</p>
+              <p>hash: {{item.content?.transactionHash}}</p>
+              <p @click="toEtherscan(item.content.transactionHash)"><svg t="1675530767636" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3635" width="14" height="14"><path d="M384 128v85.333H170.667v597.334h682.666v-384h85.334v426.666A42.667 42.667 0 0 1 896 896H128a42.667 42.667 0 0 1-42.667-42.667V170.667A42.667 42.667 0 0 1 128 128h256z m298.667 85.333V42.667l298.666 256h-384A85.333 85.333 0 0 0 512 384v256h-85.333V384a170.667 170.667 0 0 1 170.666-170.667h85.334z" fill="#E5E7EB" p-id="3636"></path></svg></p>
             </div>
             <JsonViewer :value="item.content" boxed sort expanded />
           </div>
@@ -373,6 +381,10 @@ export default {
         return str
       }
     })
+
+    const getParamsLength = (list) => {
+      return list.filter(e => e.key != 'currentWalletAddress').length
+    }
 
     const getHanddleListData = (list) => {
       let contracts = toRaw(contractList.value)
@@ -640,7 +652,7 @@ export default {
             let wallet = new ethers.Wallet(el.privateKey, provider)
             let balance = await wallet.getBalance()
             let nonce = await wallet.getTransactionCount()
-            let globalParams = triggerData.value.globalParams
+            let globalParams = triggerData.value.globalParams.filter(e => e.key != 'currentWalletAddress')
             wallet.balance = ethers.utils.formatEther(balance)
             wallet.nonce = nonce - 1
             if (!globalParams.some(e => e.key == 'currentWalletAddress')) globalParams.push({label: `当前钱包地址 (${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}})`, key: 'currentWalletAddress', value: wallet.address})
@@ -697,6 +709,7 @@ export default {
     const apply = async (item) => {
       console.log(item)
       functionLoading.value = item.id
+      let res
       try {
         item.inputs = getInputs(item.contractId, item.functionName)
         let C = await setContract(item.contractId)
@@ -718,26 +731,13 @@ export default {
           })
         }
         console.log(item.functionName, C)
-        let res = await C[item.functionName](...p)
+        res = await C[item.functionName](...p)
         console.log(res)
         if (res._isBigNumber) {
           console.log(res.toNumber())
           // message.success('执行结果：' + res.toNumber())
         } else {
           // message.success('执行结果：' + res)
-        }
-        let txData = {
-          isApply: true,
-          content: res
-        }
-        try {
-          if (!triggerData.value.msgList) {
-            triggerData.value.msgList = []
-          }
-          triggerData.value.msgList.push(txData)
-          setTrigger()
-        } catch (error) {
-          console.log(triggerData.value, error)
         }
         let tx = await res.wait()
         setWallet(triggerData.value.wallet.address)
@@ -747,6 +747,20 @@ export default {
       } catch (error) {
         console.log(error)
         functionLoading.value = ''
+        res = error
+      }
+      let txData = {
+        isApply: true,
+        content: res
+      }
+      try {
+        if (!triggerData.value.msgList) {
+          triggerData.value.msgList = []
+        }
+        triggerData.value.msgList.push(txData)
+        setTrigger()
+      } catch (error) {
+        console.log(triggerData.value, error)
       }
     }
 
@@ -988,8 +1002,13 @@ export default {
         if (res._isBigNumber) {
           console.log(res.toNumber())
         }
+      } catch (error) {
+        console.log(error)
+        res = error
+        functionLoading.value = ''
         let txData = {
-          isApply: true,
+          isFlow: true,
+          title: item.name,
           content: tx || res
         }
         try {
@@ -1001,8 +1020,21 @@ export default {
         } catch (error) {
           console.log(triggerData.value, error)
         }
+        return
+      }
+      let txData = {
+        isFlow: true,
+        title: item.name,
+        content: tx || res
+      }
+      try {
+        if (!triggerData.value.msgList) {
+          triggerData.value.msgList = []
+        }
+        triggerData.value.msgList.push(txData)
+        setTrigger()
       } catch (error) {
-        console.log(error)
+        console.log(triggerData.value, error)
       }
       handdleFlow(steps, params)
     }
@@ -1179,7 +1211,8 @@ export default {
       setRemark,
       isOpen,
       expandedNamesChange,
-      applyFlow
+      applyFlow,
+      getParamsLength
     }
   },
 }

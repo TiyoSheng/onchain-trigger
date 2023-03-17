@@ -476,7 +476,7 @@ export default {
         if (!dataItem.value.id) dataItem.value.id = crypto.randomUUID()
         emit('addFlow', toRaw(dataItem.value))
       }
-      // cancel()
+      cancel()
     }
 
     const cancel = () => {
