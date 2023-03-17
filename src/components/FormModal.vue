@@ -163,6 +163,50 @@
       </div>
       <div class="add-btn" @click="addHanddle">添加执行函数</div>
     </div>
+    <div v-if="modalType == 'flow'" class="modal-content">
+      <n-form-item label="名称：">
+        <n-input v-model:value="dataItem.name" placeholder="输入备注名称" autocomplete="off" />
+      </n-form-item>
+      <div v-if="dataItem.handdleList && dataItem.handdleList.length">
+        <div v-for="(handdle, index) in dataItem.handdleList" :key="index" class="handdle-item">
+          <div class="del" @click="delHanddle(index)">
+            <svg t="1675512681148" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2711" width="18" height="18"><path d="M789.333333 343.466667c-12.8 0-21.333333 8.533333-21.333333 21.333333v490.666667c0 23.466667-19.2 42.666667-42.666667 42.666666H298.666667c-23.466667 0-42.666667-19.2-42.666667-42.666666V362.666667c0-12.8-8.533333-21.333333-21.333333-21.333334s-21.333333 8.533333-21.333334 21.333334v490.666666c0 46.933333 38.4 85.333333 85.333334 85.333334h426.666666c46.933333 0 85.333333-38.4 85.333334-85.333334V362.666667c0-10.666667-10.666667-19.2-21.333334-19.2zM915.2 234.666667H746.666667V170.666667c0-46.933333-38.4-85.333333-85.333334-85.333334H362.666667c-46.933333 0-85.333333 38.4-85.333334 85.333334v64H106.666667c-12.8 0-21.333333 8.533333-21.333334 21.333333s8.533333 21.333333 21.333334 21.333333h808.533333c12.8 0 21.333333-8.533333 21.333333-21.333333s-8.533333-21.333333-21.333333-21.333333zM320 170.666667c0-23.466667 19.2-42.666667 42.666667-42.666667h298.666666c23.466667 0 42.666667 19.2 42.666667 42.666667v64H320V170.666667z" fill="#666666" p-id="2712"></path><path d="M640 704V364.8c0-12.8-8.533333-21.333333-21.333333-21.333333s-21.333333 8.533333-21.333334 21.333333V704c0 12.8 8.533333 21.333333 21.333334 21.333333s21.333333-10.666667 21.333333-21.333333zM426.666667 704V362.666667c0-12.8-8.533333-21.333333-21.333334-21.333334s-21.333333 8.533333-21.333333 21.333334v341.333333c0 12.8 8.533333 21.333333 21.333333 21.333333s21.333333-10.666667 21.333334-21.333333z" fill="#666666" p-id="2713"></path></svg>
+          </div>
+          <n-form-item label="备注名称：">
+            <n-input v-model:value="handdle.name" placeholder="输入备注名称" autocomplete="off" />
+          </n-form-item>
+          <n-form-item label="选择合约：" path="formValue.walletKey">
+            <n-select
+              v-model:value="handdle.contractId"
+              placeholder="选择合约"
+              :options="contractList"
+              @update:value="handdleContractChange(index)"
+              label-field="name"
+              value-field="id"
+            />
+          </n-form-item>
+          <n-form-item label="选择合约方法：" path="formValue.funName">
+            <n-select
+              v-model:value="handdle.functionName"
+              placeholder="选择合约方法"
+              :options="handdle.abi"
+              label-field="name"
+              value-field="name"
+              @update:value="handdleFunctionChange(index)"
+            />
+          </n-form-item>
+          <n-form-item v-if="handdle.params && handdle.params.length" label="参数：" path="formValue.inputData">
+            <div v-for="(item, index) in handdle.params" :key="index" class="input-item flex-center" >
+              <p style="width: 140px;flex:0 0 140px;margin:0">{{item.name + '(' + item.type + ')'}}：</p>
+              <div style="margin-left: 20px;flex:1;width: 100%">
+                <n-select v-model:value="handdle.args[item.name]" filterable tag :options="globalParams" label-field="label" value-field="key" />
+              </div>
+            </div>
+          </n-form-item>
+        </div>
+      </div>
+      <div class="add-btn" @click="addHanddle">添加执行函数</div>
+    </div>
     <n-form-item style="justify-content: flex-end;display:flex">
       <n-button attr-type="button" @click="cancel">
         取消
@@ -303,7 +347,6 @@ export default {
     }
 
     const handdleContractChange = async (index) => {
-      console.log(dataItem.value.handdleList[index])
       handdleIndex = -1
       if (dataItem.value.handdleList[index].contractId == 'add') {
         addContractModal.value.showAddModal = true
@@ -325,19 +368,30 @@ export default {
     }
 
     const handdleFunctionChange = (index) => {
-      console.log(1)
       dataItem.value.handdleList[index].abi.forEach(e => {
         if (e.name == dataItem.value.handdleList[index].functionName) {
-          console.log(e.inputs)
+          let gp = globalParams.value.filter(el => el.stepId == dataItem.value.handdleList[index].id)
+          if (gp.length) {
+            globalParams.value.splice(globalParams.value.findIndex(el => el.stepId == dataItem.value.handdleList[index].id), 1)
+          }
           dataItem.value.handdleList[index].inputs = JSON.parse(JSON.stringify(e.inputs))
           dataItem.value.handdleList[index].params = JSON.parse(JSON.stringify(e.inputs))
           dataItem.value.handdleList[index].args = {}
+          if (e.stateMutability == 'view' || e.stateMutability == 'pure') {
+            globalParams.value.push({
+              key: `${e.name}_result`,
+              label: `${e.name}_result`,
+              stepId: dataItem.value.handdleList[index].id,
+            })
+          }
           if (e.stateMutability == 'payable') {
             dataItem.value.handdleList[index].params.push({name: "value", type: "ETH"})
           }
-          dataItem.value.handdleList[index].params.forEach(el => {
-            dataItem.value.handdleList[index].args[el.name] = {}
-          })
+          if (modalType.value == 'trigger') {
+            dataItem.value.handdleList[index].params.forEach(el => {
+              dataItem.value.handdleList[index].args[el.name] = {}
+            })
+          }
           dataItem.value.handdleList[index].methodType = e.stateMutability
         }
       })
@@ -417,8 +471,12 @@ export default {
         console.log(args)
         dataItem.value.args = args
         emit('addTrigger', toRaw(dataItem.value))
+      } else if (modalType.value == 'flow') {
+        console.log(dataItem.value)
+        if (!dataItem.value.id) dataItem.value.id = crypto.randomUUID()
+        emit('addFlow', toRaw(dataItem.value))
       }
-      cancel()
+      // cancel()
     }
 
     const cancel = () => {

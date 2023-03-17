@@ -46,6 +46,45 @@
           </div>
           <div v-else class="add-btn" @click="showFormModal('params')">设置全局变量</div>
         </n-collapse-item>
+        <n-collapse-item title="流程" name="0">
+          <template #header-extra>
+            <div v-if="isOpen('0')" class="edit-btn" @click.stop="showEditNote('flow', triggerData.remark.flow)" style="margin-right: 20px;">编辑描述</div>
+            流程数量：{{triggerData.flowList && triggerData.flowList.length}}
+          </template>
+          <div v-if="triggerData.remark.flow" class="card card-no-border">
+            <div class="mt12 remark">
+              <v-md-preview :text="triggerData.remark.flow"></v-md-preview>
+            </div>
+          </div>
+          <div class="card" v-for="(item, index) in triggerData.flowList" :key="item.id">
+            <n-spin :show="functionLoading == item.id">
+              <div class="flex-center-sb">
+                <div class="">{{item.name}}</div>
+                <div class="flex-center">
+                  <div class="edit-btn" @click="showFormModal('flow', 'edit', item)">编辑</div>
+                  <n-popconfirm :show-icon="false" positive-text="确认" negative-text="取消" @positiveClick="del('flow', index)">
+                    <template #trigger>
+                      <div class="edit-btn">删除</div>
+                    </template>
+                    <p style="margin: 10px 0">是否确认删除{{item.name}}?</p>
+                  </n-popconfirm>
+                </div>
+              </div>
+              <div v-for="handdle in item.handdleList" :key="handdle.id">
+                <div class="mt12">{{handdle.name}}</div>
+                <div class="mt12 flex-center">
+                  <div class="name">{{getContractName(handdle.contractId)}}</div>
+                  <div class="line"></div>
+                  <div class="name">{{handdle.functionName}}</div>
+                  <div class="type">（{{handdle.methodType}}）</div>
+                </div>
+                
+              </div>
+              <div class="apply-btn flex-center-center mt12" @click="applyFlow(item)">执行</div>
+            </n-spin>
+          </div>
+          <div class="add-btn" @click="showFormModal('flow')">添加流程</div>
+        </n-collapse-item>
         <n-collapse-item title="附加函数" name="2">
           <template #header-extra>
             <div v-if="isOpen('2')" class="edit-btn" @click.stop="showEditNote('function', triggerData.remark.function)" style="margin-right: 20px;">编辑描述</div>
@@ -218,6 +257,7 @@
       @addFunction="addFunction"
       @addTrigger="addTrigger"
       @setParams="setParams"
+      @addFlow="addFlow"
     />
     <DataInfoModal ref="dataInfoModal" />
     <ShareModal ref="shareModal" @share="shareSuccess" />
@@ -349,6 +389,13 @@ export default {
                 if (el.stateMutability == 'payable') {
                   item.params.push({name: "value", type: "ETH"})
                 }
+                if (el.stateMutability == 'view' || el.stateMutability == 'pure') {
+                  formRef.value.globalParams.push({
+                    key: `${el.name}_result`,
+                    label: `${el.name}_result`,
+                    stepId: item.id,
+                  })
+                }
               }
             })
           }
@@ -376,7 +423,7 @@ export default {
 
     const showFormModal = (type, isEdit, it) => {
       formRef.value.isShowModal = true
-      formRef.value.globalParams = triggerData.value.globalParams
+      formRef.value.globalParams = JSON.parse(JSON.stringify(toRaw(triggerData.value.globalParams)))
       if (type == 'wallet') {
         formRef.value.modalTitle = '设置钱包'
         formRef.value.modalType = 'wallet'
@@ -398,6 +445,16 @@ export default {
         if (isEdit) {
           let it = triggerData.value.globalParams
           formRef.value.dataItem = JSON.parse(JSON.stringify(it))
+        }
+      } else if (type == 'flow') {
+        formRef.value.modalTitle = '设置流程'
+        formRef.value.modalType = 'flow'
+        formRef.value.dataItem = {handdleList: []}
+        if (isEdit) {
+          let item = JSON.parse(JSON.stringify(it))
+          formRef.value.dataItem = item
+          item.handdleList = getHanddleListData(item.handdleList)
+          formRef.value.dataItem = item
         }
       } else if (type == 'function') {
         formRef.value.modalTitle = '添加函数'
@@ -490,6 +547,21 @@ export default {
       setLs('triggers', JSON.parse(JSON.stringify(triggers))).then(res => {
         store.commit('setTriggers', res)
       })
+    }
+
+    const addFlow = (e) => {
+      let flowList = toRaw(triggerData.value.flowList) || []
+      if (flowList.findIndex(it => it.id == e.id) > -1) {
+        let index = flowList.findIndex(it => it.id == e.id)
+        flowList[index] = e
+      } else {
+        flowList.push(e)
+      }
+      triggerData.value.flowList = JSON.parse(JSON.stringify(flowList))
+      if (!triggerData.value.isImport) {
+        triggerData.value.updated = true
+      }
+      setTrigger()
     }
 
     const setParams = (e) => {
@@ -870,6 +942,79 @@ export default {
       })
     }
 
+    const handdleFlow = async (steps, params = []) => {
+      console.log(steps, params)
+      steps = JSON.parse(JSON.stringify(toRaw(steps)))
+      if (!steps.length) {
+        functionLoading.value = ''
+        return
+      }
+      let item = steps.shift()
+      console.log(`正在执行函数${item.name}`)
+      item.inputs = getInputs(item.contractId, item.functionName)
+      let C = await setContract(item.contractId)
+      let p = []
+      if (item.inputs) {
+        item.inputs.forEach(e => {
+          if (item.args[e.name]) {
+            let val = item.args[e.name]
+            for (let i = 0; i < params.length; i++) {
+              let param = params[i]
+              if (param.key == item.args[e.name]) {
+                val = param.value
+              }
+            }
+            p.push(val)
+          } else {
+            p.push('')
+          }
+        })
+      }
+      let res
+      let tx
+      try {
+        res = await C[item.functionName](...p)
+        if (item.methodType == 'view' || item.methodType == 'pure') {
+          params.push({
+            key: `${item.functionName}_result`,
+            value: res
+          })
+        } else {
+          tx = await res.wait()
+          console.log(tx)
+          setWallet(triggerData.value.wallet.address)
+          message.success('confirmed transaction')
+        }
+        if (res._isBigNumber) {
+          console.log(res.toNumber())
+        }
+        let txData = {
+          isApply: true,
+          content: tx || res
+        }
+        try {
+          if (!triggerData.value.msgList) {
+            triggerData.value.msgList = []
+          }
+          triggerData.value.msgList.push(txData)
+          setTrigger()
+        } catch (error) {
+          console.log(triggerData.value, error)
+        }
+      } catch (error) {
+        console.log(error)
+      }
+      handdleFlow(steps, params)
+    }
+
+    const applyFlow = async (item) => {
+      // let result_dic = {}
+      functionLoading.value = item.id
+      let params = JSON.parse(JSON.stringify(toRaw(triggerData.value.globalParams)))
+      let steps = JSON.parse(JSON.stringify(toRaw(item.handdleList)))
+      handdleFlow(steps, params)
+    }
+
     const off = async () => {
       await alchemy.ws.off()
       triggerData.value.running = false
@@ -983,6 +1128,7 @@ export default {
       triggerList.value.forEach(e => {
         if (e.id == activatedId.value) {
           if (!e.msgList) e.msgList = []
+          if (!e.flowList) e.flowList = []
           if (!e.globalParams) e.globalParams = []
           if (!e.remark) e.remark = {}
           triggerData.value = e
@@ -1021,6 +1167,7 @@ export default {
       clearMsg,
       del,
       setParams,
+      addFlow,
       setTrigger,
       getParams,
       copy,
@@ -1031,7 +1178,8 @@ export default {
       showEditNote,
       setRemark,
       isOpen,
-      expandedNamesChange
+      expandedNamesChange,
+      applyFlow
     }
   },
 }
