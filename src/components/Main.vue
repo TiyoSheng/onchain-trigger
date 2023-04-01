@@ -1,7 +1,7 @@
 <template>
   <div class="main flex-start" v-if="triggerData.id">
     <div class="l">
-      <div class="card" v-if="triggerData.wallet && triggerData.wallet.address">
+      <div class="card card-balance" v-if="triggerData.wallet && triggerData.wallet.address">
         <n-spin :show="walletLoading">
           <div class="flex-center-sb">
             <div class="address" @click="copy(triggerData.wallet.address)">{{triggerData.wallet.address}}</div>
@@ -14,18 +14,15 @@
         </n-spin>
       </div>
       <div v-else class="add-btn" @click="showFormModal('wallet')">设置钱包</div>
-      <n-collapse @update:expanded-names="expandedNamesChange">
-        <n-collapse-item title="全局变量" name="1">
-          <template #header-extra>
-            <div v-if="isOpen('1')" class="edit-btn" @click.stop="showEditNote('params', triggerData.remark.params)" style="margin-right: 20px;">编辑描述</div>
-            变量数量：{{getParamsLength(triggerData.globalParams)}}
-          </template>
+      <n-tabs type="segment">
+        <n-tab-pane name="params" :tab="`全局变量 (${getParamsLength(triggerData.globalParams)})`">
+          <p class="edit-des" @click.stop="showEditNote('params', triggerData.remark.params)">编辑描述</p>
           <div v-if="triggerData.remark.params" class="card card-no-border">
             <div class="mt12 remark">
               <v-md-preview :text="triggerData.remark.params"></v-md-preview>
             </div>
           </div>
-          <div class="card" v-if="triggerData.globalParams && triggerData.globalParams.length">
+          <div class="mt12 card" v-if="triggerData.globalParams && triggerData.globalParams.length">
             <div class="flex-center-sb">
               <div class="">全局变量</div>
               <div class="flex-center">
@@ -45,18 +42,15 @@
             </div>
           </div>
           <div v-else class="add-btn" @click="showFormModal('params')">设置全局变量</div>
-        </n-collapse-item>
-        <n-collapse-item title="流程" name="0">
-          <template #header-extra>
-            <div v-if="isOpen('0')" class="edit-btn" @click.stop="showEditNote('flow', triggerData.remark.flow)" style="margin-right: 20px;">编辑描述</div>
-            流程数量：{{triggerData.flowList && triggerData.flowList.length}}
-          </template>
+        </n-tab-pane>
+        <n-tab-pane name="flow" :tab="`流程 (${triggerData.flowList && triggerData.flowList.length})`">
+          <p class="edit-des" @click.stop="showEditNote('flow', triggerData.remark.flow)">编辑描述</p>
           <div v-if="triggerData.remark.flow" class="card card-no-border">
             <div class="mt12 remark">
               <v-md-preview :text="triggerData.remark.flow"></v-md-preview>
             </div>
           </div>
-          <div class="card" v-for="(item, index) in triggerData.flowList" :key="item.id">
+          <div class="mt12 card" v-for="(item, index) in triggerData.flowList" :key="item.id">
             <n-spin :show="functionLoading == item.id">
               <div class="flex-center-sb">
                 <div class="">{{item.name}}</div>
@@ -72,7 +66,12 @@
               </div>
               <div v-for="handdle in item.handdleList" :key="handdle.id">
                 <div class="mt12">{{handdle.name}}</div>
-                <div class="mt12 flex-center">
+                <div v-if="handdle.requestType == 'http'" class="mt12 flex-center">
+                  <div class="name">http</div>
+                  <div class="line"></div>
+                  <div class="type">（{{handdle.httpMethod}}）</div>
+                </div>
+                <div v-else class="mt12 flex-center">
                   <div class="name">{{getContractName(handdle.contractId)}}</div>
                   <div class="line"></div>
                   <div class="name">{{handdle.functionName}}</div>
@@ -84,18 +83,15 @@
             </n-spin>
           </div>
           <div class="add-btn" @click="showFormModal('flow')">添加流程</div>
-        </n-collapse-item>
-        <n-collapse-item title="附加函数" name="2">
-          <template #header-extra>
-            <div v-if="isOpen('2')" class="edit-btn" @click.stop="showEditNote('function', triggerData.remark.function)" style="margin-right: 20px;">编辑描述</div>
-            函数数量：{{triggerData.functions && triggerData.functions.length}}
-          </template>
+        </n-tab-pane>
+        <n-tab-pane name="function" :tab="`附加函数 (${triggerData.functions && triggerData.functions.length})`">
+          <p class="edit-des" @click.stop="showEditNote('function', triggerData.remark.function)">编辑描述</p>
           <div v-if="triggerData.remark.function" class="card card-no-border">
             <div class="mt12 remark">
               <v-md-preview :text="triggerData.remark.function"></v-md-preview>
             </div>
           </div>
-          <div class="card" v-for="(item, index) in triggerData.functions" :key="item.id">
+          <div class="card mt12" v-for="(item, index) in triggerData.functions" :key="item.id">
             <n-spin :show="functionLoading == item.id">
               <div class="flex-center-sb">
                 <div class="">{{item.name}}</div>
@@ -129,18 +125,15 @@
             </n-spin>
           </div>
           <div class="add-btn" @click="showFormModal('function')">添加附加函数</div>
-        </n-collapse-item>
-        <n-collapse-item title="合约触发器" name="3">
-          <template #header-extra>
-            <div v-if="isOpen('3')" class="edit-btn" @click.stop="showEditNote('trigger', triggerData.remark.trigger)" style="margin-right: 20px;">编辑描述</div>
-            触发器数量：{{triggerData.triggers && triggerData.triggers.length}}
-          </template>
+        </n-tab-pane>
+        <n-tab-pane name="trigger" :tab="`合约触发器 (${triggerData.triggers && triggerData.triggers.length})`">
+          <p class="edit-des" @click.stop="showEditNote('trigger', triggerData.remark.trigger)">编辑描述</p>
           <div v-if="triggerData.remark.trigger" class="card card-no-border">
             <div class="mt12 remark">
               <v-md-preview :text="triggerData.remark.trigger"></v-md-preview>
             </div>
           </div>
-          <div class="card" v-for="(item, index) in triggerData.triggers" :key="item.id">
+          <div class="mt12 card" v-for="(item, index) in triggerData.triggers" :key="item.id">
             <div class="flex-center-sb">
               <div class="">触发函数</div>
               <div class="flex-center">
@@ -191,8 +184,8 @@
             </div>
           </div>
           <div v-if="!(triggerData.triggers && triggerData.triggers.length)" class="add-btn" @click="showFormModal('trigger')">添加触发器</div>
-        </n-collapse-item>
-      </n-collapse>
+        </n-tab-pane>
+      </n-tabs>
       
       <n-divider dashed style="font-size: 12px;color:rgba(194, 194, 194, 1);margin-top: 16px"></n-divider>
       <div class="btn-list">
@@ -276,6 +269,7 @@
 import { ref, computed, watch, toRaw, nextTick } from 'vue'
 import { useStore } from 'vuex'
 import { ethers } from 'ethers'
+import axios from 'axios'
 import { setLs } from '@/service/service'
 import { useMessage } from "naive-ui"
 import { filterFun, inputFun } from '@/libs/config'
@@ -542,8 +536,10 @@ export default {
     const del = (type, index) => {
       if (type == 'function') {
         triggerData.value.functions.splice(index, 1)
-      } if (type == 'trigger') {
+      } else if (type == 'trigger') {
         triggerData.value.triggers.splice(index, 1)
+      } else if (type == 'flow') {
+        triggerData.value.flowList.splice(index, 1)
       }
       setTrigger()
     }
@@ -967,47 +963,131 @@ export default {
       }
       let item = steps.shift()
       console.log(`正在执行函数${item.name}`)
-      item.inputs = getInputs(item.contractId, item.functionName)
-      let C = await setContract(item.contractId)
-      let p = []
-      if (item.inputs) {
-        item.inputs.forEach(e => {
-          if (item.args[e.name]) {
-            let val = item.args[e.name]
-            for (let i = 0; i < params.length; i++) {
-              let param = params[i]
-              if (param.key == item.args[e.name]) {
+      if (item.requestType == 'http') {
+        let url = item.httpUrl
+        let method = item.httpMethod || 'get'
+        let headers = item.httpHeader
+        let body = {}
+        item.httpParams = item.httpParams || []
+        item.httpParams.forEach(e => {
+          let val = e.value
+          for (let i = 0; i < params.length; i++) {
+            let param = params[i]
+            if (param.key == e.value) {
+              if (param.key.indexOf('http_result') > -1) {
+                val = param.value[e.var]
+              } else {
                 val = param.value
               }
             }
-            p.push(val)
-          } else {
-            p.push('')
           }
+          body[e.key] = val
         })
-      }
-      let res
-      let tx
-      try {
-        res = await C[item.functionName](...p)
-        if (item.methodType == 'view' || item.methodType == 'pure') {
-          params.push({
-            key: `${item.functionName}_result`,
-            value: res
+        console.log(body)
+        let res
+        try {
+          if (method == 'get') {
+            res = await axios.get(url, {
+              headers: headers
+            })
+          } else {
+            res = await axios[method](url, body, {
+              headers: headers
+            })
+          }
+          if (res.data) {
+            let e = item.httpUrl
+            let arr = e.split('/')
+            let method = arr[arr.length - 1]
+            params.push({
+              key: `http_result_${method}`,
+              value: res.data
+            })
+          }
+          let txData = {
+            isFlow: true,
+            title: item.name,
+            content: res.data
+          }
+          if (!triggerData.value.msgList) {
+              triggerData.value.msgList = []
+            }
+            triggerData.value.msgList.push(txData)
+            setTrigger()
+          handdleFlow(steps, params)
+        } catch (error) {
+          console.log(error)
+          message.error('请求失败')
+        }
+      } else {
+        item.inputs = getInputs(item.contractId, item.functionName)
+        let C = await setContract(item.contractId)
+        let p = []
+        if (item.inputs) {
+          item.inputs.forEach(e => {
+            if (item.args[e.name]) {
+              let val = item.args[e.name]
+              for (let i = 0; i < params.length; i++) {
+                let param = params[i]
+                if (param.key == item.args[e.name]) {
+                  if (param.key.indexOf('http_result') > -1) {
+                    console.log(item.params)
+                    item.params.forEach(el => {
+                      if (el.name == e.name) {
+                        console.log(el)
+                        val = param.value[el.var]
+                      }
+                    })
+                  } else {
+                    val = param.value
+                  }
+                }
+              }
+              p.push(val)
+            } else {
+              p.push('')
+            }
           })
-        } else {
-          tx = await res.wait()
-          console.log(tx)
-          setWallet(triggerData.value.wallet.address)
-          message.success('confirmed transaction')
         }
-        if (res._isBigNumber) {
-          console.log(res.toNumber())
+        console.log(p)
+        let res
+        let tx
+        try {
+          res = await C[item.functionName](...p)
+          if (item.methodType == 'view' || item.methodType == 'pure') {
+            params.push({
+              key: `${item.functionName}_result`,
+              value: res
+            })
+          } else {
+            tx = await res.wait()
+            console.log(tx)
+            setWallet(triggerData.value.wallet.address)
+            message.success('confirmed transaction')
+          }
+          if (res._isBigNumber) {
+            console.log(res.toNumber())
+          }
+        } catch (error) {
+          console.log(error)
+          res = error
+          functionLoading.value = ''
+          let txData = {
+            isFlow: true,
+            title: item.name,
+            content: tx || res
+          }
+          try {
+            if (!triggerData.value.msgList) {
+              triggerData.value.msgList = []
+            }
+            triggerData.value.msgList.push(txData)
+            setTrigger()
+          } catch (error) {
+            console.log(triggerData.value, error)
+          }
+          return
         }
-      } catch (error) {
-        console.log(error)
-        res = error
-        functionLoading.value = ''
         let txData = {
           isFlow: true,
           title: item.name,
@@ -1022,23 +1102,8 @@ export default {
         } catch (error) {
           console.log(triggerData.value, error)
         }
-        return
+        handdleFlow(steps, params)
       }
-      let txData = {
-        isFlow: true,
-        title: item.name,
-        content: tx || res
-      }
-      try {
-        if (!triggerData.value.msgList) {
-          triggerData.value.msgList = []
-        }
-        triggerData.value.msgList.push(txData)
-        setTrigger()
-      } catch (error) {
-        console.log(triggerData.value, error)
-      }
-      handdleFlow(steps, params)
     }
 
     const applyFlow = async (item) => {
@@ -1243,7 +1308,7 @@ export default {
   height: 100vh;
   overflow-y: auto;
   width: 600px;
-  padding: 24px 12px;
+  padding: 24px;
   box-sizing: border-box;
   scrollbar-width: none;
   -ms-overflow-style: none; 
@@ -1271,15 +1336,16 @@ export default {
     padding: 16px;
     box-sizing: border-box;
     margin-bottom: 24px;
+    &.card-balance {
+      background: #F8F9FA;
+      border-radius: 8px;
+    }
     &.card-no-border {
       border: none;
       padding: 0;
     }
     &:hover {
       // box-shadow: 0 1px 2px -2px rgba(0, 0, 0, 0.08), 0 3px 6px 0 rgba(0, 0, 0, 0.06), 0 5px 12px 4px rgba(0, 0, 0, 0.04);
-    }
-    .mt12 {
-      margin-top: 12px;
     }
     .remark {
       padding: 12px 14px;
@@ -1352,7 +1418,6 @@ export default {
   height: 100vh;
   width: 100%;
   overflow-y: auto;
-  margin-left: 40px;
   position: relative;
   background: #1f1e27;
   box-sizing: border-box;
@@ -1428,6 +1493,15 @@ export default {
   &:hover {
     color: #444444;
   }
+}
+.edit-des {
+  display: flex;
+  justify-content: flex-end;
+  font-size: 12px;
+  cursor: pointer;
+}
+.mt12 {
+  margin-top: 12px;
 }
 </style>
 <style>

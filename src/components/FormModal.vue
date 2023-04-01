@@ -175,34 +175,87 @@
           <n-form-item label="备注名称：">
             <n-input v-model:value="handdle.name" placeholder="输入备注名称" autocomplete="off" />
           </n-form-item>
-          <n-form-item label="选择合约：" path="formValue.walletKey">
-            <n-select
-              v-model:value="handdle.contractId"
-              placeholder="选择合约"
-              :options="contractList"
-              @update:value="handdleContractChange(index)"
-              label-field="name"
-              value-field="id"
-            />
+          <n-form-item label="请求类型：">
+            <n-radio-group v-model:value="handdle.requestType" name="requestType" size="medium">
+              <n-radio-button value="contract">合约</n-radio-button>
+              <n-radio-button value="http">http</n-radio-button>
+            </n-radio-group>
           </n-form-item>
-          <n-form-item label="选择合约方法：" path="formValue.funName">
-            <n-select
-              v-model:value="handdle.functionName"
-              placeholder="选择合约方法"
-              :options="handdle.abi"
-              label-field="name"
-              value-field="name"
-              @update:value="handdleFunctionChange(index)"
-            />
-          </n-form-item>
-          <n-form-item v-if="handdle.params && handdle.params.length" label="参数：" path="formValue.inputData">
-            <div v-for="(item, index) in handdle.params" :key="index" class="input-item flex-center" >
-              <p style="width: 140px;flex:0 0 140px;margin:0">{{item.name + '(' + item.type + ')'}}：</p>
-              <div style="margin-left: 20px;flex:1;width: 100%">
-                <n-select v-model:value="handdle.args[item.name]" filterable tag :options="globalParams" label-field="label" value-field="key" />
+          <div v-if="handdle.requestType == 'http'">
+            <n-form-item label="请求地址：">
+              <n-input v-model:value="handdle.httpUrl" placeholder="输入url" autocomplete="off" @change="httpUrlChange(index)" />
+            </n-form-item>
+            <n-form-item label="请求方式：">
+              <n-input v-model:value="handdle.httpMethod" placeholder="输入请求方式" autocomplete="off" />
+            </n-form-item>
+            <n-form-item label="参数：" >
+              <div v-for="(item, i) in handdle.httpParams" :key="i" class="input-item flex-center" >
+                <div class="input-label">
+                  <n-input v-model:value="item.key" placeholder="输入参数名" autocomplete="off" />
+                </div>
+                <div style="margin-left: 20px;flex:1;width: 100%">
+                  <n-select v-model:value="item.value" filterable tag :options="globalParams" label-field="label" value-field="key" />
+                </div>
+                <div v-if="item.value.indexOf('http_result_') > -1" class="input-label">
+                  <n-input v-model:value="item.var" placeholder="header" autocomplete="off" />
+                </div>
+                <div @click="delHttpParams(index, i)" style="margin-left: 12px">
+                  <svg t="1675512681148" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2711" width="18" height="18"><path d="M789.333333 343.466667c-12.8 0-21.333333 8.533333-21.333333 21.333333v490.666667c0 23.466667-19.2 42.666667-42.666667 42.666666H298.666667c-23.466667 0-42.666667-19.2-42.666667-42.666666V362.666667c0-12.8-8.533333-21.333333-21.333333-21.333334s-21.333333 8.533333-21.333334 21.333334v490.666666c0 46.933333 38.4 85.333333 85.333334 85.333334h426.666666c46.933333 0 85.333333-38.4 85.333334-85.333334V362.666667c0-10.666667-10.666667-19.2-21.333334-19.2zM915.2 234.666667H746.666667V170.666667c0-46.933333-38.4-85.333333-85.333334-85.333334H362.666667c-46.933333 0-85.333333 38.4-85.333334 85.333334v64H106.666667c-12.8 0-21.333333 8.533333-21.333334 21.333333s8.533333 21.333333 21.333334 21.333333h808.533333c12.8 0 21.333333-8.533333 21.333333-21.333333s-8.533333-21.333333-21.333333-21.333333zM320 170.666667c0-23.466667 19.2-42.666667 42.666667-42.666667h298.666666c23.466667 0 42.666667 19.2 42.666667 42.666667v64H320V170.666667z" fill="#666666" p-id="2712"></path><path d="M640 704V364.8c0-12.8-8.533333-21.333333-21.333333-21.333333s-21.333333 8.533333-21.333334 21.333333V704c0 12.8 8.533333 21.333333 21.333334 21.333333s21.333333-10.666667 21.333333-21.333333zM426.666667 704V362.666667c0-12.8-8.533333-21.333333-21.333334-21.333334s-21.333333 8.533333-21.333333 21.333334v341.333333c0 12.8 8.533333 21.333333 21.333333 21.333333s21.333333-10.666667 21.333334-21.333333z" fill="#666666" p-id="2713"></path></svg>
+                </div>
               </div>
-            </div>
-          </n-form-item>
+              <div class="add-btn" @click="addHttpParams(index)">添加参数</div>
+            </n-form-item>
+            <n-form-item label="Header：" >
+              <div v-for="(item, i) in handdle.httpHeader" :key="i" class="input-item flex-center" >
+                <div class="input-label">
+                  <n-input v-model:value="item.key" placeholder="变量名" autocomplete="off" />
+                </div>
+                <div style="margin-left: 20px;flex:1;width: 100%">
+                  <n-select v-model:value="item.value" filterable tag :options="globalParams" label-field="label" value-field="key" />
+                </div>
+                <div v-if="item.value.indexOf('http_result_') > -1" class="input-label">
+                  <n-input v-model:value="item.var" placeholder="变量名" autocomplete="off" />
+                </div>
+                <div @click="delHttpHeader(index, i)" style="margin-left: 12px">
+                  <svg t="1675512681148" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2711" width="18" height="18"><path d="M789.333333 343.466667c-12.8 0-21.333333 8.533333-21.333333 21.333333v490.666667c0 23.466667-19.2 42.666667-42.666667 42.666666H298.666667c-23.466667 0-42.666667-19.2-42.666667-42.666666V362.666667c0-12.8-8.533333-21.333333-21.333333-21.333334s-21.333333 8.533333-21.333334 21.333334v490.666666c0 46.933333 38.4 85.333333 85.333334 85.333334h426.666666c46.933333 0 85.333333-38.4 85.333334-85.333334V362.666667c0-10.666667-10.666667-19.2-21.333334-19.2zM915.2 234.666667H746.666667V170.666667c0-46.933333-38.4-85.333333-85.333334-85.333334H362.666667c-46.933333 0-85.333333 38.4-85.333334 85.333334v64H106.666667c-12.8 0-21.333333 8.533333-21.333334 21.333333s8.533333 21.333333 21.333334 21.333333h808.533333c12.8 0 21.333333-8.533333 21.333333-21.333333s-8.533333-21.333333-21.333333-21.333333zM320 170.666667c0-23.466667 19.2-42.666667 42.666667-42.666667h298.666666c23.466667 0 42.666667 19.2 42.666667 42.666667v64H320V170.666667z" fill="#666666" p-id="2712"></path><path d="M640 704V364.8c0-12.8-8.533333-21.333333-21.333333-21.333333s-21.333333 8.533333-21.333334 21.333333V704c0 12.8 8.533333 21.333333 21.333334 21.333333s21.333333-10.666667 21.333333-21.333333zM426.666667 704V362.666667c0-12.8-8.533333-21.333333-21.333334-21.333334s-21.333333 8.533333-21.333333 21.333334v341.333333c0 12.8 8.533333 21.333333 21.333333 21.333333s21.333333-10.666667 21.333334-21.333333z" fill="#666666" p-id="2713"></path></svg>
+                </div>
+              </div>
+              <div class="add-btn" @click="addHttpHeader(index)">添加参数</div>
+            </n-form-item>
+          </div>
+          <div v-else>
+            <n-form-item label="选择合约：" path="formValue.walletKey">
+              <n-select
+                v-model:value="handdle.contractId"
+                placeholder="选择合约"
+                :options="contractList"
+                @update:value="handdleContractChange(index)"
+                label-field="name"
+                value-field="id"
+              />
+            </n-form-item>
+            <n-form-item label="选择合约方法：" path="formValue.funName">
+              <n-select
+                v-model:value="handdle.functionName"
+                placeholder="选择合约方法"
+                :options="handdle.abi"
+                label-field="name"
+                value-field="name"
+                @update:value="handdleFunctionChange(index)"
+              />
+            </n-form-item>
+            <n-form-item v-if="handdle.params && handdle.params.length" label="参数：" path="formValue.inputData">
+              <div v-for="(item, i) in handdle.params" :key="i" class="input-item flex-center" >
+                <p style="width: 140px;flex:0 0 140px;margin:0">{{item.name + '(' + item.type + ')'}}：</p>
+                <div style="margin-left: 20px;flex:1;width: 100%">
+                  <n-select v-model:value="handdle.args[item.name]" filterable tag :options="globalParams" label-field="label" value-field="key" />
+                </div>
+                <div style="margin-left:12px" v-if="handdle.args[item.name] && handdle.args[item.name].indexOf('http_result_') > -1" class="input-label">
+                  <n-input v-model:value="item.var" placeholder="变量名" autocomplete="off" />
+                </div>
+              </div>
+            </n-form-item>
+          </div>
         </div>
       </div>
       <div class="add-btn" @click="addHanddle">添加执行函数</div>
@@ -415,10 +468,16 @@ export default {
     }
 
     const addHanddle = () => {
+      let item = {
+        id: crypto.randomUUID()
+      }
+      if (modalType.value == 'flow') {
+        item.requestType = 'contract'
+      }
       if (dataItem.value.handdleList && dataItem.value.handdleList.length) {
-        dataItem.value.handdleList.push({id: crypto.randomUUID()})
+        dataItem.value.handdleList.push(item)
       } else {
-        dataItem.value.handdleList = [{id: crypto.randomUUID()}]
+        dataItem.value.handdleList = [item]
       }
     }
 
@@ -430,8 +489,61 @@ export default {
       dataItem.value.push({key: '', value: ''})
     }
 
+    const addHttpParams = (index) => {
+      if (dataItem.value?.handdleList[index]?.httpParams) {
+        dataItem.value.handdleList[index].httpParams.push({key: '', value: ''})
+      } else {
+        dataItem.value.handdleList[index].httpParams = [{key: '', value: ''}]
+      }
+    }
+
+    const delHttpParams = (index, i) => {
+      dataItem.value.handdleList[index].httpParams.splice(i, 1)
+    }
+
+    const addHttpHeader = (index) => {
+      if (dataItem.value?.handdleList[index]?.httpHeader) {
+        dataItem.value.handdleList[index].httpHeader.push({key: '', value: ''})
+      } else {
+        dataItem.value.handdleList[index].httpHeader = [{key: '', value: ''}]
+      }
+    }
+
+    const delHttpHeader = (index, i) => {
+      dataItem.value.handdleList[index].httpHeader.splice(i, 1)
+    }
+
     const delParams = (index) => {
       dataItem.value.splice(index, 1)
+    }
+
+
+    const httpUrlChange = (index) => {
+      console.log(index)
+      let e = dataItem.value.handdleList[index].httpUrl
+      let arr = e.split('/')
+      let method = arr[arr.length - 1]
+      console.log(method)
+      let i = -1
+      console.log(dataItem.value.handdleList[index])
+      globalParams.value.forEach((el, j) => {
+        if (el.stepId == dataItem.value.handdleList[index].id) {
+          i = j
+        }
+      })
+      if (i > -1) {
+        globalParams.value[i] = {
+          key: `http_result_${method}`,
+          label: `http_result_${method}`,
+          stepId: dataItem.value.handdleList[index].id,
+        }
+      } else {
+        globalParams.value.push({
+          key: `http_result_${method}`,
+          label: `http_result_${method}`,
+          stepId: dataItem.value.handdleList[index].id,
+        })
+      }
     }
 
     const ok = () => {
@@ -530,7 +642,12 @@ export default {
       filterChange,
       delFilter,
       addParams,
-      delParams
+      delParams,
+      addHttpParams,
+      delHttpParams,
+      addHttpHeader,
+      delHttpHeader,
+      httpUrlChange,
     }
   },
 }
