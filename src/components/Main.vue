@@ -966,8 +966,9 @@ export default {
       if (item.requestType == 'http') {
         let url = item.httpUrl
         let method = item.httpMethod || 'get'
-        let headers = item.httpHeader
+        let headers = item.httpHeader || []
         let body = {}
+        let httpHeader = {}
         item.httpParams = item.httpParams || []
         item.httpParams.forEach(e => {
           let val = e.value
@@ -983,16 +984,24 @@ export default {
           }
           body[e.key] = val
         })
+        headers.forEach(e => {
+          let val = e.value
+          httpHeader[e.key] = val
+        })
         console.log(body)
         let res
         try {
-          if (method == 'get') {
-            res = await axios.get(url, {
-              headers: headers
+          if (method.toLocaleLowerCase() == 'get') {
+            res = await axios.get({
+              url,
+              params: body,
+              headers: httpHeader
             })
           } else {
-            res = await axios[method](url, body, {
-              headers: headers
+            res = await axios[method]({
+              url,
+              data: body,
+              headers: httpHeader
             })
           }
           if (res.data) {
@@ -1018,6 +1027,7 @@ export default {
         } catch (error) {
           console.log(error)
           message.error('请求失败')
+          functionLoading.value = ''
         }
       } else {
         item.inputs = getInputs(item.contractId, item.functionName)
