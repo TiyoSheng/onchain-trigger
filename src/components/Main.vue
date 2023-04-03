@@ -992,13 +992,15 @@ export default {
         let res
         try {
           if (method.toLocaleLowerCase() == 'get') {
-            res = await axios.get({
+            res = await axios({
+              method: 'get',
               url,
               params: body,
               headers: httpHeader
             })
           } else {
-            res = await axios[method]({
+            res = await axios({
+              method,
               url,
               data: body,
               headers: httpHeader
