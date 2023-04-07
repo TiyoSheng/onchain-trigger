@@ -304,6 +304,7 @@ watch(() => store.state.activatedId, (val) => {
   if (val) {
     activatedId.value = val
     const trigger = store.state.triggers.find(item => item.id === val)
+    if (!trigger) return
     msgs.value = trigger?.messages || []
     trigger.status = 'off'
     triggerData.value = JSON.parse(JSON.stringify(trigger))
