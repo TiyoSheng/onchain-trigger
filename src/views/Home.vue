@@ -1,164 +1,272 @@
+<script setup>
+import { ref } from 'vue'
+import { useGlobalStore } from '../hooks/globalStore'
+import AddContract from '../components/form/AddContract.vue'
+import AddTrigger from '../components/form/CreateTrigger.vue'
+import TriggerDetail from '../components/TriggerDetail.vue'
+import Msgs from '../components/Msgs.vue'
+import { useMessage, useDialog } from "naive-ui"
+import { setLs } from '../libs/storage'
+
+const { store, setActivatedId, setTriggrts, setContracts } = useGlobalStore()
+const message = useMessage()
+const dialog = useDialog()
+
+const addContractRef = ref(null)
+const addTriggerRef = ref(null)
+const popconfirmRef = ref(null)
+const contractPopconfirmRef = ref(null)
+
+const showModal = (type, item) => {
+  if (type == 'contract') {
+    addContractRef.value.showAddModal = true
+    if (item) {
+      addContractRef.value.isEdit = true
+      addContractRef.value.contractData = Object.assign({}, item)
+    }
+  } else if (type == 'trigger') {
+    addTriggerRef.value.showAddModal = true
+  }
+}
+
+const cancel = (type) => {
+  if (type == 'contract') {
+    contractPopconfirmRef.value[0].setShow(false)
+  } else {
+    popconfirmRef.value[0].setShow(false)
+  }
+}
+
+const delContractItem = async (index) => {
+  let contracts = store.state.contracts
+  contracts.splice(index, 1)
+  await setContracts(contracts)
+  await setLs('contracts', JSON.parse(JSON.stringify(contracts)))
+  message.success('删除成功')
+}
+
+const delTriggerItem = async (index) => {
+  let triggers = store.state.triggers
+  let activatedId = store.state.activatedId
+  let isActived = activatedId == triggers[index].id ? true : false
+  triggers.splice(index, 1)
+  await setTriggrts(triggers)
+  await setLs('triggers', JSON.parse(JSON.stringify(triggers)))
+  if (isActived) {
+    if (triggers.length > 0) {
+      await setActivatedId(triggers[index - 1].id)
+      await setLs('activatedId', triggers[index - 1].id)
+    } else {
+      await setActivatedId('')
+      await setLs('activatedId', '')
+    }
+  }
+  message.success('删除成功')
+}
+
+const changeMenu = async (id) => {
+  await setActivatedId(id)
+  await setLs('activatedId', id)
+}
+
+</script>
 <template>
-  <div class="home flex-start">
-    <Menu />
-    <Main />
-    <GetTriggerModal ref="getTriggerModal" @confirm="confirm" />
-  </div>
+<div>
+  <n-layout class="layout">
+    <n-layout-header class="flex-center-sb" style="height: 64px; padding: 0 24px" bordered>
+      <img src="../assets/images/logo.svg" alt="">
+    </n-layout-header>
+    <n-layout class="layout-body" has-sider>
+      <n-layout-sider
+        class="layout-sider"
+        content-style="padding: 16px 8px;"
+        :native-scrollbar="false"
+        width="200px"
+        bordered
+      >
+        <div class="menu">
+          <div class="menu-hd flex-center-sb">Trigger列表
+            <n-popover placement="right" style="width: auto;background: rgba(6, 30, 85, 0.9);backdrop-filter: blur(2.5px);color:#FFF"
+            :arrow-style="{background: 'rgba(6, 30, 85, 0.9)', 'backdrop-filter': 'blur(2.5px)'}">
+              <template #trigger>
+                <svg @click="showModal('trigger')" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 8H13" stroke="#9BA0A8" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M8 13L8 3" stroke="#9BA0A8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </template>
+              Add Trigger
+            </n-popover>
+          </div>
+          <div class="menu-bd">
+            <div class="menu-item flex-center-sb" :class="{'menu-item-actived': item.id == store.state.activatedId}" v-for="(item, index) in store.state.triggers" :key="item.i " @click="changeMenu(item.id)">{{item.name}}
+              <n-popconfirm :show-icon="false" @click.stop ref="popconfirmRef">
+                <template #trigger>
+                  <svg class="del-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9.33325 6.66663L9.33325 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M6.66675 6.66663L6.66675 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 4H4V13.3333C4 13.7015 4.29848 14 4.66667 14H11.3333C11.7015 14 12 13.7015 12 13.3333V4Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2.66675 4H13.3334" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M9.99992 2H5.99992C5.63173 2 5.33325 2.29848 5.33325 2.66667V4H10.6666V2.66667C10.6666 2.29848 10.3681 2 9.99992 2Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </template>
+                <template #action>
+                  <div class="del-btns flex-center">
+                    <div class="btn-no flex-center-center" @click.stop="cancel">取消</div>
+                    <div class="btn-yes flex-center-center" @click.stop="delTriggerItem(index)">确认</div>
+                  </div>
+                </template>
+                <div class="flex-center">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="8.00008" cy="8.00002" r="7.33333" fill="#F98080"/>
+                    <path d="M5.27783 5.27777L10.7223 10.7222" stroke="white" stroke-linejoin="round"/>
+                    <path d="M10.7222 5.27777L5.27772 10.7222" stroke="white" stroke-linejoin="round"/>
+                  </svg>
+                  <span style="margin-left: 8px">确认删除【{{item.name}}】？</span>
+                </div>
+              </n-popconfirm>
+            </div>
+          </div>
+          <div class="menu-hd flex-center-sb">Contract列表
+            <n-popover placement="right" style="width: auto;background: rgba(6, 30, 85, 0.9);backdrop-filter: blur(2.5px);color:#FFF"
+            :arrow-style="{background: 'rgba(6, 30, 85, 0.9)', 'backdrop-filter': 'blur(2.5px)'}">
+              <template #trigger>
+                <svg @click="showModal('contract')" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 8H13" stroke="#9BA0A8" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M8 13L8 3" stroke="#9BA0A8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </template>
+              Add Contract
+            </n-popover>
+          </div>
+          <div class="menu-bd">
+            <div class="menu-item flex-center-sb" v-for="(item, index) in store.state.contracts" :key="item.id" @click="showModal('contract', item)">{{item.name}}
+              <n-popconfirm :show-icon="false" @click.stop ref="contractPopconfirmRef">
+                <template #trigger>
+                  <svg @click.stop class="del-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9.33325 6.66663L9.33325 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M6.66675 6.66663L6.66675 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 4H4V13.3333C4 13.7015 4.29848 14 4.66667 14H11.3333C11.7015 14 12 13.7015 12 13.3333V4Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2.66675 4H13.3334" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M9.99992 2H5.99992C5.63173 2 5.33325 2.29848 5.33325 2.66667V4H10.6666V2.66667C10.6666 2.29848 10.3681 2 9.99992 2Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </template>
+                <template #action>
+                  <div class="del-btns flex-center">
+                    <div class="btn-no flex-center-center" @click.stop="cancel('contract')">取消</div>
+                    <div class="btn-yes flex-center-center" @click.stop="delContractItem(index)">确认</div>
+                  </div>
+                </template>
+                <div class="flex-center">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="8.00008" cy="8.00002" r="7.33333" fill="#F98080"/>
+                    <path d="M5.27783 5.27777L10.7223 10.7222" stroke="white" stroke-linejoin="round"/>
+                    <path d="M10.7222 5.27777L5.27772 10.7222" stroke="white" stroke-linejoin="round"/>
+                  </svg>
+                  <span style="margin-left: 8px">确认删除【{{item.name}}】？</span>
+                </div>
+              </n-popconfirm>
+            </div>
+          </div>
+        </div>
+      </n-layout-sider>
+      <n-layout :native-scrollbar="false">
+        <div class="flex-start">
+          <TriggerDetail />
+          <Msgs />
+        </div>
+      </n-layout>
+    </n-layout>
+  </n-layout>
+  <AddContract ref="addContractRef" />
+  <AddTrigger ref="addTriggerRef" />
+</div>
+  
 </template>
 
-<script>
-// @ is an alias to /src
-import Main from '@/components/Main.vue'
-import Menu from '@/components/Menu.vue'
-import GetTriggerModal from '@/components/GetTriggerModal.vue'
-import { useStore } from 'vuex'
-import { onMounted, ref, onBeforeMount, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { getLs, setLs } from '@/service/service'
-import { getTrigger } from '@/http/api'
-import { useMessage } from "naive-ui"
-export default {
-  name: 'Home',
-  components: {
-    Main,
-    Menu,
-    GetTriggerModal
-  },
-  setup() {
-    const store = useStore()
-    const route = useRoute()
-    const router = useRouter()
-    const message = useMessage()
-    const triggerList = computed(() => {
-      return store.state.triggerList
-    })
-    const getTriggerModal = ref(null)
-    const setContract = async (res) => {
-      let contractList = await getLs('contracts') || []
-      let contracts = res.trigger.contracts
-      contracts.forEach(e => {
-        let hash = `${e.address}-${e.chain.chainId}`
-        e.isImport = true
-        if (contractList.some(el => el.hash == hash)) {
-          contractList.forEach((ele, index) => {
-            if (ele.hash == hash) {
-              contractList[index] = e
-            }
-          })
-        } else {
-          contractList.push(e)
-        }
-      })
-      setLs('contracts', JSON.parse(JSON.stringify(contractList))).then(async () => {
-        contracts.push({name: '添加新合约', id: 'add'})
-        store.commit('setContract', contractList)
-      })
-    }
-    const setTrigger = async (res, password) => {
-      let { functions, globalParams, name, note, trigger_id, triggers, version } = res.trigger
-      globalParams = globalParams.map(e => {
-        let item = {}
-        let val = e.value
-        if (val.length > 22) {
-          val = `${val.slice(0, 6)}...${val.slice(-4)}`
-        }
-        if (e.key != 'currentWalletAddress') {
-          item =  {
-            key: e.key,
-            value: e.value,
-            label: `${e.key} (${val})`
-          }
-        } else {
-          item =  {
-            key: e.key,
-            value: e.value,
-            label: `当前钱包地址 (${val})`
+<style lang="scss" scoped>
+.layout {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  .layout-body {
+    position: absolute;
+    top: 64px;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    .menu {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      .menu-hd {
+        height: 32px;
+        padding: 0 16px;
+        font-weight: 500;
+        font-size: 12px;
+        line-height: 16px;
+        color: #9BA0A8;
+        box-sizing: border-box;
+        svg {
+          cursor: pointer;
+          &:hover {
+            background: rgba(201, 209, 220, 0.2);
+            border-radius: 2px;
           }
         }
-        return item
-      })
-      let triggerData = {functions, globalParams, name, note, triggerId: trigger_id, triggers, version, message: [],  running: false, id: crypto.randomUUID(), isImprot: true, password }
-      console.log(triggerData)
-      let triggerList = await getLs('triggers') || []
-      triggerList.push(triggerData)
-      setLs('triggers', JSON.parse(JSON.stringify(triggerList))).then(res => {
-        store.commit('setTriggers', res)
-        setLs('activatedId', triggerData.id).then(() => {
-          store.commit('setActivatedId', triggerData.id)
-        })
-      })
-    }
-    const getTriggerFun = (password = '') => {
-      let triggerId = route.params.id
-      getTrigger({trigger_id: triggerId, password}).then(res => {
-        if (res.code == 1) {
-          message.error(res.msg)
-        } else {
-          if (triggerList.value.some(e => e.triggerId == triggerId)) {
-            message.info('已存在该触发器', {
-              keepAliveOnHover: true
-            })
-            triggerList.value.forEach(el => {
-              if (el.triggerId == triggerId) {
-                store.commit('setActivatedId', el.id)
-              }
-            })
-          } else {
-            setContract(res)
-            setTrigger(res, password)
-          }
-          getTriggerModal.value.showModal = false
-          router.replace('/')
-        }
-        getTriggerModal.value.loading = false
-      }).catch(err => {
-        console.log(err)
-        message.error(err)
-        getTriggerModal.value.loading = false
-      })
-    }
-    const confirm = (e) => {
-      getTriggerFun(e)
-    }
-    onBeforeMount(() => {
-      
-    })
-    onMounted(async () => {
-      // getProvider()
-      let wallets = await getLs('wallet') || []
-      let contracts = await getLs('contracts') || []
-      contracts.forEach(e => {
-        e.hash = `${e.address}-${e.chain.chainId}`
-      })
-      let triggers = await getLs('triggers') || []
-      let activatedId = await getLs('activatedId') || ''
-      wallets.push({name: '添加新钱包', privateKey: 'add'})
-      contracts.push({name: '添加新合约', id: 'add'})
-      triggers.forEach(e => {
-        e.running = false
-        e.msgList = e.msgList || []
-      })
-      store.commit('setWallet', wallets)
-      store.commit('setContract', contracts)
-      store.commit('setTriggers', triggers)
-      store.commit('setActivatedId', activatedId)
-      let triggerId = route.params.id
-      if (triggerId) {
-        getTriggerModal.value.showModal = true
       }
-    })
-    return {
-      getTriggerModal,
-      confirm
+      .menu-bd {
+        .menu-item {
+          padding: 0px 16px;
+          height: 32px;
+          border-radius: 4px;
+          font-size: 12px;
+          cursor: pointer;
+          color: #5C636B;
+          &.menu-item-actived {
+            color: #000;
+            background: rgba(201, 209, 220, 0.4);
+          }
+          &:hover {
+            background: rgba(201, 209, 220, 0.2);
+            .del-icon {
+              display: flex;
+            }
+          }
+          .del-icon {
+            display: none;
+            &:hover {
+              background: rgba(201, 209, 220, 0.35);
+              border-radius: 2px;
+            }
+          }
+        }
+      }
     }
   }
 }
-</script>
-<style lang="scss" scoped>
-.home {
-  width: 100%;
-  max-width: 1680px;
-  height: 100vh;
-  overflow: hidden;
+.del-btns {
+  justify-content: flex-end;
+  margin-top: 4px;
+  .btn-no {
+    font-size: 13px;
+    line-height: 18px;
+    color: #262C33;
+    width: 50px;
+    height: 28px;
+    border: 1px solid #E5E7EB;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .btn-yes {
+    margin-left: 8px;
+    width: 50px;
+    height: 28px;
+    background: #F98080;
+    border-radius: 6px;
+    font-size: 13px;
+    line-height: 18px;
+    color: #FFFFFF;
+    cursor: pointer;
+  }
 }
 </style>

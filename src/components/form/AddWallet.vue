@@ -1,0 +1,64 @@
+<script setup>
+import { ref } from 'vue'
+import { setLs } from '../../libs/storage'
+import { useGlobalStore } from '../../hooks/globalStore'
+import { useMessage } from "naive-ui"
+import { ethers } from 'ethers'
+
+const { store, setWallet } = useGlobalStore()
+const message = useMessage()
+
+const emit = defineEmits(['success'])
+
+const walletName = ref('')
+const showAddModal = ref(false)
+
+const handleCreated = async () => {
+  if (!walletName.value) {
+    message.error('请输入钱包名称')
+    return
+  }
+  let lbcWallet = ethers.Wallet.createRandom()
+  let newWallet = {}
+  newWallet.privateKey = lbcWallet.privateKey
+  newWallet.address = lbcWallet.address
+  newWallet.name = walletName.value
+  let wallets = store.state.wallets
+  wallets.push(newWallet)
+  await setLs('wallet', JSON.parse(JSON.stringify(wallets)))
+  setWallet(wallets)
+  emit('success', newWallet)
+  cancel()
+}
+
+const cancel = () => {
+  showAddModal.value = false
+  walletName.value = ''
+}
+
+defineExpose({
+  showAddModal,
+  walletName
+});
+</script>
+
+<template>
+  <n-modal
+    v-model:show="showAddModal"
+    :mask-closable="false"
+    :style="{width: '600px', 'border-radius': '10px'}"
+    preset="card"
+    title="创建新钱包"
+    @afterLeave="cancel"
+  >
+    <div>
+      <n-form-item label="钱包名称" >
+        <n-input v-model:value="walletName" placeholder="输入钱包名" />
+      </n-form-item>
+      <n-form-item style="display: flex;justify-content: flex-end;">
+        <n-button attr-type="button" @click="cancel">取消</n-button>
+        <n-button style="margin-left: 20px" attr-type="button" @click="handleCreated">创建</n-button>
+      </n-form-item>
+    </div>
+  </n-modal>
+</template>
