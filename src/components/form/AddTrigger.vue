@@ -1,11 +1,13 @@
 <script setup>
 import { ref } from 'vue'
 import { useGlobalStore } from '../../hooks/globalStore'
+import AddContract from '../../components/form/AddContract.vue'
 
 const { store } = useGlobalStore()
 
 const emit = defineEmits(['handleOk'])
 
+const addContractRef = ref(null)
 const showAddModal = ref(false)
 const modalTitle = ref('设置触发器')
 const params = ref([])
@@ -43,6 +45,35 @@ const inputFun = [{
   label: '更改',
   value: '$ne'
 }]
+
+let handdleIndex = -1
+
+const addContract = (index) => {
+  console.log(index)
+  index > -1 ? handdleIndex = index : handdleIndex = -1
+  addContractRef.value.showAddModal = true
+}
+
+const addContractSuccess = (val) => {
+  console.log(val, handdleIndex)
+  if (handdleIndex > -1) {
+    triggerItem.value.handdleList[handdleIndex].contractId = val.id
+    contractChange(handdleIndex)
+  } else {
+    triggerItem.value.contractId = val.id
+    contractChange()
+  }
+}
+
+const contractChange = (index) => {
+  if (index) {
+    let handdle = triggerItem.value.handdleList[index]
+    handdle.functionName = ''
+    triggerItem.value.handdleList[index] = JSON.parse(JSON.stringify(handdle))
+  } else {
+    triggerItem.value.functionName = ''
+  }
+}
 
 const addHanddle = () => {
   triggerItem.value.handdleList.push({
@@ -160,9 +191,10 @@ defineExpose({
         :options="store.state.contracts"
         label-field="name"
         value-field="id"
+        @update:value="contractChange('')"
       >
         <template #action>
-          <p @click="addContract" class="add-new-btn">添加新合约</p>
+          <p @click="addContract(-1)" class="add-new-btn">添加新合约</p>
         </template>
       </n-select>
     </n-form-item>
@@ -239,6 +271,7 @@ defineExpose({
             :options="store.state.contracts"
             label-field="name"
             value-field="id"
+            @update:value="contractChange(index)"
           >
             <template #action>
               <p @click="addContract(index)" class="add-new-btn">添加新合约</p>
@@ -290,6 +323,7 @@ defineExpose({
       <n-button style="margin-left: 20px" attr-type="button" @click="handleOk">确定</n-button>
     </n-form-item>
   </n-modal>
+  <AddContract ref="addContractRef" @success="addContractSuccess" />
 </template>
 <style lang="scss" scoped>
 .filter-item {

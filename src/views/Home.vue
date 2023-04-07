@@ -171,7 +171,7 @@ const changeMenu = async (id) => {
       </n-layout-sider>
       <n-layout :native-scrollbar="false">
         <div class="flex-start">
-          <TriggerDetail />
+          <TriggerDetail @createTrigger="showModal('trigger')" />
           <Msgs />
         </div>
       </n-layout>

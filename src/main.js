@@ -7,11 +7,11 @@ import 'vfonts/FiraCode.css'
 import { create, NButton, NLayout, NLayoutHeader, NLayoutFooter, NH2, NLayoutSider,
   NAnchor, NAnchorLink, NMessageProvider, NConfigProvider, NDialogProvider, NInput,
   NFormItem, NModal, NPopconfirm, NPopover, NSelect, NSpin, NDivider,
-  NRadioGroup, NRadioButton, NAffix } from 'naive-ui'
+  NRadioGroup, NRadioButton, NAffix, NEmpty } from 'naive-ui'
 const naive = create({
   components: [NButton, NLayout, NLayoutHeader, NLayoutFooter, NH2, NLayoutSider,
     NAnchor, NAnchorLink, NMessageProvider, NConfigProvider, NDialogProvider, NInput,
     NFormItem, NModal, NPopconfirm, NPopover, NSelect, NSpin, NDivider,
-    NRadioGroup, NRadioButton, NAffix]
+    NRadioGroup, NRadioButton, NAffix, NEmpty]
 })
 createApp(App).use(naive).use(router).mount('#app')

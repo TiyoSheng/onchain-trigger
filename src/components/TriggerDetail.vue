@@ -5,6 +5,8 @@ import { useGlobalStore } from '../hooks/globalStore'
 import Wallet from './Wallet.vue'
 import Tabs from './Tabs.vue'
 
+const emit = defineEmits(['createTrigger'])
+
 const { store, setTriggrts } = useGlobalStore()
 
 const triggerData = ref({
@@ -18,6 +20,10 @@ const triggerData = ref({
   remark: {},
   wallet: {}
 })
+
+const createTrigger = () => {
+  emit('createTrigger')
+}
 
 const setTrigger = async (item) => {
   let triggers = store.state.triggers
@@ -37,14 +43,35 @@ watch(() => store.state.activatedId, (activatedId) => {
     if (trigger) {
       triggerData.value = trigger
     }
+  } else {
+    triggerData.value = {
+      name: '',
+      note: '',
+      id: '',
+      functions: [],
+      triggers: [],
+      globalParams: [],
+      flows: [],
+      remark: {},
+      wallet: {}
+    }
   }
 }, {immediate: true})
 
 </script>
 <template>
   <div class="trigger-detail">
-    <Wallet :trigger="triggerData" @setTrigger="setTrigger" />
-    <Tabs :trigger="triggerData" @setTrigger="setTrigger" />
+    <div v-if="triggerData.id">
+      <Wallet :trigger="triggerData" @setTrigger="setTrigger" />
+      <Tabs :trigger="triggerData" @setTrigger="setTrigger" />
+    </div>
+    <div v-else class="flex-center-center">
+      <n-empty description="暂无内容哦，请先添加触发器">
+        <template #extra>
+          <div class="btn" style="width: 200px;height: 40px" @click="createTrigger">添加触发器</div>
+        </template>
+      </n-empty>
+    </div>
   </div>
 </template>
 
