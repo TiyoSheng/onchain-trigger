@@ -24,6 +24,7 @@ const setTrigger = () => {
 }
 
 const setMessage = (msg) => {
+  console.log(msg)
   if (!triggerData.value.messages) {
     triggerData.value.messages = []
   }

@@ -25,9 +25,9 @@ const handleCreated = async () => {
   newWallet.name = walletName.value
   let wallets = store.state.wallets
   wallets.push(newWallet)
-  await setLs('wallet', JSON.parse(JSON.stringify(wallets)))
-  setWallet(wallets)
+  await setWallet(wallets)
   emit('success', newWallet)
+  await setLs('wallet', JSON.parse(JSON.stringify(wallets)))
   cancel()
 }
 

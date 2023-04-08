@@ -1,21 +1,119 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onBeforeMount } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useGlobalStore } from '../hooks/globalStore'
 import AddContract from '../components/form/AddContract.vue'
 import AddTrigger from '../components/form/CreateTrigger.vue'
 import TriggerDetail from '../components/TriggerDetail.vue'
+import Password from '../components/form/Password.vue'
+import Nav from '../components/Nav.vue'
 import Msgs from '../components/Msgs.vue'
 import { useMessage, useDialog } from "naive-ui"
 import { setLs } from '../libs/storage'
+import { getTrigger, getTriggerInfo } from '../http/api'
 
 const { store, setActivatedId, setTriggrts, setContracts } = useGlobalStore()
 const message = useMessage()
 const dialog = useDialog()
+const route = useRoute()
+const router = useRouter()
 
 const addContractRef = ref(null)
+const passwordRef = ref(null)
 const addTriggerRef = ref(null)
 const popconfirmRef = ref(null)
 const contractPopconfirmRef = ref(null)
+const isSpin = ref(false)
+
+const id = route.params.id
+
+onBeforeMount(() => {
+  if (id) {
+    getTriggerFun()
+  }
+})
+
+const submit = (val) => {
+  isSpin.value = true
+  let data = {
+    trigger_id: id
+  }
+  if (val) {
+    data.password = val
+    data.share_type = 'password'
+  } else {
+    data.share_type = 'playground'
+  }
+  getTrigger(data).then(async res => {
+    console.log(res)
+    if (res.code == 0) {
+      let contracts = store.state.contracts
+      let newContracts = JSON.parse(JSON.stringify(res.trigger.contracts))
+      let trigger = JSON.parse(JSON.stringify(res.trigger))
+      trigger.id = trigger.trigger_id
+      trigger.flows = trigger.flow
+      trigger.password = data.password
+      trigger.isImport = true
+      delete trigger.flow
+      delete trigger.contracts
+      let triggers = store.state.triggers
+      // findtrigger
+      if (triggers.find(item => item.trigger_id == trigger.trigger_id)) {
+        message.error('触发器已存在')
+        isSpin.value = false
+        router.replace({
+          path: '/'
+        })
+        return
+      }
+      // 根据id 去重
+      let newContractsArr = []
+      let obj = {}
+      for (let i = 0; i < contracts.length; i++) {
+        if (!obj[contracts[i].id]) {
+          newContractsArr.push(contracts[i])
+          obj[contracts[i].id] = 1
+        }
+      }
+      triggers.push(trigger)
+      await setTriggrts(triggers)
+      await setContracts(newContractsArr)
+      await setActivatedId(trigger.id)
+      await setLs('contracts', JSON.parse(JSON.stringify(contracts)))
+      await setLs('triggers', JSON.parse(JSON.stringify(triggers)))
+      await setLs('setActivatedId', JSON.parse(JSON.stringify(trigger.id)))
+      router.replace({
+        path: '/'
+      })
+    } else {
+      message.error(res.msg)
+    }
+    isSpin.value = false
+  }).catch(err => {
+    isSpin.value = false
+  })
+}
+
+const getTriggerFun = () => {
+  isSpin.value = true
+  getTriggerInfo({
+    trigger_id: id
+  }).then(res => {
+    console.log(res)
+    isSpin.value = false
+    if (res.code == 0) {
+      let shareType = res.trigger.share_type
+      if (shareType == 'password') {
+        passwordRef.value.showAddModal = true
+      } else {
+        submit()
+      }
+    }
+  }).catch(err => {
+    isSpin.value = false
+  })
+  // getTrigger()
+}
 
 const showModal = (type, item) => {
   if (type == 'contract') {
@@ -29,11 +127,11 @@ const showModal = (type, item) => {
   }
 }
 
-const cancel = (type) => {
+const cancel = (index, type) => {
   if (type == 'contract') {
-    contractPopconfirmRef.value[0].setShow(false)
+    contractPopconfirmRef.value[index].setShow(false)
   } else {
-    popconfirmRef.value[0].setShow(false)
+    popconfirmRef.value[index].setShow(false)
   }
 }
 
@@ -72,113 +170,114 @@ const changeMenu = async (id) => {
 </script>
 <template>
 <div>
-  <n-layout class="layout">
-    <n-layout-header class="flex-center-sb" style="height: 64px; padding: 0 24px" bordered>
-      <img src="../assets/images/logo.svg" alt="">
-    </n-layout-header>
-    <n-layout class="layout-body" has-sider>
-      <n-layout-sider
-        class="layout-sider"
-        content-style="padding: 16px 8px;"
-        :native-scrollbar="false"
-        width="200px"
-        bordered
-      >
-        <div class="menu">
-          <div class="menu-hd flex-center-sb">Trigger列表
-            <n-popover placement="right" style="width: auto;background: rgba(6, 30, 85, 0.9);backdrop-filter: blur(2.5px);color:#FFF"
-            :arrow-style="{background: 'rgba(6, 30, 85, 0.9)', 'backdrop-filter': 'blur(2.5px)'}">
-              <template #trigger>
-                <svg @click="showModal('trigger')" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M3 8H13" stroke="#9BA0A8" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M8 13L8 3" stroke="#9BA0A8" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </template>
-              Add Trigger
-            </n-popover>
-          </div>
-          <div class="menu-bd">
-            <div class="menu-item flex-center-sb" :class="{'menu-item-actived': item.id == store.state.activatedId}" v-for="(item, index) in store.state.triggers" :key="item.i " @click="changeMenu(item.id)">{{item.name}}
-              <n-popconfirm :show-icon="false" @click.stop ref="popconfirmRef">
+  <n-spin size="small" :show="isSpin">
+    <n-layout class="layout">
+      <Nav />
+      <n-layout class="layout-body" has-sider>
+        <n-layout-sider
+          class="layout-sider"
+          content-style="padding: 16px 8px;"
+          :native-scrollbar="false"
+          width="200px"
+          bordered
+        >
+          <div class="menu">
+            <div class="menu-hd flex-center-sb">Trigger列表
+              <n-popover placement="right" style="width: auto;background: rgba(6, 30, 85, 0.9);backdrop-filter: blur(2.5px);color:#FFF"
+              :arrow-style="{background: 'rgba(6, 30, 85, 0.9)', 'backdrop-filter': 'blur(2.5px)'}">
                 <template #trigger>
-                  <svg class="del-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9.33325 6.66663L9.33325 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M6.66675 6.66663L6.66675 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M12 4H4V13.3333C4 13.7015 4.29848 14 4.66667 14H11.3333C11.7015 14 12 13.7015 12 13.3333V4Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M2.66675 4H13.3334" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M9.99992 2H5.99992C5.63173 2 5.33325 2.29848 5.33325 2.66667V4H10.6666V2.66667C10.6666 2.29848 10.3681 2 9.99992 2Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                  <svg @click="showModal('trigger')" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 8H13" stroke="#9BA0A8" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M8 13L8 3" stroke="#9BA0A8" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </template>
-                <template #action>
-                  <div class="del-btns flex-center">
-                    <div class="btn-no flex-center-center" @click.stop="cancel">取消</div>
-                    <div class="btn-yes flex-center-center" @click.stop="delTriggerItem(index)">确认</div>
+                Add Trigger
+              </n-popover>
+            </div>
+            <div class="menu-bd">
+              <div class="menu-item flex-center-sb" :class="{'menu-item-actived': item.id == store.state.activatedId}" v-for="(item, index) in store.state.triggers" :key="item.i " @click="changeMenu(item.id)">{{item.name}}
+                <n-popconfirm :show-icon="false" @click.stop ref="popconfirmRef">
+                  <template #trigger>
+                    <svg class="del-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M9.33325 6.66663L9.33325 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M6.66675 6.66663L6.66675 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M12 4H4V13.3333C4 13.7015 4.29848 14 4.66667 14H11.3333C11.7015 14 12 13.7015 12 13.3333V4Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M2.66675 4H13.3334" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M9.99992 2H5.99992C5.63173 2 5.33325 2.29848 5.33325 2.66667V4H10.6666V2.66667C10.6666 2.29848 10.3681 2 9.99992 2Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </template>
+                  <template #action>
+                    <div class="del-btns flex-center">
+                      <div class="btn-no flex-center-center" @click.stop="cancel(index)">取消</div>
+                      <div class="btn-yes flex-center-center" @click.stop="delTriggerItem(index)">确认</div>
+                    </div>
+                  </template>
+                  <div class="flex-center">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="8.00008" cy="8.00002" r="7.33333" fill="#F98080"/>
+                      <path d="M5.27783 5.27777L10.7223 10.7222" stroke="white" stroke-linejoin="round"/>
+                      <path d="M10.7222 5.27777L5.27772 10.7222" stroke="white" stroke-linejoin="round"/>
+                    </svg>
+                    <span style="margin-left: 8px">确认删除【{{item.name}}】？</span>
                   </div>
-                </template>
-                <div class="flex-center">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="8.00008" cy="8.00002" r="7.33333" fill="#F98080"/>
-                    <path d="M5.27783 5.27777L10.7223 10.7222" stroke="white" stroke-linejoin="round"/>
-                    <path d="M10.7222 5.27777L5.27772 10.7222" stroke="white" stroke-linejoin="round"/>
+                </n-popconfirm>
+              </div>
+            </div>
+            <div class="menu-hd flex-center-sb">Contract列表
+              <n-popover placement="right" style="width: auto;background: rgba(6, 30, 85, 0.9);backdrop-filter: blur(2.5px);color:#FFF"
+              :arrow-style="{background: 'rgba(6, 30, 85, 0.9)', 'backdrop-filter': 'blur(2.5px)'}">
+                <template #trigger>
+                  <svg @click="showModal('contract')" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 8H13" stroke="#9BA0A8" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M8 13L8 3" stroke="#9BA0A8" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
-                  <span style="margin-left: 8px">确认删除【{{item.name}}】？</span>
-                </div>
-              </n-popconfirm>
+                </template>
+                Add Contract
+              </n-popover>
+            </div>
+            <div class="menu-bd">
+              <div class="menu-item flex-center-sb" v-for="(item, index) in store.state.contracts" :key="item.id" @click="showModal('contract', item)">{{item.name}}
+                <n-popconfirm :show-icon="false" @click.stop ref="contractPopconfirmRef">
+                  <template #trigger>
+                    <svg @click.stop class="del-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M9.33325 6.66663L9.33325 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M6.66675 6.66663L6.66675 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M12 4H4V13.3333C4 13.7015 4.29848 14 4.66667 14H11.3333C11.7015 14 12 13.7015 12 13.3333V4Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M2.66675 4H13.3334" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M9.99992 2H5.99992C5.63173 2 5.33325 2.29848 5.33325 2.66667V4H10.6666V2.66667C10.6666 2.29848 10.3681 2 9.99992 2Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </template>
+                  <template #action>
+                    <div class="del-btns flex-center">
+                      <div class="btn-no flex-center-center" @click.stop="cancel(index, 'contract')">取消</div>
+                      <div class="btn-yes flex-center-center" @click.stop="delContractItem(index)">确认</div>
+                    </div>
+                  </template>
+                  <div class="flex-center">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="8.00008" cy="8.00002" r="7.33333" fill="#F98080"/>
+                      <path d="M5.27783 5.27777L10.7223 10.7222" stroke="white" stroke-linejoin="round"/>
+                      <path d="M10.7222 5.27777L5.27772 10.7222" stroke="white" stroke-linejoin="round"/>
+                    </svg>
+                    <span style="margin-left: 8px">确认删除【{{item.name}}】？</span>
+                  </div>
+                </n-popconfirm>
+              </div>
             </div>
           </div>
-          <div class="menu-hd flex-center-sb">Contract列表
-            <n-popover placement="right" style="width: auto;background: rgba(6, 30, 85, 0.9);backdrop-filter: blur(2.5px);color:#FFF"
-            :arrow-style="{background: 'rgba(6, 30, 85, 0.9)', 'backdrop-filter': 'blur(2.5px)'}">
-              <template #trigger>
-                <svg @click="showModal('contract')" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M3 8H13" stroke="#9BA0A8" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M8 13L8 3" stroke="#9BA0A8" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </template>
-              Add Contract
-            </n-popover>
+        </n-layout-sider>
+        <n-layout :native-scrollbar="false">
+          <div class="flex-start">
+            <TriggerDetail @createTrigger="showModal('trigger')" />
+            <Msgs />
           </div>
-          <div class="menu-bd">
-            <div class="menu-item flex-center-sb" v-for="(item, index) in store.state.contracts" :key="item.id" @click="showModal('contract', item)">{{item.name}}
-              <n-popconfirm :show-icon="false" @click.stop ref="contractPopconfirmRef">
-                <template #trigger>
-                  <svg @click.stop class="del-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9.33325 6.66663L9.33325 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M6.66675 6.66663L6.66675 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M12 4H4V13.3333C4 13.7015 4.29848 14 4.66667 14H11.3333C11.7015 14 12 13.7015 12 13.3333V4Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M2.66675 4H13.3334" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M9.99992 2H5.99992C5.63173 2 5.33325 2.29848 5.33325 2.66667V4H10.6666V2.66667C10.6666 2.29848 10.3681 2 9.99992 2Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </template>
-                <template #action>
-                  <div class="del-btns flex-center">
-                    <div class="btn-no flex-center-center" @click.stop="cancel('contract')">取消</div>
-                    <div class="btn-yes flex-center-center" @click.stop="delContractItem(index)">确认</div>
-                  </div>
-                </template>
-                <div class="flex-center">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="8.00008" cy="8.00002" r="7.33333" fill="#F98080"/>
-                    <path d="M5.27783 5.27777L10.7223 10.7222" stroke="white" stroke-linejoin="round"/>
-                    <path d="M10.7222 5.27777L5.27772 10.7222" stroke="white" stroke-linejoin="round"/>
-                  </svg>
-                  <span style="margin-left: 8px">确认删除【{{item.name}}】？</span>
-                </div>
-              </n-popconfirm>
-            </div>
-          </div>
-        </div>
-      </n-layout-sider>
-      <n-layout :native-scrollbar="false">
-        <div class="flex-start">
-          <TriggerDetail @createTrigger="showModal('trigger')" />
-          <Msgs />
-        </div>
+        </n-layout>
       </n-layout>
     </n-layout>
-  </n-layout>
+  </n-spin>
   <AddContract ref="addContractRef" />
   <AddTrigger ref="addTriggerRef" />
+  <Password ref="passwordRef" @submit="submit" />
 </div>
   
 </template>

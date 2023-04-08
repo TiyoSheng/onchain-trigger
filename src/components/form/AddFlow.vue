@@ -16,6 +16,14 @@ const flowItem = ref({
   handdleList: []
 })
 
+const methods = [{
+  value: 'GET',
+  label: 'GET'
+}, {
+  value: 'POST',
+  label: 'POST'
+}]
+
 let handdleIndex = -1
 
 const getParams = (index) => {
@@ -190,18 +198,6 @@ const radioUpdate = (index) => {
   handdle.method = ''
   handdle.headers = []
   handdle.params = []
-  if (handdle.type === 'http') {
-    handdle.params.push({
-      key: '',
-      value: '',
-      type: ''
-    })
-    handdle.headers.push({
-      key: '',
-      value: '',
-      type: ''
-    })
-  }
   flowItem.value.handdleList[index] = JSON.parse(JSON.stringify(handdle))
 }
 
@@ -248,7 +244,13 @@ defineExpose({
           <n-input v-model:value="item.url" placeholder="输入请求地址" autocomplete="off" />
         </n-form-item>
         <n-form-item label="请求方法：">
-          <n-input v-model:value="item.method" placeholder="输入请求方法" autocomplete="off" />
+          <n-select 
+            v-model:value="item.method"
+            :options="methods"
+            label-field="label"
+            value-field="value"
+            placeholder="选择请求方法"
+          />
         </n-form-item>
         <n-form-item label="请求参数：">
           <div style="width: 100%">
@@ -271,7 +273,7 @@ defineExpose({
                   <path d="M8 13L8 3" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </div>
-              <div v-if="i > 0" class="icon" @click="delParams(index, i, 'params')">
+              <div class="icon" @click="delParams(index, i, 'params')">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M9.33325 6.66663L9.33325 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
                   <path d="M6.66675 6.66663L6.66675 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
@@ -281,6 +283,7 @@ defineExpose({
                 </svg>
               </div>
             </div>
+            <div v-if="!item.params?.length" class="btn" @click="addParams(index, 'params')">添加参数</div>
           </div>
         </n-form-item>
         <n-form-item label="请求Headers：">
@@ -304,7 +307,7 @@ defineExpose({
                   <path d="M8 13L8 3" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </div>
-              <div v-if="i > 0" class="icon" @click="delParams(index, i, 'headers')">
+              <div class="icon" @click="delParams(index, i, 'headers')">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M9.33325 6.66663L9.33325 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
                   <path d="M6.66675 6.66663L6.66675 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
@@ -314,6 +317,7 @@ defineExpose({
                 </svg>
               </div>
             </div>
+            <div v-if="!item.headers?.length" class="btn" @click="addParams(index, 'headers')">添加Headers</div>
           </div>
         </n-form-item>
       </div>

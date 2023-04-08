@@ -100,6 +100,11 @@ const runFunction = async (funList, paramList) => {
   }
   let item = funList.shift()
   if (item.type == 'contract') {
+    if (!trigger.value.wallet?.address) {
+      message.error("请先设置钱包")
+      loading.value = ''
+      return
+    }
     let inputs = getInputs(item.contractId, item.functionName)
     let C = await setContract(item.contractId)
     let p = []

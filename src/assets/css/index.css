@@ -115,7 +115,9 @@
   color: #4C4F53;
 }
 
-.n-input__input-el {
+.n-input__input-el,
+.n-base-selection-input__content,
+.n-radio__label {
   font-weight: 400;
   font-size: 13px !important;
   color: #262C33 !important;
@@ -163,5 +165,22 @@
 .jv-node:after {
   color: #FFFFFF;
   font-family: Avenir, Helvetica, Arial, sans-serif;
+}
+
+.n-card-header,
+.n-card__content {
+  padding: 16px !important;
+}
+
+.n-card-header {
+  padding-bottom: 12px !important;
+}
+
+.n-card__content {
+  padding-top: 0 !important;
+}
+
+.n-card > .n-card-header .n-card-header__main {
+  font-size: 16px;
 }
 

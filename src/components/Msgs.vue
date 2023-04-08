@@ -312,6 +312,15 @@ watch(() => store.state.activatedId, (val) => {
   off()
 }, {immediate: true})
 
+watch(() => store.state.triggers, (val) => {
+  if (val && store.state.activatedId) {
+    const trigger = store.state.triggers.find(item => item.id === store.state.activatedId)
+    if (!trigger) return
+    msgs.value = trigger.messages || []
+    triggerData.value = JSON.parse(JSON.stringify(trigger))
+  }
+}, {immediate: true, deep: true})
+
 watch(() => msgs.value, (val) => {
   if (val) {
     setTimeout(() => {
@@ -322,11 +331,12 @@ watch(() => msgs.value, (val) => {
 </script>
 <template>
   <div class="msgs" ref="msgsRef">
-    <div class="msg-item" v-for="(item, index) in msgs" :key="index">
-      <div class="msg-title">{{getType(item.type)}}-{{item.name}}</div>
-      <JsonViewer :value="item.result" />
+    <div class="msg-list">
+      <div class="msg-item" v-for="(item, index) in msgs" :key="index">
+        <div class="msg-title">{{getType(item.type)}}-{{item.name}}</div>
+        <JsonViewer :value="item.result" />
+      </div>
     </div>
-
     <div class="ft flex-center-sb">
       <div class="ft-l flex-center">
         <div class="status" :style="{background: triggerData.status == 'on' ? '#31C48D' : '#F98080'}"></div>
@@ -352,6 +362,12 @@ watch(() => msgs.value, (val) => {
   padding: 24px;
   box-sizing: border-box;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  .msg-list {
+    flex: 1;
+    margin-bottom: 10px;
+  }
   .msg-item {
     background: rgb(41, 44, 51);
     padding: 16px;
@@ -369,6 +385,7 @@ watch(() => msgs.value, (val) => {
 .ft {
   width: 100%;
   height: 52px;
+  flex:  0 0 52px;
   position: sticky;
   bottom: 0;
   background: rgba(255, 255, 255, 0.9);

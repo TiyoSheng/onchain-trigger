@@ -33,6 +33,7 @@ const addWallet = () => {
 }
 
 const addSuccess = (val) => {
+  console.log('addSuccess', val)
   walletKey.value = val.privateKey
 }
 
@@ -42,6 +43,7 @@ const cancel = () => {
 }
 
 watch(() => store.state.wallets, (val) => {
+  console.log('watch', val)
   val.map((item) => {
     item.label = `${item.name} (${item.address.slice(0, 6)}...${item.address.slice(-4)})`
     item.privateKey = item.privateKey
@@ -49,7 +51,7 @@ watch(() => store.state.wallets, (val) => {
 
   })
   wallets.value = val
-}, {immediate: true})
+}, {immediate: true, deep: true})
 
 defineExpose({
   showModal,

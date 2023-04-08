@@ -39,7 +39,7 @@ const handleCreatedContractData = async () => {
       message.error('合约地址已存在')
       return
     }
-    contractData.value.id = crypto.randomUUID()
+    contractData.value.id = contractData.value.address
     contracts.push(contractData.value)
     message.success('添加成功')
   }

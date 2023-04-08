@@ -61,7 +61,14 @@ const getParamLabel = (item) => {
   console.log(item)
   if (item.type == 'param') {
     let param = params.value.find(param => param.key === item.value)
-    return param.label
+    console.log(param)
+    if (param) {
+      return param.label
+    } else {
+      if (item.value == 'currentWalletAddress' && !triggerData?.wallet?.address) {
+        return '请设置钱包'
+      }
+    }
   } else {
     return item.name
   }
@@ -100,6 +107,8 @@ const getContract = (id, type, funName) => {
   let contract = store.state.contracts.find(item => item.id === id)
   if (type == 'type') {
     let abi = JSON.parse(contract.abi)
+    console.log(funName)
+    if (!funName) return ''
     let type = abi.find(item => item.name === funName).stateMutability
     return type
   } else if (type == 'name') {
@@ -116,7 +125,7 @@ watch(() => props.triggerId, (val) => {
     let trigger = store.state.triggers.find(item => item.id === val)
     trigger = JSON.parse(JSON.stringify(trigger))
     triggers.value = JSON.parse(JSON.stringify(trigger.triggers))
-    let globalParams = trigger.globalParams
+    let globalParams = JSON.parse(JSON.stringify(trigger.globalParams))
     let address = trigger.wallet?.address
     if (address) {
       globalParams.push({key: 'currentWalletAddress', value: address})
@@ -133,11 +142,37 @@ watch(() => props.triggerId, (val) => {
         type: 'param'
       }
     })
-    console.log(trigger)
     triggerData.value = trigger
     params.value = globalParams || []
   }
 }, {immediate: true})
+
+watch(() => store.state.triggers, (val) => {
+  if (val && store.state.activatedId) {
+    const trigger = store.state.triggers.find(item => item.id === store.state.activatedId)
+    if (trigger) {
+      triggerData.value = JSON.parse(JSON.stringify(trigger))
+      let globalParams = JSON.parse(JSON.stringify(trigger.globalParams))
+      let address = trigger.wallet?.address
+      if (address) {
+        globalParams.push({key: 'currentWalletAddress', value: address})
+      }
+      globalParams = globalParams.map(e => {
+        let value = e.value
+        if (value.length > 24) {
+          value = `${value.slice(0, 6)}...${value.slice(-4)}`
+        }
+        return {
+          key: e.key,
+          value: e.value,
+          label: `${e.key == 'currentWalletAddress' ? '当前钱包地址' : e.key} (${value})`,
+          type: 'param'
+        }
+      })
+      params.value = globalParams || []
+    }
+  }
+}, {immediate: true, deep: true})
 </script>
 <template>
   <div class="trigger">
