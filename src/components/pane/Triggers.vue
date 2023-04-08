@@ -9,7 +9,7 @@ const message = useMessage()
 
 const emit = defineEmits(['setTrigger', 'setMessage'])
 const props = defineProps({
-  triggerId: String
+  trigger: Object
 })
 
 const addTriggerRef = ref(null)
@@ -120,10 +120,9 @@ const getContract = (id, type, funName) => {
   }
 }
 
-watch(() => props.triggerId, (val) => {
+watch(() => props.trigger, (val) => {
   if (val) {
-    let trigger = store.state.triggers.find(item => item.id === val)
-    trigger = JSON.parse(JSON.stringify(trigger))
+    let trigger = JSON.parse(JSON.stringify(val))
     triggers.value = JSON.parse(JSON.stringify(trigger.triggers))
     let globalParams = JSON.parse(JSON.stringify(trigger.globalParams))
     let address = trigger.wallet?.address
@@ -145,34 +144,8 @@ watch(() => props.triggerId, (val) => {
     triggerData.value = trigger
     params.value = globalParams || []
   }
-}, {immediate: true})
-
-watch(() => store.state.triggers, (val) => {
-  if (val && store.state.activatedId) {
-    const trigger = store.state.triggers.find(item => item.id === store.state.activatedId)
-    if (trigger) {
-      triggerData.value = JSON.parse(JSON.stringify(trigger))
-      let globalParams = JSON.parse(JSON.stringify(trigger.globalParams))
-      let address = trigger.wallet?.address
-      if (address) {
-        globalParams.push({key: 'currentWalletAddress', value: address})
-      }
-      globalParams = globalParams.map(e => {
-        let value = e.value
-        if (value.length > 24) {
-          value = `${value.slice(0, 6)}...${value.slice(-4)}`
-        }
-        return {
-          key: e.key,
-          value: e.value,
-          label: `${e.key == 'currentWalletAddress' ? '当前钱包地址' : e.key} (${value})`,
-          type: 'param'
-        }
-      })
-      params.value = globalParams || []
-    }
-  }
 }, {immediate: true, deep: true})
+
 </script>
 <template>
   <div class="trigger">

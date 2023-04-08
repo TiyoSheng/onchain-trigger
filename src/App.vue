@@ -23,6 +23,7 @@ const init = async () => {
   let triggers = await getLs('triggers') || []
   let activatedId = await getLs('activatedId') || ''
   let isV2 = await getLs('isV2') || false
+  console.log('isV2',isV2)
   if (!isV2) {
     setLs('isV2', true)
     setLs('triggers', [])

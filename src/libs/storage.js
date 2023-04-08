@@ -8,10 +8,10 @@ export const getLs = (itemName) => {
       if (value !== null) {
         resolve(value)
       } else {
-        resolve([])
+        resolve(null)
       }
     }).catch(() => {
-      resolve([])
+      resolve(null)
     })
   })
 }

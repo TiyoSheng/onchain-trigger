@@ -10,7 +10,7 @@ const message = useMessage()
 
 const emit = defineEmits(['setFlows', 'setMessage'])
 const props = defineProps({
-  triggerId: String
+  triggerData: Object
 })
 
 const trigger = ref({})
@@ -295,11 +295,12 @@ const init = (val) => {
   params.value = globalParams || []
 }
 
-watch(() => props.triggerId, (val) => {
+watch(() => props.triggerData, (val) => {
   if (val) {
-    init(val)
+    console.log('val', val)
+    init(val.id)
   }
-}, {immediate: true})
+}, {immediate: true, deep: true})
 
 </script>
 <template>

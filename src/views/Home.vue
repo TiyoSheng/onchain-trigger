@@ -67,6 +67,7 @@ const submit = (val) => {
         return
       }
       // 根据id 去重
+      contracts.push(...newContracts)
       let newContractsArr = []
       let obj = {}
       for (let i = 0; i < contracts.length; i++) {
@@ -79,9 +80,9 @@ const submit = (val) => {
       await setTriggrts(triggers)
       await setContracts(newContractsArr)
       await setActivatedId(trigger.id)
-      await setLs('contracts', JSON.parse(JSON.stringify(contracts)))
+      await setLs('contracts', JSON.parse(JSON.stringify(newContractsArr)))
       await setLs('triggers', JSON.parse(JSON.stringify(triggers)))
-      await setLs('setActivatedId', JSON.parse(JSON.stringify(trigger.id)))
+      await setLs('activatedId', JSON.parse(JSON.stringify(trigger.id)))
       router.replace({
         path: '/'
       })
@@ -127,11 +128,16 @@ const showModal = (type, item) => {
   }
 }
 
-const cancel = (index, type) => {
+const cancel = (type) => {
   if (type == 'contract') {
-    contractPopconfirmRef.value[index].setShow(false)
+    contractPopconfirmRef.value.forEach(e => {
+      e.setShow(false)
+    })
   } else {
-    popconfirmRef.value[index].setShow(false)
+    console.log(popconfirmRef.value)
+    popconfirmRef.value.forEach(e => {
+      e.setShow(false)
+    })
   }
 }
 
@@ -141,6 +147,7 @@ const delContractItem = async (index) => {
   await setContracts(contracts)
   await setLs('contracts', JSON.parse(JSON.stringify(contracts)))
   message.success('删除成功')
+  cancel()
 }
 
 const delTriggerItem = async (index) => {
@@ -208,7 +215,7 @@ const changeMenu = async (id) => {
                   </template>
                   <template #action>
                     <div class="del-btns flex-center">
-                      <div class="btn-no flex-center-center" @click.stop="cancel(index)">取消</div>
+                      <div class="btn-no flex-center-center" @click.stop="cancel('')">取消</div>
                       <div class="btn-yes flex-center-center" @click.stop="delTriggerItem(index)">确认</div>
                     </div>
                   </template>
@@ -249,7 +256,7 @@ const changeMenu = async (id) => {
                   </template>
                   <template #action>
                     <div class="del-btns flex-center">
-                      <div class="btn-no flex-center-center" @click.stop="cancel(index, 'contract')">取消</div>
+                      <div class="btn-no flex-center-center" @click.stop="cancel('contract')">取消</div>
                       <div class="btn-yes flex-center-center" @click.stop="delContractItem(index)">确认</div>
                     </div>
                   </template>

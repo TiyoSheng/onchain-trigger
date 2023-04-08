@@ -10,7 +10,7 @@ const message = useMessage()
 
 const emit = defineEmits(['setFunctions', 'setMessage'])
 const props = defineProps({
-  triggerId: String,
+  triggerData: Object,
 })
 
 const params = ref([])
@@ -149,9 +149,8 @@ const apply = async (item) => {
   emit('setMessage', msg)
 }
 
-watch(() => props.triggerId, (val) => {
-  let trigger = store.state.triggers.find(item => item.id === val)
-  trigger = JSON.parse(JSON.stringify(trigger))
+watch(() => props.triggerData, (val) => {
+  let trigger = JSON.parse(JSON.stringify(val))
   let funs = trigger.functions
   let globalParams = trigger.globalParams
   let address = trigger.wallet?.address
@@ -173,7 +172,7 @@ watch(() => props.triggerId, (val) => {
   walletAddress.value = address
   params.value = globalParams || []
   functions.value = funs || []
-}, {immediate: true})
+}, {immediate: true, deep: true})
 
   
 </script>

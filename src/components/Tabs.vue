@@ -54,7 +54,7 @@ const setFlows = (flows) => {
 
 watch(() => props.trigger, (val) => {
   triggerData.value = val
-}, {immediate: true})
+}, {immediate: true, deep: true})
 </script>
 <template>
   <div class="tabs">
@@ -69,20 +69,20 @@ watch(() => props.trigger, (val) => {
       </div>
       <div v-if="tabIndex == 1">
         <Flows 
-          :triggerId="triggerData.id"
+          :triggerData="triggerData"
           @setFlows="setFlows"
           @setMessage="setMessage"
         />
       </div>
       <div v-if="tabIndex == 2">
         <Functions
-          :triggerId="triggerData.id"
+          :triggerData="triggerData"
           @setFunctions="setFunctions"
           @setMessage="setMessage"
         />
       </div>
       <div v-if="tabIndex == 3">
-        <Triggers :triggerId="triggerData.id" @setTrigger="setTriggers" @setMessage="setMessage" />
+        <Triggers :trigger="triggerData" @setTrigger="setTriggers" @setMessage="setMessage" />
       </div>
     </div>
   </div>
