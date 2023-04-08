@@ -182,7 +182,9 @@ watch(() => props.trigger, (val) => {
 
 watch(() => store.state.countdownDuration, (val) => {
   console.log(val)
-  countdownRef.value[0].reset()
+  if (countdownRef.value && countdownRef.value[0]) {
+    countdownRef.value[0].reset()
+  }
 }, {deep: true})
 
 </script>
