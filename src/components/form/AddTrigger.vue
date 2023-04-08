@@ -12,6 +12,7 @@ const showAddModal = ref(false)
 const modalTitle = ref('设置触发器')
 const params = ref([])
 const triggerItem = ref({
+  type: 'contract',
   filter: [],
   handdleList: []
 })
@@ -46,6 +47,20 @@ const inputFun = [{
   value: '$ne'
 }]
 
+const units = [{
+  label: '秒',
+  value: 's'
+}, {
+  label: '分钟',
+  value: 'm'
+}, {
+  label: '小时',
+  value: 'h'
+}, {
+  label: '天',
+  value: 'd'
+}]
+
 let handdleIndex = -1
 
 const addContract = (index) => {
@@ -66,7 +81,7 @@ const addContractSuccess = (val) => {
 }
 
 const contractChange = (index) => {
-  if (index) {
+  if (index > -1) {
     let handdle = triggerItem.value.handdleList[index]
     handdle.functionName = ''
     triggerItem.value.handdleList[index] = JSON.parse(JSON.stringify(handdle))
@@ -76,6 +91,10 @@ const contractChange = (index) => {
 }
 
 const addHanddle = () => {
+  console.log(triggerItem.value)
+  if (!triggerItem.value.handdleList) {
+    triggerItem.value.handdleList = []
+  }
   triggerItem.value.handdleList.push({
     contractId: '',
     functionName: '',
@@ -103,12 +122,43 @@ const delFilter = (index) => {
 
 const handleOk = () => {
   let trigger = JSON.parse(JSON.stringify(triggerItem.value))
-  console.log(trigger)
-  emit('handleOk', trigger)
+  let data = {}
+  if (trigger.type === 'time') {
+    if (trigger.timeType == 'timing') {
+      data = {
+        type: 'time',
+        timeType: 'timing',
+        timestamp: trigger.timestamp
+      }
+    } else {
+      data = {
+        type: 'time',
+        timeType: 'loop',
+        interval: trigger.interval,
+        unit: trigger.unit,
+      }
+    }
+  } else {
+    data = {
+      type: 'contract',
+      contractId: trigger.contractId,
+      functionName: trigger.functionName,
+      filter: trigger.filter,
+    }
+  }
+  data.handdleList = trigger.handdleList
+  data.name = trigger.name
+  data.id = trigger.id || ''
+  emit('handleOk', data)
   cancel()
 }
 
 const cancel = () => {
+  triggerItem.value = {
+    type: 'contract',
+    filter: [],
+    handdleList: []
+  }
   showAddModal.value = false
 }
 
@@ -132,6 +182,7 @@ const getFitlerParams = (id ,name) => {
 
 const argsChange = (key, val, index) => {
   let handdle = triggerItem.value.handdleList[index]
+  console.log(handdle)
   if (val) {
     let param = params.value.find(item => item.key === val)
     if (param) {
@@ -146,13 +197,22 @@ const functionChange = (index) => {
   let handdle = triggerItem.value.handdleList[index]
   let fun = getAbi(handdle.contractId).find(item => item.name === handdle.functionName)
   handdle.args = {}
-  fun.inputs.forEach(item => {
-    handdle.args[item.name] = {
-      value: '',
-      condition: '$eq',
-      type: ''
-    }
-  })
+  if (triggerItem.value.type === 'time') {
+    fun.inputs.forEach(item => {
+      handdle.args[item.name] = {
+        value: '',
+        type: ''
+      }
+    })
+  } else {
+    fun.inputs.forEach(item => {
+      handdle.args[item.name] = {
+        value: '',
+        condition: '$eq',
+        type: ''
+      }
+    })
+  }
 }
 
 const filterValueChange = (index) => {
@@ -162,6 +222,18 @@ const filterValueChange = (index) => {
     filter.type = param.type
   } else {
     filter.type = 'var'
+  }
+}
+
+const radioUpdate = () => {
+  triggerItem.value.handdleList = []
+  triggerItem.value.filter = []
+  triggerItem.value.functionName = ''
+  triggerItem.value.contractId = '',
+  triggerItem.value.timeType = ''
+  if (triggerItem.value.type === 'time') {
+    triggerItem.value.timeType = 'timing'
+    triggerItem.value.unit = 's'
   }
 }
 
@@ -175,7 +247,7 @@ defineExpose({
   <n-modal
     v-model:show="showAddModal"
     :mask-closable="false"
-    :style="{width: '600px', 'border-radius': '10px', maxHeight: '80vh', overflow: 'auto'}"
+    :style="{width: '600px', 'border-radius': '10px'}"
     preset="card"
     :title="modalTitle"
     @afterLeave="cancel"
@@ -183,98 +255,62 @@ defineExpose({
     <n-form-item label="触发器名称：">
       <n-input v-model:value="triggerItem.name" placeholder="输入触发器名称" autocomplete="off" />
     </n-form-item>
-    <n-form-item label="选择合约：">
-      <n-select
-        v-model:value="triggerItem.contractId"
-        placeholder="选择合约"
-        filterable
-        :options="store.state.contracts"
-        label-field="name"
-        value-field="id"
-        @update:value="contractChange('')"
-      >
-        <template #action>
-          <p @click="addContract(-1)" class="add-new-btn">添加新合约</p>
-        </template>
-      </n-select>
+    <n-form-item label="触发器类型：">
+      <n-radio-group v-model:value="triggerItem.type" name="radio" size="large" @update:value="radioUpdate">
+        <n-radio-button value="contract">合约触发器</n-radio-button>
+        <n-radio-button value="time">时间触发器</n-radio-button>
+      </n-radio-group>
     </n-form-item>
-    <n-form-item label="选择合约方法：">
-      <n-select
-        v-model:value="triggerItem.functionName"
-        placeholder="选择合约方法"
-        :options="getAbi(triggerItem?.contractId)"
-        filterable
-        label-field="name"
-        value-field="name"
-      />
-    </n-form-item>
-    <n-form-item label="过滤逻辑：">
-      <div style="width: 100%">
-        <div v-for="(filter, index) in triggerItem.filter" class="flex-center filter-item">
-          <n-select
-            v-model:value="filter.name"
-            placeholder="选择过滤参数"
-            :options="getFitlerParams(triggerItem?.contractId, triggerItem?.functionName)"
-            label-field="label"
-            value-field="value"
-            style="flex:0 0 180px"
-          />
-          <n-select
-            v-model:value="filter.condition"
-            placeholder="选择过滤条件"
-            :options="filterConditions"
-            label-field="label"
-            value-field="value"
-            style="margin: 0 12px;width: 100px;flex:0 0 100px"
-          />
-          <n-select
-            v-model:value="filter.value"
-            placeholder="选择过滤值"
-            :options="params"
-            label-field="label" 
-            value-field="key"
-            @update:value="filterValueChange(index)"
-          />
-          <div class="del" @click="delFilter(index)">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M9.33325 6.66663L9.33325 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M6.66675 6.66663L6.66675 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M12 4H4V13.3333C4 13.7015 4.29848 14 4.66667 14H11.3333C11.7015 14 12 13.7015 12 13.3333V4Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M2.66675 4H13.3334" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M9.99992 2H5.99992C5.63173 2 5.33325 2.29848 5.33325 2.66667V4H10.6666V2.66667C10.6666 2.29848 10.3681 2 9.99992 2Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-        </div>
-        <div class="btn" @click="addFilter">添加过滤条件</div>
-      </div>
-    </n-form-item>
-    <n-divider class="divider"><p>监听后执行</p></n-divider>
-    <div v-for="(item, index) in triggerItem.handdleList" :key="index" class="handdle-item">
-      <div class="handdle-item-del" @click="delHanddle(index)">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M9.33325 6.66663L9.33325 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M6.66675 6.66663L6.66675 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M12 4H4V13.3333C4 13.7015 4.29848 14 4.66667 14H11.3333C11.7015 14 12 13.7015 12 13.3333V4Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M2.66675 4H13.3334" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M9.99992 2H5.99992C5.63173 2 5.33325 2.29848 5.33325 2.66667V4H10.6666V2.66667C10.6666 2.29848 10.3681 2 9.99992 2Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-      <n-form-item label="函数名称：">
-        <n-input v-model:value="item.name" placeholder="输入函数名称" autocomplete="off" />
+    <div v-if="triggerItem.type == 'time'">
+      <n-form-item label="触发方式：">
+        <n-radio-group v-model:value="triggerItem.timeType" name="radio" size="large">
+          <n-radio-button value="timing">定时触发</n-radio-button>
+          <n-radio-button value="loop">循环触发</n-radio-button>
+        </n-radio-group>
       </n-form-item>
-      <div>
+      <div v-show="triggerItem.timeType == 'timing'">
+        <n-form-item label="触发时间：">
+          <n-date-picker v-model:value="triggerItem.timestamp" type="datetime" clearable />
+        </n-form-item>
+      </div>
+      <div v-show="triggerItem.timeType == 'loop'">
+        <n-form-item label="触发间隔：">
+          <n-input-number style="margin-right: 12px" v-model:value="triggerItem.interval" :min="1" :max="100000" />
+          <n-select 
+            v-model:value="triggerItem.unit"
+            :options="units"
+            label-field="label" 
+            value-field="value"
+            style="width: 120px"
+          />
+        </n-form-item>
+      </div>
+      <n-divider class="divider"><p>触发后执行</p></n-divider>
+      <div v-for="(item, index) in triggerItem.handdleList" :key="index" class="handdle-item">
+        <div class="handdle-item-del" @click="delHanddle(index)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9.33325 6.66663L9.33325 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M6.66675 6.66663L6.66675 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 4H4V13.3333C4 13.7015 4.29848 14 4.66667 14H11.3333C11.7015 14 12 13.7015 12 13.3333V4Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2.66675 4H13.3334" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M9.99992 2H5.99992C5.63173 2 5.33325 2.29848 5.33325 2.66667V4H10.6666V2.66667C10.6666 2.29848 10.3681 2 9.99992 2Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <n-form-item label="函数名称：">
+          <n-input v-model:value="item.name" placeholder="输入函数名称" autocomplete="off" />
+        </n-form-item>
         <n-form-item label="选择合约：">
           <n-select
             v-model:value="item.contractId"
             placeholder="选择合约"
             filterable
             :options="store.state.contracts"
+            @update:value="contractChange(index)"
             label-field="name"
             value-field="id"
-            @update:value="contractChange(index)"
           >
             <template #action>
-              <p @click="addContract(index)" class="add-new-btn">添加新合约</p>
+              <p @click="addContract" class="add-new-btn">添加新合约</p>
             </template>
           </n-select>
         </n-form-item>
@@ -282,7 +318,7 @@ defineExpose({
           <n-select
             v-model:value="item.functionName"
             placeholder="选择合约方法"
-            :options="getAbi(item?.contractId)"
+            :options="getAbi(item.contractId)"
             filterable
             label-field="name"
             value-field="name"
@@ -293,26 +329,153 @@ defineExpose({
           <p>参数：</p>
           <div v-for="(val, key, i) in item.args" :key="i" class="input-item flex-center" >
             <p>{{key}}：</p>
-            <n-select 
-              v-model:value="val.condition"
-              filterable 
-              tag 
-              :options="inputFun" 
-              label-field="label" 
+            <div>
+              <n-select 
+                v-model:value="val.value"
+                filterable 
+                tag 
+                :options="params" 
+                label-field="label" 
+                value-field="key"
+                @update:value="argsChange(key, val.value, index)"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div v-else>
+      <n-form-item label="选择合约：">
+        <n-select
+          v-model:value="triggerItem.contractId"
+          placeholder="选择合约"
+          filterable
+          :options="store.state.contracts"
+          label-field="name"
+          value-field="id"
+          @update:value="contractChange('')"
+        >
+          <template #action>
+            <p @click="addContract(-1)" class="add-new-btn">添加新合约</p>
+          </template>
+        </n-select>
+      </n-form-item>
+      <n-form-item label="选择合约方法：">
+        <n-select
+          v-model:value="triggerItem.functionName"
+          placeholder="选择合约方法"
+          :options="getAbi(triggerItem?.contractId)"
+          filterable
+          label-field="name"
+          value-field="name"
+        />
+      </n-form-item>
+      <n-form-item label="过滤逻辑：">
+        <div style="width: 100%">
+          <div v-for="(filter, index) in triggerItem.filter" class="flex-center filter-item">
+            <n-select
+              v-model:value="filter.name"
+              placeholder="选择过滤参数"
+              :options="getFitlerParams(triggerItem?.contractId, triggerItem?.functionName)"
+              label-field="label"
               value-field="value"
-              style="margin:12px;flex:0 0 100px"
+              style="flex:0 0 180px"
             />
-            <n-select 
-              v-if="val.condition == '$ne'"
-              v-model:value="val.value"
-              filterable 
-              tag 
-              :options="params" 
+            <n-select
+              v-model:value="filter.condition"
+              placeholder="选择过滤条件"
+              :options="filterConditions"
+              label-field="label"
+              value-field="value"
+              style="margin: 0 12px;width: 100px;flex:0 0 100px"
+            />
+            <n-select
+              v-model:value="filter.value"
+              placeholder="选择过滤值"
+              :options="params"
               label-field="label" 
               value-field="key"
-              @update:value="argsChange(key, val.value, index)"
+              @update:value="filterValueChange(index)"
             />
-            <n-input style="margin-left:12px" v-if="val.type == 'http'" v-model:value="val.var" placeholder="输入返回值变量名" autocomplete="off" />
+            <div class="del" @click="delFilter(index)">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9.33325 6.66663L9.33325 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M6.66675 6.66663L6.66675 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12 4H4V13.3333C4 13.7015 4.29848 14 4.66667 14H11.3333C11.7015 14 12 13.7015 12 13.3333V4Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2.66675 4H13.3334" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9.99992 2H5.99992C5.63173 2 5.33325 2.29848 5.33325 2.66667V4H10.6666V2.66667C10.6666 2.29848 10.3681 2 9.99992 2Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="btn" @click="addFilter">添加过滤条件</div>
+        </div>
+      </n-form-item>
+      <n-divider class="divider"><p>监听后执行</p></n-divider>
+      <div v-for="(item, index) in triggerItem.handdleList" :key="index" class="handdle-item">
+        <div class="handdle-item-del" @click="delHanddle(index)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9.33325 6.66663L9.33325 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M6.66675 6.66663L6.66675 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 4H4V13.3333C4 13.7015 4.29848 14 4.66667 14H11.3333C11.7015 14 12 13.7015 12 13.3333V4Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2.66675 4H13.3334" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M9.99992 2H5.99992C5.63173 2 5.33325 2.29848 5.33325 2.66667V4H10.6666V2.66667C10.6666 2.29848 10.3681 2 9.99992 2Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <n-form-item label="函数名称：">
+          <n-input v-model:value="item.name" placeholder="输入函数名称" autocomplete="off" />
+        </n-form-item>
+        <div>
+          <n-form-item label="选择合约：">
+            <n-select
+              v-model:value="item.contractId"
+              placeholder="选择合约"
+              filterable
+              :options="store.state.contracts"
+              label-field="name"
+              value-field="id"
+              @update:value="contractChange(index)"
+            >
+              <template #action>
+                <p @click="addContract(index)" class="add-new-btn">添加新合约</p>
+              </template>
+            </n-select>
+          </n-form-item>
+          <n-form-item label="选择合约方法：">
+            <n-select
+              v-model:value="item.functionName"
+              placeholder="选择合约方法"
+              :options="getAbi(item?.contractId)"
+              filterable
+              label-field="name"
+              value-field="name"
+              @update:value="functionChange(index)"
+            />
+          </n-form-item>
+          <div v-if="item.args">
+            <p>参数：</p>
+            <div v-for="(val, key, i) in item.args" :key="i" class="input-item flex-center" >
+              <p>{{key}}：</p>
+              <n-select 
+                v-model:value="val.condition"
+                filterable 
+                tag 
+                :options="inputFun" 
+                label-field="label" 
+                value-field="value"
+                style="flex:0 0 100px"
+              />
+              <n-select 
+                v-if="val.condition == '$ne'"
+                v-model:value="val.value"
+                filterable 
+                tag 
+                :options="params" 
+                label-field="label" 
+                value-field="key"
+                @update:value="argsChange(key, val.value, index)"
+              />
+              <n-input style="margin-left:12px" v-if="val.type == 'http'" v-model:value="val.var" placeholder="输入返回值变量名" autocomplete="off" />
+            </div>
           </div>
         </div>
       </div>
@@ -351,6 +514,7 @@ defineExpose({
   }
 }
 .input-item {
+  margin-bottom: 12px;
   p {
     flex: 0 0 90px;
   }

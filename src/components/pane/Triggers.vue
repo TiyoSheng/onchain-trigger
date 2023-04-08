@@ -13,6 +13,7 @@ const props = defineProps({
 })
 
 const addTriggerRef = ref(null)
+const countdownRef = ref(null)
 const triggerData = ref({})
 const triggers = ref([])
 const params = ref([])
@@ -46,6 +47,38 @@ const inputFun = [{
   label: '更改',
   value: '$ne'
 }]
+
+const getUnit = (unit) => {
+  if (unit == 's') {
+    return '秒'
+  } else if (unit == 'm') {
+    return '分钟'
+  } else if (unit == 'h') {
+    return '小时'
+  } else if (unit == 'd') {
+    return '天'
+  }
+}
+
+const formatDate = (date, fmt) => {
+  let ret
+  date = new Date(date)
+  let opt = {
+    'Y+': date.getFullYear().toString(),
+    'm+': (date.getMonth() + 1).toString(),
+    'd+': date.getDate().toString(),
+    'H+': date.getHours().toString(),
+    'M+': date.getMinutes().toString(),
+    'S+': date.getSeconds().toString()
+  };
+  for (let k in opt) {
+    ret = new RegExp('(' + k + ')').exec(fmt)
+    if (ret) {
+      fmt = fmt.replace(ret[1], (ret[1].length == 1) ? (opt[k]) : (opt[k].padStart(ret[1].length, '0')))
+    }
+  }
+  return fmt
+}
 
 const getInputConditionsName = (val) => {
   let name = inputFun.find(item => item.value === val).label
@@ -142,58 +175,114 @@ watch(() => props.trigger, (val) => {
       }
     })
     triggerData.value = trigger
+    console.log(trigger)
     params.value = globalParams || []
   }
 }, {immediate: true, deep: true})
+
+watch(() => store.state.countdownDuration, (val) => {
+  console.log(val)
+  countdownRef.value[0].reset()
+}, {deep: true})
 
 </script>
 <template>
   <div class="trigger">
     <div v-if="triggers && triggers.length" class="card">
       <div v-for="(item, index) in triggers" :key="item.id" class="trigger-item">
-        <div class="flex-center-sb">
-          <div class="name">合约触发器名称 - {{item.name}}</div>
-          <div class="flex-center">
-            <div class="edit-btn" @click="showModal(item)">编辑</div>
-            <n-popconfirm :show-icon="false" positive-text="确认" negative-text="取消" @positiveClick="del(index)">
-              <template #trigger>
-                <div class="edit-btn">删除</div>
-              </template>
-              <p style="margin: 10px 0">是否确认删除{{item.name}}?</p>
-            </n-popconfirm>
+        <div v-if="item.type == 'time'">
+          <div class="flex-center-sb">
+            <div class="name">时间触发器 - {{item.name}}</div>
+            <div class="flex-center">
+              <div class="edit-btn" @click="showModal(item)">编辑</div>
+              <n-popconfirm :show-icon="false" positive-text="确认" negative-text="取消" @positiveClick="del(index)">
+                <template #trigger>
+                  <div class="edit-btn">删除</div>
+                </template>
+                <p style="margin: 10px 0">是否确认删除{{item.name}}?</p>
+              </n-popconfirm>
+            </div>
+          </div>
+          <div class="mt16 sub-title">触发方式</div>
+          <div v-if="item.timeType == 'timing'" class="flex-center mt12">
+            <div class="fun flex-center">
+              <div class="name flex-center">定时触发</div>
+              <div class="function-name flex-center">{{formatDate(item.timestamp, 'YY-mm-dd HH:MM:SS')}}</div>
+            </div>
+            <div class="type">（<n-countdown :duration="item.timestamp - new Date().getTime()" :active="true" />）</div>
+            <!-- <div class="type">（ccc）</div> -->
+          </div>
+          <div v-if="item.timeType == 'loop'" class="flex-center mt12">
+            <div class="fun flex-center">
+              <div class="name flex-center">循环触发</div>
+              <div class="function-name flex-center">间隔时间：{{item.interval}} {{getUnit(item.unit)}}</div>
+              <div class="type">（<n-countdown ref="countdownRef" :duration="store.state.countdownDuration" :active="true" />）</div>
+            </div>
+          </div>
+          
+          <div class="mt16 sub-title">触发后执行</div>
+          <div v-for="(handdle,i) in item.handdleList" :key="i">
+            <div class="mt12 flex-center">
+              <div class="fun flex-center">
+                <div class="name flex-center">{{getContract(handdle.contractId, 'name')}}</div>
+                <div class="function-name flex-center">{{handdle.functionName}}</div>
+              </div>
+              <div class="type">（{{getContract(handdle.contractId, 'type', handdle.functionName)}}）</div>
+            </div>
+            <div class="mt16 sub-title">参数</div>
+            <div class="params mt12" v-if="Object.keys(handdle.args).length">
+              <div class="params-item flex-center" v-for="(val, key) in handdle.args" :key="key">
+                <div class="params-item-key flex-center">{{key}}</div>
+                <div class="params-item-value flex-center">{{getParamLabel(val)}}</div>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="mt16 sub-title">触发函数</div>
-        <div class="mt12 flex-center">
-          <div class="fun flex-center">
-            <div class="name flex-center">{{getContract(item.contractId, 'name')}}</div>
-            <div class="function-name flex-center">{{item.functionName}}</div>
+        <div v-else>
+          <div class="flex-center-sb">
+            <div class="name">合约触发器名称 - {{item.name}}</div>
+            <div class="flex-center">
+              <div class="edit-btn" @click="showModal(item)">编辑</div>
+              <n-popconfirm :show-icon="false" positive-text="确认" negative-text="取消" @positiveClick="del(index)">
+                <template #trigger>
+                  <div class="edit-btn">删除</div>
+                </template>
+                <p style="margin: 10px 0">是否确认删除{{item.name}}?</p>
+              </n-popconfirm>
+            </div>
           </div>
-          <div class="type">（{{getContract(item.contractId, 'type', item.functionName)}}）</div>
-        </div>
-        <div class="mt16 sub-title">过滤条件</div>
-        <div class="mt12 flex-center">
-          <div v-for="(filter, i) in item.filter" :key="i" class="filter flex-center">
-            <div class="filter-name flex-center">{{filter.name}}</div>
-            <div class="filter-condition flex-center-center">{{getConditionsName(filter.condition)}}</div>
-            <div class="filter-value flex-center">{{getParamLabel(filter)}}</div>
-          </div>
-        </div>
-        <div v-for="(handdle,i) in item.handdleList" :key="i">
-          <div class="mt16 sub-title">执行函数</div>
+          <div class="mt16 sub-title">触发函数</div>
           <div class="mt12 flex-center">
             <div class="fun flex-center">
-              <div class="name flex-center">{{getContract(handdle.contractId, 'name')}}</div>
-              <div class="function-name flex-center">{{handdle.functionName}}</div>
+              <div class="name flex-center">{{getContract(item.contractId, 'name')}}</div>
+              <div class="function-name flex-center">{{item.functionName}}</div>
             </div>
-            <div class="type">（{{getContract(handdle.contractId, 'type', handdle.functionName)}}）</div>
+            <div class="type">（{{getContract(item.contractId, 'type', item.functionName)}}）</div>
           </div>
-          <div class="mt16 sub-title">覆盖内容</div>
-          <div class="params mt12">
-            <div class="params-item flex-center" v-for="(val, key) in handdle.args" :key="key">
-              <div class="params-item-key flex-center">{{key}}</div>
-              <div class="params-item-type flex-center-center" :style="{color: val.condition == '$eq' ? '#31C48D' : '#FF8A4C', background:  val.condition == '$eq' ? '#EFFAF5' : '#FFF6EB'}">{{getInputConditionsName(val.condition)}}</div>
-              <div class="params-item-value flex-center">{{getParamLabel(val)}}</div>
+          <div class="mt16 sub-title">过滤条件</div>
+          <div class="mt12 flex-center">
+            <div v-for="(filter, i) in item.filter" :key="i" class="filter flex-center">
+              <div class="filter-name flex-center">{{filter.name}}</div>
+              <div class="filter-condition flex-center-center">{{getConditionsName(filter.condition)}}</div>
+              <div class="filter-value flex-center">{{getParamLabel(filter)}}</div>
+            </div>
+          </div>
+          <div v-for="(handdle,i) in item.handdleList" :key="i">
+            <div class="mt16 sub-title">执行函数</div>
+            <div class="mt12 flex-center">
+              <div class="fun flex-center">
+                <div class="name flex-center">{{getContract(handdle.contractId, 'name')}}</div>
+                <div class="function-name flex-center">{{handdle.functionName}}</div>
+              </div>
+              <div class="type">（{{getContract(handdle.contractId, 'type', handdle.functionName)}}）</div>
+            </div>
+            <div class="mt16 sub-title">覆盖内容</div>
+            <div class="params mt12">
+              <div class="params-item flex-center" v-for="(val, key) in handdle.args" :key="key">
+                <div class="params-item-key flex-center">{{key}}</div>
+                <div class="params-item-type flex-center-center" :style="{color: val.condition == '$eq' ? '#31C48D' : '#FF8A4C', background:  val.condition == '$eq' ? '#EFFAF5' : '#FFF6EB'}">{{getInputConditionsName(val.condition)}}</div>
+                <div class="params-item-value flex-center">{{getParamLabel(val)}}</div>
+              </div>
             </div>
           </div>
         </div>

@@ -13,16 +13,18 @@ const settings = {
 }
 const alchemy = new Alchemy(settings)
 
-const { store, setTriggrts } = useGlobalStore()
+const { store, setTriggrts, setCountdownDuration } = useGlobalStore()
 const message = useMessage()
 
 const activatedId = ref('')
 const msgsRef = ref(null)
 const msgs = ref([])
 const params = ref([])
-const triggerData = ref({})
+const triggerData = ref({triggers: []})
 
 let contractData = []
+let interval = null
+let loopInterval = null
 
 const getType = (type) => {
   if (type == 'function') {
@@ -127,6 +129,103 @@ const filterFun = (args, filters) => {
   return r
 }
 
+const applyFun = async (list, time) => {
+  if (list.length == 0) {
+    if (time) {
+      setCountdownDuration(time)
+    }
+    return
+  }
+  setCountdownDuration(0)
+  let item = list.shift()
+  let inputs = getContract(item.contractId, 'input', item.functionName)
+  let C = await setContract(item.contractId)
+  let p = []
+  let res = null
+  let paramList = JSON.parse(JSON.stringify(params.value))
+  if (inputs) {
+    inputs.forEach(e => {
+      if (item.args[e.name]) {
+        let val = item.args[e.name].value
+        if (item.args[e.name].type == 'param') {
+          for (let i = 0; i < paramList.length; i++) {
+            let param = paramList[i]
+            if (param.key == item.args[e.name].value && param.type == 'param') {
+              val = param.value
+            }
+          }
+        }
+        p.push(val)
+      } else {
+        p.push('')
+      }
+    })
+  }
+  try {
+    console.log(p)
+    res = await C[item.functionName](...p)
+      if (res._isBigNumber) {
+        res = ethers.utils.formatUnits(res, 0)
+      }
+    if (res.hash) {
+      let tx = await res.wait()
+      res = tx
+      message.success('confirmed transaction')
+    }
+  } catch (error) {
+    res = error?.error?.message || error?.message || error
+  }
+  let msg = {
+    type: 'trigger',
+    name: item.name,
+    result: res
+  }
+  msgs.value.push(msg)
+  triggerData.value.messages = msgs.value
+  setTrigger(triggerData.value)
+  applyFun(list, time)
+}
+
+const onTime = () => {
+  triggerData.value.status = 'on'
+  let triggerFun = triggerData.value.triggers[0]
+  if (triggerFun.timeType == 'timing') {
+    let nowData = new Date().getTime()
+    if (nowData > triggerFun.timestamp) {
+      message.error('时间已过')
+      off()
+      return
+    }
+    interval = setInterval(() => {
+      let now = new Date().getTime()
+      let time = new Date(triggerFun.timestamp).getTime()
+      if (now >= time) {
+        clearInterval(interval)
+        let list = JSON.parse(JSON.stringify(triggerFun.handdleList))
+        applyFun(list)
+      }
+    }, 1000)
+  } else {
+    let triggerInterval = triggerFun.interval
+    let unit = triggerFun.unit
+    let time = 0
+    if (unit == 's') {
+      time = triggerInterval * 1000
+    } else if (unit == 'm') {
+      time = triggerInterval * 1000 * 60
+    } else if (unit == 'h') {
+      time = triggerInterval * 1000 * 60 * 60
+    } else if (unit == 'd') {
+      time = triggerInterval * 1000 * 60 * 60 * 24
+    }
+    setCountdownDuration(time)
+    loopInterval = setInterval(() => {
+      let list = JSON.parse(JSON.stringify(triggerFun.handdleList))
+      applyFun(list, time)
+    }, time)
+  }
+}
+
 const handdleFun = async (list, res, args, index) => {
   if (list && list.length) {
     let item = list.shift()
@@ -188,8 +287,22 @@ const handdleFun = async (list, res, args, index) => {
 }
 
 const off = async () => {
-  await alchemy.ws.off()
-  triggerData.value.status = 'off'
+  console.log(triggerData.value)
+  let trigger = triggerData.value?.triggers[0]
+  if (trigger) {
+    if (trigger.type == 'time') {
+      if (trigger.timeType == 'timing') {
+        clearInterval(interval)
+      } else {
+        clearInterval(loopInterval)
+      }
+    }
+    if (trigger.type == 'contract') {
+      await alchemy.ws.off()
+    }
+    triggerData.value.status = 'off'
+    setCountdownDuration(0)
+  }
 }
 
 const getTriggerData = () => {
@@ -230,6 +343,10 @@ const on = (index) => {
   }
   off()
   let trigger = triggerData.value.triggers[index]
+  if (trigger.type == 'time') {
+    onTime()
+    return
+  }
   let contractId = trigger.contractId
   let contractAbi = []
   let contractAddress = ''

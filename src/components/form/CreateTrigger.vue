@@ -63,7 +63,7 @@ defineExpose({
     <n-modal 
       v-model:show="showAddModal"
       :mask-closable="false"
-      :style="{width: '600px', 'border-radius': '10px', maxHeight: '80vh', overflow: 'auto'}"
+      :style="{width: '600px', 'border-radius': '10px'}"
       preset="card"
       @afterLeave="cancel"
       title="新增触发器">

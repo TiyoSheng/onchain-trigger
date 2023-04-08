@@ -5,7 +5,8 @@ const store = reactive({
     triggers: [],
     contracts: [],
     wallets: [],
-    activatedId: ""
+    activatedId: "",
+    countdownDuration: 0
   },
 });
 
@@ -25,10 +26,15 @@ const setActivatedId = (activatedId) => {
   store.state.activatedId = activatedId;
 };
 
+const setCountdownDuration = (countdownDuration) => {
+  store.state.countdownDuration = countdownDuration;
+};
+
 export const useGlobalStore = () => ({
   store,
   setTriggrts,
   setContracts,
   setWallet,
   setActivatedId,
+  setCountdownDuration
 });
