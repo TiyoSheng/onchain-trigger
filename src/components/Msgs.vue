@@ -345,7 +345,7 @@ const onTime = () => {
     loopInterval = setInterval(() => {
       let list = []
       if (triggerFun.applyType == 'flow') {
-        flows = triggerData.value.flows
+        let flows = triggerData.value.flows
         let flow = flows.find(flow => flow.id == triggerFun.flowId)
         list = JSON.parse(JSON.stringify(flow.handdleList))
       } else {

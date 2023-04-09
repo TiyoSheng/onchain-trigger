@@ -31,6 +31,7 @@ const handleAddClick = async () => {
   }
   await setTriggrts(triggers)
   await setActivatedId(triggerData.value.id)
+  cancel()
 }
 const cancel = () => {
   showAddModal.value = false
