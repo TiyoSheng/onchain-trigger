@@ -46,7 +46,6 @@ import { useMessage } from "naive-ui"
 import { shareTrigger } from '../../http/api'
 import { useUtils } from '../../hooks/utils'
 import { useGlobalStore } from '../../hooks/globalStore'
-import { setLs } from '../../libs/storage'
 
 export default {
   setup(props, { emit }) {
@@ -133,7 +132,6 @@ export default {
           }
           console.log(triggers)
           setTriggrts(triggers)
-          await setLs('triggers', JSON.parse(JSON.stringify(triggers)))
           info.value.triggerId = res.trigger_id
         }
         isSpin.value = false

@@ -1,6 +1,5 @@
 <script setup>
 import { ref } from 'vue'
-import { setLs } from '../../libs/storage'
 import { useGlobalStore } from '../../hooks/globalStore'
 import { useMessage } from "naive-ui"
 
@@ -43,11 +42,9 @@ const handleCreatedContractData = async () => {
     contracts.push(contractData.value)
     message.success('添加成功')
   }
-  setLs('contracts', JSON.parse(JSON.stringify(contracts))).then(async () => {
-    await setContracts(contracts)
-    await emit('success', contractData.value)
-    cancel()
-  })
+  await setContracts(contracts)
+  await emit('success', contractData.value)
+  cancel()
 }
 const cancel = () => {
   showAddModal.value = false

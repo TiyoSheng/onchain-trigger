@@ -9,7 +9,6 @@ import Password from '../components/form/Password.vue'
 import Nav from '../components/Nav.vue'
 import Msgs from '../components/Msgs.vue'
 import { useMessage, useDialog } from "naive-ui"
-import { setLs } from '../libs/storage'
 import { getTrigger, getTriggerInfo } from '../http/api'
 
 const { store, setActivatedId, setTriggrts, setContracts } = useGlobalStore()
@@ -80,9 +79,7 @@ const submit = (val) => {
       await setTriggrts(triggers)
       await setContracts(newContractsArr)
       await setActivatedId(trigger.id)
-      await setLs('contracts', JSON.parse(JSON.stringify(newContractsArr)))
-      await setLs('triggers', JSON.parse(JSON.stringify(triggers)))
-      await setLs('activatedId', JSON.parse(JSON.stringify(trigger.id)))
+
       router.replace({
         path: '/'
       })
@@ -145,7 +142,6 @@ const delContractItem = async (index) => {
   let contracts = store.state.contracts
   contracts.splice(index, 1)
   await setContracts(contracts)
-  await setLs('contracts', JSON.parse(JSON.stringify(contracts)))
   message.success('删除成功')
   cancel()
 }
@@ -156,14 +152,11 @@ const delTriggerItem = async (index) => {
   let isActived = activatedId == triggers[index].id ? true : false
   triggers.splice(index, 1)
   await setTriggrts(triggers)
-  await setLs('triggers', JSON.parse(JSON.stringify(triggers)))
   if (isActived) {
     if (triggers.length > 0) {
       await setActivatedId(triggers[index - 1].id)
-      await setLs('activatedId', triggers[index - 1].id)
     } else {
       await setActivatedId('')
-      await setLs('activatedId', '')
     }
   }
   message.success('删除成功')
@@ -171,7 +164,6 @@ const delTriggerItem = async (index) => {
 
 const changeMenu = async (id) => {
   await setActivatedId(id)
-  await setLs('activatedId', id)
 }
 
 </script>

@@ -48,6 +48,11 @@ const inputFun = [{
   value: '$ne'
 }]
 
+const getFlowName = (id) => {
+  let flow = triggerData.value.flows.find(item => item.id === id)
+  return flow.name
+}
+
 const getUnit = (unit) => {
   if (unit == 's') {
     return '秒'
@@ -181,7 +186,6 @@ watch(() => props.trigger, (val) => {
 }, {immediate: true, deep: true})
 
 watch(() => store.state.countdownDuration, (val) => {
-  console.log(val)
   if (countdownRef.value && countdownRef.value[0]) {
     countdownRef.value[0].reset()
   }
@@ -223,19 +227,27 @@ watch(() => store.state.countdownDuration, (val) => {
           </div>
           
           <div class="mt16 sub-title">触发后执行</div>
-          <div v-for="(handdle,i) in item.handdleList" :key="i">
-            <div class="mt12 flex-center">
-              <div class="fun flex-center">
-                <div class="name flex-center">{{getContract(handdle.contractId, 'name')}}</div>
-                <div class="function-name flex-center">{{handdle.functionName}}</div>
-              </div>
-              <div class="type">（{{getContract(handdle.contractId, 'type', handdle.functionName)}}）</div>
+          <div v-if="item.applyType == 'flow'" class="mt12">
+            <div class="fun flex-center">
+              <div class="name flex-center">执行流程</div>
+              <div class="function-name flex-center">{{getFlowName(item.flowId)}}</div>
             </div>
-            <div class="mt16 sub-title">参数</div>
-            <div class="params mt12" v-if="Object.keys(handdle.args).length">
-              <div class="params-item flex-center" v-for="(val, key) in handdle.args" :key="key">
-                <div class="params-item-key flex-center">{{key}}</div>
-                <div class="params-item-value flex-center">{{getParamLabel(val)}}</div>
+          </div>
+          <div v-else>
+            <div v-for="(handdle,i) in item.handdleList" :key="i">
+              <div class="mt12 flex-center">
+                <div class="fun flex-center">
+                  <div class="name flex-center">{{getContract(handdle.contractId, 'name')}}</div>
+                  <div class="function-name flex-center">{{handdle.functionName}}</div>
+                </div>
+                <div class="type">（{{getContract(handdle.contractId, 'type', handdle.functionName)}}）</div>
+              </div>
+              <div class="mt16 sub-title">参数</div>
+              <div class="params mt12" v-if="Object.keys(handdle.args).length">
+                <div class="params-item flex-center" v-for="(val, key) in handdle.args" :key="key">
+                  <div class="params-item-key flex-center">{{key}}</div>
+                  <div class="params-item-value flex-center">{{getParamLabel(val)}}</div>
+                </div>
               </div>
             </div>
           </div>
@@ -269,21 +281,29 @@ watch(() => store.state.countdownDuration, (val) => {
               <div class="filter-value flex-center">{{getParamLabel(filter)}}</div>
             </div>
           </div>
-          <div v-for="(handdle,i) in item.handdleList" :key="i">
-            <div class="mt16 sub-title">执行函数</div>
-            <div class="mt12 flex-center">
-              <div class="fun flex-center">
-                <div class="name flex-center">{{getContract(handdle.contractId, 'name')}}</div>
-                <div class="function-name flex-center">{{handdle.functionName}}</div>
-              </div>
-              <div class="type">（{{getContract(handdle.contractId, 'type', handdle.functionName)}}）</div>
+          <div class="mt16 sub-title">触发后执行</div>
+          <div v-if="item.applyType == 'flow'" class="mt12">
+            <div class="fun flex-center">
+              <div class="name flex-center">执行流程</div>
+              <div class="function-name flex-center">{{getFlowName(item.flowId)}}</div>
             </div>
-            <div class="mt16 sub-title">覆盖内容</div>
-            <div class="params mt12">
-              <div class="params-item flex-center" v-for="(val, key) in handdle.args" :key="key">
-                <div class="params-item-key flex-center">{{key}}</div>
-                <div class="params-item-type flex-center-center" :style="{color: val.condition == '$eq' ? '#31C48D' : '#FF8A4C', background:  val.condition == '$eq' ? '#EFFAF5' : '#FFF6EB'}">{{getInputConditionsName(val.condition)}}</div>
-                <div class="params-item-value flex-center">{{getParamLabel(val)}}</div>
+          </div>
+          <div v-else>
+            <div v-for="(handdle,i) in item.handdleList" :key="i">
+              <div class="mt12 flex-center">
+                <div class="fun flex-center">
+                  <div class="name flex-center">{{getContract(handdle.contractId, 'name')}}</div>
+                  <div class="function-name flex-center">{{handdle.functionName}}</div>
+                </div>
+                <div class="type">（{{getContract(handdle.contractId, 'type', handdle.functionName)}}）</div>
+              </div>
+              <div class="mt16 sub-title">覆盖内容</div>
+              <div class="params mt12">
+                <div class="params-item flex-center" v-for="(val, key) in handdle.args" :key="key">
+                  <div class="params-item-key flex-center">{{key}}</div>
+                  <div class="params-item-type flex-center-center" :style="{color: val.condition == '$eq' ? '#31C48D' : '#FF8A4C', background:  val.condition == '$eq' ? '#EFFAF5' : '#FFF6EB'}">{{getInputConditionsName(val.condition)}}</div>
+                  <div class="params-item-value flex-center">{{getParamLabel(val)}}</div>
+                </div>
               </div>
             </div>
           </div>

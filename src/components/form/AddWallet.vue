@@ -1,6 +1,5 @@
 <script setup>
 import { ref } from 'vue'
-import { setLs } from '../../libs/storage'
 import { useGlobalStore } from '../../hooks/globalStore'
 import { useMessage } from "naive-ui"
 import { ethers } from 'ethers'
@@ -27,7 +26,6 @@ const handleCreated = async () => {
   wallets.push(newWallet)
   await setWallet(wallets)
   emit('success', newWallet)
-  await setLs('wallet', JSON.parse(JSON.stringify(wallets)))
   cancel()
 }
 

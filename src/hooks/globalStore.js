@@ -1,4 +1,5 @@
 import { reactive } from "vue";
+import { setLs } from '../libs/storage'
 
 const store = reactive({
   state: {
@@ -10,19 +11,23 @@ const store = reactive({
   },
 });
 
-const setTriggrts = (triggers) => {
+const setTriggrts = async (triggers) => {
+  await setLs('triggers', JSON.parse(JSON.stringify(triggers)))
   store.state.triggers = triggers;
 };
 
-const setContracts = (contracts) => {
+const setContracts = async (contracts) => {
+  await setLs('contracts', JSON.parse(JSON.stringify(contracts)))
   store.state.contracts = contracts;
 };
 
-const setWallet = (wallets) => {
+const setWallet = async (wallets) => {
+  await setLs('wallets', JSON.parse(JSON.stringify(wallets)))
   store.state.wallets = wallets;
 };
 
-const setActivatedId = (activatedId) => {
+const setActivatedId = async (activatedId) => {
+  await setLs('activatedId', activatedId)
   store.state.activatedId = activatedId;
 };
 

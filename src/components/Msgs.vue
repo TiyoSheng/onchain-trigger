@@ -1,6 +1,5 @@
 <script setup >
 import { ref, watch } from 'vue'
-import { setLs } from '../libs/storage'
 import { JsonViewer } from "vue3-json-viewer"
 import { useMessage } from "naive-ui"
 import { ethers } from 'ethers'
@@ -129,7 +128,7 @@ const filterFun = (args, filters) => {
   return r
 }
 
-const applyFun = async (list, time) => {
+const applyFun = async (list, paramList, time) => {
   if (list.length == 0) {
     if (time) {
       setCountdownDuration(time)
@@ -138,52 +137,167 @@ const applyFun = async (list, time) => {
   }
   setCountdownDuration(0)
   let item = list.shift()
-  let inputs = getContract(item.contractId, 'input', item.functionName)
-  let C = await setContract(item.contractId)
-  let p = []
-  let res = null
-  let paramList = JSON.parse(JSON.stringify(params.value))
-  if (inputs) {
-    inputs.forEach(e => {
-      if (item.args[e.name]) {
-        let val = item.args[e.name].value
-        if (item.args[e.name].type == 'param') {
-          for (let i = 0; i < paramList.length; i++) {
-            let param = paramList[i]
-            if (param.key == item.args[e.name].value && param.type == 'param') {
-              val = param.value
-            }
+  if (item.type == 'http') {
+    let body = {}
+    let headers = {}
+    let res = null
+    item.params = item.params || []
+    item.params.forEach(e => {
+      let val = e.value
+      if (!val) return
+      if (e.type == 'param') {
+        for (let i = 0; i < paramList.length; i++) {
+          let param = paramList[i]
+          if (param.key == e.value && param.type == 'param') {
+            val = param.value
           }
         }
-        p.push(val)
-      } else {
-        p.push('')
+      } else if (e.type == 'http') {
+        for (let i = 0; i < paramList.length; i++) {
+          let param = paramList[i]
+          if (param.key == e.value && param.type == 'http') {
+            val = param.value[e.var]
+          }
+        }
+      } else if (e.type == 'contract') {
+        for (let i = 0; i < paramList.length; i++) {
+          let param = paramList[i]
+          if (param.key == e.value && param.type == 'contract') {
+            val = param.value
+          }
+        }
       }
+      body[e.key] = val
     })
-  }
-  try {
-    console.log(p)
-    res = await C[item.functionName](...p)
-      if (res._isBigNumber) {
-        res = ethers.utils.formatUnits(res, 0)
+    item.headers.forEach(e => {
+      let val = e.value
+      if (!val) return
+      if (e.type == 'param') {
+        for (let i = 0; i < paramList.length; i++) {
+          let param = paramList[i]
+          if (param.key == e.value && param.type == 'param') {
+            val = param.value
+          }
+        }
+      } else if (e.type == 'http') {
+        for (let i = 0; i < paramList.length; i++) {
+          let param = paramList[i]
+          if (param.key == e.value && param.type == 'http') {
+            val = param.value[e.var]
+          }
+        }
+      } else if (e.type == 'contract') {
+        for (let i = 0; i < paramList.length; i++) {
+          let param = paramList[i]
+          if (param.key == e.value && param.type == 'contract') {
+            val = param.value
+          }
+        }
       }
-    if (res.hash) {
-      let tx = await res.wait()
-      res = tx
-      message.success('confirmed transaction')
+      headers[e.key] = val
+    })
+    console.log(body, headers)
+    if (item.method.toLocaleLowerCase() == 'get') {
+      let dataStr = '';
+      Object.keys(body).forEach(key => {
+        dataStr += key + '=' + body[key] + '&';
+      })
+      if (dataStr !== '') {
+        dataStr = dataStr.substr(0, dataStr.lastIndexOf('&'));
+        item.url = item.url + '?' + dataStr;
+      }
+      const response = await fetch(item.url, {headers});
+      res = await response.json()
+      console.log(res, response)
+    } else {
+      const response = await fetch(item.url, {
+        method: item.method,
+        headers: Object.assign({'Content-Type': 'application/json'}, headers),
+        body: JSON.stringify(body)
+      })
+      res = await response.json()
     }
-  } catch (error) {
-    res = error?.error?.message || error?.message || error
+    let msg = {
+      type: 'flow',
+      name: item.name,
+      result: res
+    }
+    paramList.push({
+      key: `http_result:${item.name}`,
+      type: 'http',
+      value: res,
+      label: `http_result: ${item.name}`
+    })
+    msgs.value.push(msg)
+    triggerData.value.messages = msgs.value
+    setTrigger(triggerData.value)
+  } else {
+    let inputs = getContract(item.contractId, 'input', item.functionName)
+    let C = await setContract(item.contractId)
+    let p = []
+    let res = null
+    if (inputs) {
+      inputs.forEach(e => {
+        if (item.args[e.name]) {
+          let val = item.args[e.name].value
+          if (item.args[e.name].type == 'param') {
+            for (let i = 0; i < paramList.length; i++) {
+              let param = paramList[i]
+              if (param.key == item.args[e.name].value && param.type == 'param') {
+                val = param.value
+              }
+            }
+          } else if (item.args[e.name].type == 'http') {
+            for (let i = 0; i < paramList.length; i++) {
+              let param = paramList[i]
+              if (param.key == item.args[e.name].value && param.type == 'http') {
+                val = param.value[item.args[e.name].var]
+              }
+            }
+          } else if (item.args[e.name].type == 'contract') {
+            for (let i = 0; i < paramList.length; i++) {
+              let param = paramList[i]
+              if (param.key == item.args[e.name].value && param.type == 'contract') {
+                val = param.value
+              }
+            }
+          }
+          p.push(val)
+        } else {
+          p.push('')
+        }
+      })
+    }
+    try {
+      console.log(p)
+      res = await C[item.functionName](...p)
+        if (res._isBigNumber) {
+          res = ethers.utils.formatUnits(res, 0)
+        }
+      if (res.hash) {
+        let tx = await res.wait()
+        res = tx
+        message.success('confirmed transaction')
+      }
+    } catch (error) {
+      res = error?.error?.message || error?.message || error
+    }
+    let msg = {
+      type: 'trigger',
+      name: item.name,
+      result: res
+    }
+    paramList.push({
+      key: `contract_result:${item.name}`,
+      type: 'contract',
+      value: res,
+      label: `contract_result: ${item.name}`
+    })
+    msgs.value.push(msg)
+    triggerData.value.messages = msgs.value
+    setTrigger(triggerData.value)
   }
-  let msg = {
-    type: 'trigger',
-    name: item.name,
-    result: res
-  }
-  msgs.value.push(msg)
-  triggerData.value.messages = msgs.value
-  setTrigger(triggerData.value)
-  applyFun(list, time)
+  applyFun(list, paramList, time)
 }
 
 const onTime = () => {
@@ -200,9 +314,18 @@ const onTime = () => {
       let now = new Date().getTime()
       let time = new Date(triggerFun.timestamp).getTime()
       if (now >= time) {
+        let list = []
+        if (triggerFun.applyType == 'flow') {
+          console.log(triggerData.value, triggerData.value.flows)
+          let flows = triggerData.value.flows
+          let flow = flows.find(flow => flow.id == triggerFun.flowId)
+          list = JSON.parse(JSON.stringify(flow.handdleList))
+        } else {
+          list = JSON.parse(JSON.stringify(triggerFun.handdleList))
+        }
+        let paramList = JSON.parse(JSON.stringify(params.value))
         clearInterval(interval)
-        let list = JSON.parse(JSON.stringify(triggerFun.handdleList))
-        applyFun(list)
+        applyFun(list, paramList)
       }
     }, 1000)
   } else {
@@ -220,8 +343,16 @@ const onTime = () => {
     }
     setCountdownDuration(time)
     loopInterval = setInterval(() => {
-      let list = JSON.parse(JSON.stringify(triggerFun.handdleList))
-      applyFun(list, time)
+      let list = []
+      if (triggerFun.applyType == 'flow') {
+        flows = triggerData.value.flows
+        let flow = flows.find(flow => flow.id == triggerFun.flowId)
+        list = JSON.parse(JSON.stringify(flow.handdleList))
+      } else {
+        list = JSON.parse(JSON.stringify(triggerFun.handdleList))
+      }
+      let paramList = JSON.parse(JSON.stringify(params.value))
+      applyFun(list, paramList, time)
     }, time)
   }
 }
@@ -265,6 +396,10 @@ const handdleFun = async (list, res, args, index) => {
     console.log(...input, sendInfo)
     try {
       let tx = await C[item.functionName](...input, sendInfo)
+      if (tx.hash) {
+        triggerData.value.wallet.nonce = tx.nonce
+        tx = await tx.wait()
+      }
       let txData = {
         name: item.name,
         result: tx,
@@ -273,13 +408,17 @@ const handdleFun = async (list, res, args, index) => {
       msgs.value.push(txData)
       triggerData.value.messages = msgs.value
       setTrigger(triggerData.value)
-      if (tx.hash) {
-        triggerData.value.wallet.nonce = tx.nonce
-        await tx.wait()
-      }
       index += 1
       handdleFun(list, res, args, index)
     } catch (error) {
+      let txData = {
+        name: `执行失败 - ${item.name}`,
+        result: error?.error?.message || error?.message || error,
+        type: 'triggerHanddle',
+      }
+      msgs.value.push(txData)
+      triggerData.value.messages = msgs.value
+      setTrigger(triggerData.value)
       console.log(error)
       message.error('transaction failed')
     }
@@ -287,7 +426,6 @@ const handdleFun = async (list, res, args, index) => {
 }
 
 const off = async () => {
-  console.log(triggerData.value)
   let trigger = triggerData.value?.triggers[0]
   if (trigger) {
     if (trigger.type == 'time') {
@@ -374,7 +512,6 @@ const on = (index) => {
       const iface = new ethers.utils.Interface(contractAbi)
       let args = iface.decodeFunctionData(res.input.slice(0,10), res.input)
       let functionName = iface.getFunction(res.input.slice(0,10)).name
-      console.log(args)
       if (functionName == trigger.functionName && filterFun(args, trigger.filter) && res.from.toLocaleLowerCase() != triggerData.value.wallet.address.toLocaleLowerCase()) {
         let msg = {
           name: trigger.name,
@@ -386,8 +523,17 @@ const on = (index) => {
         triggerData.value.messages = msgs.value
         setTrigger(triggerData.value)
         try {
-          let list = JSON.parse(JSON.stringify(trigger.handdleList))
-          handdleFun(list, res, args, 0)
+          if (trigger.applyType == 'flow') {
+            let flows = triggerData.value.flows
+            let flow = flows.find(flow => flow.id == trigger.flowId)
+            let list = JSON.parse(JSON.stringify(flow.handdleList))
+            let paramList = JSON.parse(JSON.stringify(params.value))
+            applyFun(list, paramList)
+          } else {
+            let list = JSON.parse(JSON.stringify(trigger.handdleList))
+            handdleFun(list, res, args, 0)
+          }
+          
         } catch (error) {
           console.log(error)
         }
@@ -408,7 +554,6 @@ const setTrigger = async (item) => {
     triggers.push(item)
   }
   await setTriggrts(triggers)
-  await setLs('triggers', JSON.parse(JSON.stringify(triggers)))
 }
 
 const clear = async () => {

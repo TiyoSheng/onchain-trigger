@@ -2,12 +2,14 @@
 import { ref } from 'vue'
 import { useGlobalStore } from '../../hooks/globalStore'
 import AddContract from '../../components/form/AddContract.vue'
+import AddFlow from '../../components/form/AddFlow.vue'
 
-const { store } = useGlobalStore()
+const { store, setTriggrts } = useGlobalStore()
 
 const emit = defineEmits(['handleOk'])
 
 const addContractRef = ref(null)
+const addFlowRef = ref(null)
 const showAddModal = ref(false)
 const modalTitle = ref('设置触发器')
 const params = ref([])
@@ -62,6 +64,24 @@ const units = [{
 }]
 
 let handdleIndex = -1
+
+const addFlow = () => {
+  console.log(addFlowRef.value)
+  addFlowRef.value.params = JSON.parse(JSON.stringify(params.value))
+  addFlowRef.value.showAddModal = true
+}
+
+const addFlowSuccess = async (val) => {
+  val.id = crypto.randomUUID()
+  let triggrts = store.state.triggers
+  let activatedId = store.state.activatedId
+  let triggerData = triggrts.find(item => item.id === activatedId)
+  let index = triggrts.findIndex(item => item.id === activatedId)
+  triggerData.flows.push(val)
+  triggrts[index] = triggerData
+  await setTriggrts(triggrts)
+  triggerItem.value.flowId = val.id
+}
 
 const addContract = (index) => {
   console.log(index)
@@ -146,7 +166,13 @@ const handleOk = () => {
       filter: trigger.filter,
     }
   }
-  data.handdleList = trigger.handdleList
+  if (trigger.applyType == 'flow') {
+    data.applyType = 'flow'
+    data.flowId = trigger.flowId
+  } else {
+    data.applyType = 'contract'
+    data.handdleList = trigger.handdleList
+  }
   data.name = trigger.name
   data.id = trigger.id || ''
   emit('handleOk', data)
@@ -160,6 +186,13 @@ const cancel = () => {
     handdleList: []
   }
   showAddModal.value = false
+}
+
+const getTirggerFlows = () => {
+  let triggers = store.state.triggers
+  let id = store.state.activatedId
+  let trigger = triggers.find(item => item.id === id)
+  return trigger.flows || []
 }
 
 const getAbi = (id) => {
@@ -286,59 +319,77 @@ defineExpose({
         </n-form-item>
       </div>
       <n-divider class="divider"><p>触发后执行</p></n-divider>
-      <div v-for="(item, index) in triggerItem.handdleList" :key="index" class="handdle-item">
-        <div class="handdle-item-del" @click="delHanddle(index)">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M9.33325 6.66663L9.33325 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M6.66675 6.66663L6.66675 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M12 4H4V13.3333C4 13.7015 4.29848 14 4.66667 14H11.3333C11.7015 14 12 13.7015 12 13.3333V4Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M2.66675 4H13.3334" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M9.99992 2H5.99992C5.63173 2 5.33325 2.29848 5.33325 2.66667V4H10.6666V2.66667C10.6666 2.29848 10.3681 2 9.99992 2Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <n-form-item label="函数名称：">
-          <n-input v-model:value="item.name" placeholder="输入函数名称" autocomplete="off" />
-        </n-form-item>
-        <n-form-item label="选择合约：">
-          <n-select
-            v-model:value="item.contractId"
-            placeholder="选择合约"
-            filterable
-            :options="store.state.contracts"
-            @update:value="contractChange(index)"
-            label-field="name"
-            value-field="id"
-          >
-            <template #action>
-              <p @click="addContract" class="add-new-btn">添加新合约</p>
-            </template>
-          </n-select>
-        </n-form-item>
-        <n-form-item label="选择合约方法：">
-          <n-select
-            v-model:value="item.functionName"
-            placeholder="选择合约方法"
-            :options="getAbi(item.contractId)"
-            filterable
-            label-field="name"
-            value-field="name"
-            @update:value="functionChange(index)"
-          />
-        </n-form-item>
-        <div v-if="item.args">
-          <p>参数：</p>
-          <div v-for="(val, key, i) in item.args" :key="i" class="input-item flex-center" >
-            <p>{{key}}：</p>
-            <div>
-              <n-select 
-                v-model:value="val.value"
-                filterable 
-                tag 
-                :options="params" 
-                label-field="label" 
-                value-field="key"
-                @update:value="argsChange(key, val.value, index)"
-              />
+      <n-radio-group v-model:value="triggerItem.applyType" name="radio" size="large">
+        <n-radio-button value="contract">添加执行合约</n-radio-button>
+        <n-radio-button value="flow">添加执行流程</n-radio-button>
+      </n-radio-group>
+      <div v-if="triggerItem.applyType == 'flow'" class="mt16">
+        <n-select 
+          v-model:value="triggerItem.flowId"
+          :options="getTirggerFlows()"
+          label-field="name" 
+          value-field="id"
+        >
+          <template #action>
+            <p @click="addFlow" class="add-new-btn">添加新流程</p>
+          </template>
+        </n-select>
+      </div>
+      <div v-else class="mt16">
+        <div v-for="(item, index) in triggerItem.handdleList" :key="index" class="handdle-item">
+          <div class="handdle-item-del" @click="delHanddle(index)">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9.33325 6.66663L9.33325 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M6.66675 6.66663L6.66675 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M12 4H4V13.3333C4 13.7015 4.29848 14 4.66667 14H11.3333C11.7015 14 12 13.7015 12 13.3333V4Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M2.66675 4H13.3334" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M9.99992 2H5.99992C5.63173 2 5.33325 2.29848 5.33325 2.66667V4H10.6666V2.66667C10.6666 2.29848 10.3681 2 9.99992 2Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <n-form-item label="函数名称：">
+            <n-input v-model:value="item.name" placeholder="输入函数名称" autocomplete="off" />
+          </n-form-item>
+          <n-form-item label="选择合约：">
+            <n-select
+              v-model:value="item.contractId"
+              placeholder="选择合约"
+              filterable
+              :options="store.state.contracts"
+              @update:value="contractChange(index)"
+              label-field="name"
+              value-field="id"
+            >
+              <template #action>
+                <p @click="addContract" class="add-new-btn">添加新合约</p>
+              </template>
+            </n-select>
+          </n-form-item>
+          <n-form-item label="选择合约方法：">
+            <n-select
+              v-model:value="item.functionName"
+              placeholder="选择合约方法"
+              :options="getAbi(item.contractId)"
+              filterable
+              label-field="name"
+              value-field="name"
+              @update:value="functionChange(index)"
+            />
+          </n-form-item>
+          <div v-if="item.args">
+            <p>参数：</p>
+            <div v-for="(val, key, i) in item.args" :key="i" class="input-item flex-center" >
+              <p>{{key}}：</p>
+              <div>
+                <n-select 
+                  v-model:value="val.value"
+                  filterable 
+                  tag 
+                  :options="params" 
+                  label-field="label" 
+                  value-field="key"
+                  @update:value="argsChange(key, val.value, index)"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -410,83 +461,102 @@ defineExpose({
           <div class="btn" @click="addFilter">添加过滤条件</div>
         </div>
       </n-form-item>
-      <n-divider class="divider"><p>监听后执行</p></n-divider>
-      <div v-for="(item, index) in triggerItem.handdleList" :key="index" class="handdle-item">
-        <div class="handdle-item-del" @click="delHanddle(index)">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M9.33325 6.66663L9.33325 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M6.66675 6.66663L6.66675 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M12 4H4V13.3333C4 13.7015 4.29848 14 4.66667 14H11.3333C11.7015 14 12 13.7015 12 13.3333V4Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M2.66675 4H13.3334" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M9.99992 2H5.99992C5.63173 2 5.33325 2.29848 5.33325 2.66667V4H10.6666V2.66667C10.6666 2.29848 10.3681 2 9.99992 2Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <n-form-item label="函数名称：">
-          <n-input v-model:value="item.name" placeholder="输入函数名称" autocomplete="off" />
-        </n-form-item>
-        <div>
-          <n-form-item label="选择合约：">
-            <n-select
-              v-model:value="item.contractId"
-              placeholder="选择合约"
-              filterable
-              :options="store.state.contracts"
-              label-field="name"
-              value-field="id"
-              @update:value="contractChange(index)"
-            >
-              <template #action>
-                <p @click="addContract(index)" class="add-new-btn">添加新合约</p>
-              </template>
-            </n-select>
+      <n-divider class="divider"><p>触发后执行</p></n-divider>
+      <n-radio-group v-model:value="triggerItem.applyType" name="radio" size="large">
+        <n-radio-button value="contract">添加执行合约</n-radio-button>
+        <n-radio-button value="flow">添加执行流程</n-radio-button>
+      </n-radio-group>
+      <div v-if="triggerItem.applyType == 'flow'" class="mt16">
+        <n-select 
+          v-model:value="triggerItem.flowId"
+          :options="getTirggerFlows()"
+          label-field="name" 
+          value-field="id"
+        >
+          <template #action>
+            <p @click="addFlow" class="add-new-btn">添加新流程</p>
+          </template>
+        </n-select>
+      </div>
+      <div v-else class="mt16">
+        <div v-for="(item, index) in triggerItem.handdleList" :key="index" class="handdle-item">
+          <div class="handdle-item-del" @click="delHanddle(index)">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9.33325 6.66663L9.33325 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M6.66675 6.66663L6.66675 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M12 4H4V13.3333C4 13.7015 4.29848 14 4.66667 14H11.3333C11.7015 14 12 13.7015 12 13.3333V4Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M2.66675 4H13.3334" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M9.99992 2H5.99992C5.63173 2 5.33325 2.29848 5.33325 2.66667V4H10.6666V2.66667C10.6666 2.29848 10.3681 2 9.99992 2Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <n-form-item label="函数名称：">
+            <n-input v-model:value="item.name" placeholder="输入函数名称" autocomplete="off" />
           </n-form-item>
-          <n-form-item label="选择合约方法：">
-            <n-select
-              v-model:value="item.functionName"
-              placeholder="选择合约方法"
-              :options="getAbi(item?.contractId)"
-              filterable
-              label-field="name"
-              value-field="name"
-              @update:value="functionChange(index)"
-            />
-          </n-form-item>
-          <div v-if="item.args">
-            <p>参数：</p>
-            <div v-for="(val, key, i) in item.args" :key="i" class="input-item flex-center" >
-              <p>{{key}}：</p>
-              <n-select 
-                v-model:value="val.condition"
-                filterable 
-                tag 
-                :options="inputFun" 
-                label-field="label" 
-                value-field="value"
-                style="flex:0 0 100px"
+          <div>
+            <n-form-item label="选择合约：">
+              <n-select
+                v-model:value="item.contractId"
+                placeholder="选择合约"
+                filterable
+                :options="store.state.contracts"
+                label-field="name"
+                value-field="id"
+                @update:value="contractChange(index)"
+              >
+                <template #action>
+                  <p @click="addContract(index)" class="add-new-btn">添加新合约</p>
+                </template>
+              </n-select>
+            </n-form-item>
+            <n-form-item label="选择合约方法：">
+              <n-select
+                v-model:value="item.functionName"
+                placeholder="选择合约方法"
+                :options="getAbi(item?.contractId)"
+                filterable
+                label-field="name"
+                value-field="name"
+                @update:value="functionChange(index)"
               />
-              <n-select 
-                v-if="val.condition == '$ne'"
-                v-model:value="val.value"
-                filterable 
-                tag 
-                :options="params" 
-                label-field="label" 
-                value-field="key"
-                @update:value="argsChange(key, val.value, index)"
-              />
-              <n-input style="margin-left:12px" v-if="val.type == 'http'" v-model:value="val.var" placeholder="输入返回值变量名" autocomplete="off" />
+            </n-form-item>
+            <div v-if="item.args">
+              <p>参数：</p>
+              <div v-for="(val, key, i) in item.args" :key="i" class="input-item flex-center" >
+                <p>{{key}}：</p>
+                <n-select 
+                  v-model:value="val.condition"
+                  filterable 
+                  tag 
+                  :options="inputFun" 
+                  label-field="label" 
+                  value-field="value"
+                  style="flex:0 0 100px"
+                />
+                <n-select 
+                  v-if="val.condition == '$ne'"
+                  v-model:value="val.value"
+                  filterable 
+                  tag 
+                  :options="params" 
+                  label-field="label" 
+                  value-field="key"
+                  @update:value="argsChange(key, val.value, index)"
+                />
+                <n-input style="margin-left:12px" v-if="val.type == 'http'" v-model:value="val.var" placeholder="输入返回值变量名" autocomplete="off" />
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-    <div class="btn" @click="addHanddle">添加执行函数</div>
+    <div v-if="triggerItem.applyType != 'flow'" class="btn" @click="addHanddle">添加执行函数</div>
     <n-form-item style="display: flex;justify-content: flex-end;margin-top: 16px">
       <n-button attr-type="button" @click="cancel">取消</n-button>
       <n-button style="margin-left: 20px" attr-type="button" @click="handleOk">确定</n-button>
     </n-form-item>
   </n-modal>
   <AddContract ref="addContractRef" @success="addContractSuccess" />
+  <AddFlow ref="addFlowRef" @handleOk="addFlowSuccess" />
 </template>
 <style lang="scss" scoped>
 .filter-item {

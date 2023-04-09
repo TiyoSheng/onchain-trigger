@@ -1,6 +1,5 @@
 <script setup>
 import { ref } from 'vue'
-import { setLs } from '../../libs/storage'
 import { useGlobalStore } from '../../hooks/globalStore'
 import { useMessage } from "naive-ui"
 
@@ -30,12 +29,8 @@ const handleAddClick = async () => {
     triggerData.value.id = crypto.randomUUID()
     triggers.push(triggerData.value)
   }
-  setLs('triggers', JSON.parse(JSON.stringify(triggers))).then(async res => {
-    await setTriggrts(triggers)
-    await setActivatedId(triggerData.value.id)
-    await setLs('activatedId', triggerData.value.id)
-    cancel()
-  })
+  await setTriggrts(triggers)
+  await setActivatedId(triggerData.value.id)
 }
 const cancel = () => {
   showAddModal.value = false

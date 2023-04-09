@@ -1,6 +1,5 @@
 <script setup >
 import { ref, watch } from 'vue'
-import { setLs } from '../../libs/storage'
 import { useGlobalStore } from '../../hooks/globalStore'
 import { useMessage } from "naive-ui"
 import AddWallet from './AddWallet.vue'

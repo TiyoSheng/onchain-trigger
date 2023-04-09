@@ -1,6 +1,5 @@
 <script setup>
 import { ref, watch } from 'vue'
-import { setLs } from '../libs/storage'
 import { useGlobalStore } from '../hooks/globalStore'
 import Wallet from './Wallet.vue'
 import Tabs from './Tabs.vue'
@@ -36,7 +35,6 @@ const setTrigger = async (item) => {
     triggers.push(item)
   }
   await setTriggrts(triggers)
-  await setLs('triggers', JSON.parse(JSON.stringify(triggers)))
 }
 
 const getContract = (id) => {
