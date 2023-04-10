@@ -82,7 +82,7 @@ watch(() => store.state.triggers, (val) => {
 </script>
 <template>
   <div class="trigger-detail">
-    <div v-if="triggerData.id">
+    <div v-if="triggerData.id" class="content">
       <div>
         <Wallet :trigger="triggerData" @setTrigger="setTrigger" />
         <Tabs :trigger="triggerData" @setTrigger="setTrigger" />
@@ -116,8 +116,14 @@ watch(() => store.state.triggers, (val) => {
   padding: 24px;
   box-sizing: border-box;
   height: calc(100vh - 64px);
-  overflow-y: auto;
+  overflow: hidden;
   position: relative;
+}
+.content {
+  height: 100%;
+  padding-bottom: 50px;
+  box-sizing: border-box;
+  overflow-y: auto;
 }
 .share {
   position: absolute;
