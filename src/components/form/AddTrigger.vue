@@ -15,8 +15,10 @@ const modalTitle = ref('设置触发器')
 const params = ref([])
 const triggerItem = ref({
   type: 'contract',
+  applyType: 'contract',
   filter: [],
-  handdleList: []
+  handdleList: [],
+  conditions: []
 })
 const filterConditions = [{
   label: '大于',
@@ -39,6 +41,25 @@ const filterConditions = [{
 }, {
   label: '包含',
   value: '$in'
+}]
+const conditions = [{
+  label: '大于',
+  value: '$gt'
+}, {
+  label: '小于',
+  value: '$lt'
+}, {
+  label: '大于等于',
+  value: '$gte'
+}, {
+  label: '小于等于',
+  value: '$lte'
+}, {
+  label: '等于',
+  value: '$eq'
+}, {
+  label: '不等于',
+  value: '$ne'
 }]
 
 const inputFun = [{
@@ -158,6 +179,11 @@ const handleOk = () => {
         unit: trigger.unit,
       }
     }
+  } else if (trigger.type === 'gas') {
+    data = {
+      type: 'gas',
+      conditions: trigger.conditions
+    }
   } else {
     data = {
       type: 'contract',
@@ -262,15 +288,38 @@ const filterValueChange = (index) => {
   }
 }
 
+const addCondition = () => {
+  triggerItem.value.conditions.push({
+    condition: '$eq',
+    value: '',
+    type: ''
+  })
+}
+
+const conditionChange = (index) => {
+  let condition = triggerItem.value.conditions[index]
+  let param = params.value.find(item => item.key === condition.value)
+  if (param) {
+    condition.type = param.type
+  } else {
+    condition.type = 'var'
+  }
+}
+
 const radioUpdate = () => {
   triggerItem.value.handdleList = []
   triggerItem.value.filter = []
   triggerItem.value.functionName = ''
   triggerItem.value.contractId = '',
   triggerItem.value.timeType = ''
+  triggerItem.value.applyType = 'contract'
+  triggerItem.value.flowId = ''
   if (triggerItem.value.type === 'time') {
     triggerItem.value.timeType = 'timing'
     triggerItem.value.unit = 's'
+  }
+  if (triggerItem.value.type === 'gas') {
+    triggerItem.value.conditions = []
   }
 }
 
@@ -296,31 +345,59 @@ defineExpose({
       <n-radio-group v-model:value="triggerItem.type" name="radio" size="large" @update:value="radioUpdate">
         <n-radio-button value="contract">合约触发器</n-radio-button>
         <n-radio-button value="time">时间触发器</n-radio-button>
+        <n-radio-button value="gas">Gas触发器</n-radio-button>
       </n-radio-group>
     </n-form-item>
-    <div v-if="triggerItem.type == 'time'">
-      <n-form-item label="触发方式：">
-        <n-radio-group v-model:value="triggerItem.timeType" name="radio" size="large">
-          <n-radio-button value="timing">定时触发</n-radio-button>
-          <n-radio-button value="loop">循环触发</n-radio-button>
-        </n-radio-group>
-      </n-form-item>
-      <div v-show="triggerItem.timeType == 'timing'">
-        <n-form-item label="触发时间：">
-          <n-date-picker v-model:value="triggerItem.timestamp" type="datetime" clearable />
+    <div v-if="triggerItem.type == 'time' || triggerItem.type == 'gas'">
+      <div v-if="triggerItem.type == 'gas'">
+        <n-form-item label="触发条件：">
+          <div style="width: 100%">
+            <div class="condition-item flex-center" style="margin-bottom: 12px" v-for="(condition, index) in triggerItem.conditions" :key="index">
+              <n-select 
+                v-model:value="condition.condition"
+                :options="conditions"
+                label-field="label" 
+                value-field="value"
+              />
+              <n-select 
+                v-model:value="condition.value"
+                filterable 
+                tag 
+                :options="params" 
+                label-field="label" 
+                value-field="key"
+                @update:value="conditionChange(index)"
+                style="margin-left: 12px"
+              />
+            </div>
+            <div class="btn" @click="addCondition">添加触发条件</div>
+          </div>
         </n-form-item>
       </div>
-      <div v-show="triggerItem.timeType == 'loop'">
-        <n-form-item label="触发间隔：">
-          <n-input-number style="margin-right: 12px" v-model:value="triggerItem.interval" :min="1" :max="100000" />
-          <n-select 
-            v-model:value="triggerItem.unit"
-            :options="units"
-            label-field="label" 
-            value-field="value"
-            style="width: 120px"
-          />
+      <div v-else-if="triggerItem.type == 'time'">
+        <n-form-item label="触发方式：">
+          <n-radio-group v-model:value="triggerItem.timeType" name="radio" size="large">
+            <n-radio-button value="timing">定时触发</n-radio-button>
+            <n-radio-button value="loop">循环触发</n-radio-button>
+          </n-radio-group>
         </n-form-item>
+        <div v-show="triggerItem.timeType == 'timing'">
+          <n-form-item label="触发时间：">
+            <n-date-picker v-model:value="triggerItem.timestamp" type="datetime" clearable />
+          </n-form-item>
+        </div>
+        <div v-show="triggerItem.timeType == 'loop'">
+          <n-form-item label="触发间隔：">
+            <n-input-number style="margin-right: 12px" v-model:value="triggerItem.interval" :min="1" :max="100000" />
+            <n-select 
+              v-model:value="triggerItem.unit"
+              :options="units"
+              label-field="label" 
+              value-field="value"
+              style="width: 120px"
+            />
+          </n-form-item>
+        </div>
       </div>
       <n-divider class="divider"><p>触发后执行</p></n-divider>
       <n-radio-group v-model:value="triggerItem.applyType" name="radio" size="large">
@@ -408,7 +485,7 @@ defineExpose({
           :options="store.state.contracts"
           label-field="name"
           value-field="id"
-          @update:value="contractChange('')"
+          @update:value="contractChange(-1)"
         >
           <template #action>
             <p @click="addContract(-1)" class="add-new-btn">添加新合约</p>
@@ -446,6 +523,8 @@ defineExpose({
             />
             <n-select
               v-model:value="filter.value"
+              filterable 
+              tag 
               placeholder="选择过滤值"
               :options="params"
               label-field="label" 

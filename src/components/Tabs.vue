@@ -269,10 +269,10 @@ watch(() => props.trigger, (val) => {
 </style>
 <style>
 .github-markdown-body {
-  padding: 0;
-  font-size: 12px;
-  line-height: 16px;
-  color: #4C4F53;
+  padding: 0 !important;
+  font-size: 12px !important;
+  line-height: 16px !important;
+  color: #4C4F53 !important;
 }
 .github-markdown-body blockquote, .github-markdown-body details, .github-markdown-body dl, .github-markdown-body ol, .github-markdown-body p, .github-markdown-body pre, .github-markdown-body table, .github-markdown-body ul {
   margin-bottom: 12px;

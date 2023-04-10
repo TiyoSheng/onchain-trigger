@@ -65,6 +65,26 @@ const getUnit = (unit) => {
   }
 }
 
+const getCcondition = (val) => {
+  if (val == '$gt') {
+    return '大于'
+  } else if (val == '$lt') {
+    return '小于'
+  } else if (val == '$gte') {
+    return '大于等于'
+  } else if (val == '$lte') {
+    return '小于等于'
+  } else if (val == '$eq') {
+    return '等于'
+  } else if (val == '$ne') {
+    return '不等于'
+  } else if (val == '$in') {
+    return '包含'
+  } else {
+    return ''
+  }
+}
+
 const formatDate = (date, fmt) => {
   let ret
   date = new Date(date)
@@ -96,7 +116,6 @@ const getConditionsName = (val) => {
 }
 
 const getParamLabel = (item) => {
-  console.log(item)
   if (item.type == 'param') {
     let param = params.value.find(param => param.key === item.value)
     console.log(param)
@@ -108,7 +127,7 @@ const getParamLabel = (item) => {
       }
     }
   } else {
-    return item.name
+    return item.value
   }
 }
 
@@ -196,7 +215,54 @@ watch(() => store.state.countdownDuration, (val) => {
   <div class="trigger">
     <div v-if="triggers && triggers.length" class="card">
       <div v-for="(item, index) in triggers" :key="item.id" class="trigger-item">
-        <div v-if="item.type == 'time'">
+        <div v-if="item.type == 'gas'">
+          <div class="flex-center-sb">
+            <div class="name">Gas触发器 - {{item.name}}</div>
+            <div class="flex-center">
+              <div class="edit-btn" @click="showModal(item)">编辑</div>
+              <n-popconfirm :show-icon="false" positive-text="确认" negative-text="取消" @positiveClick="del(index)">
+                <template #trigger>
+                  <div class="edit-btn">删除</div>
+                </template>
+                <p style="margin: 10px 0">是否确认删除{{item.name}}?</p>
+              </n-popconfirm>
+            </div>
+          </div>
+          <div class="mt16 sub-title">触发条件 （当前Gas: {{store.state.gasPrice}}）</div>
+          <div v-for="(condition, index) in item.conditions" :key="index" class="flex-center mt12">
+            <div class="fun flex-center">
+              <div class="name flex-center">{{getCcondition(condition.condition)}}</div>
+              <div class="function-name flex-center">{{getParamLabel(condition)}}</div>
+            </div>
+          </div>
+          
+          <div class="mt16 sub-title">触发后执行</div>
+          <div v-if="item.applyType == 'flow'" class="mt12">
+            <div class="fun flex-center">
+              <div class="name flex-center">执行流程</div>
+              <div class="function-name flex-center">{{getFlowName(item.flowId)}}</div>
+            </div>
+          </div>
+          <div v-else>
+            <div v-for="(handdle,i) in item.handdleList" :key="i">
+              <div class="mt12 flex-center">
+                <div class="fun flex-center">
+                  <div class="name flex-center">{{getContract(handdle.contractId, 'name')}}</div>
+                  <div class="function-name flex-center">{{handdle.functionName}}</div>
+                </div>
+                <div class="type">（{{getContract(handdle.contractId, 'type', handdle.functionName)}}）</div>
+              </div>
+              <div class="mt16 sub-title">参数</div>
+              <div class="params mt12" v-if="Object.keys(handdle.args).length">
+                <div class="params-item flex-center" v-for="(val, key) in handdle.args" :key="key">
+                  <div class="params-item-key flex-center">{{key}}</div>
+                  <div class="params-item-value flex-center">{{getParamLabel(val)}}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-else-if="item.type == 'time'">
           <div class="flex-center-sb">
             <div class="name">时间触发器 - {{item.name}}</div>
             <div class="flex-center">

@@ -12,7 +12,7 @@ const settings = {
 }
 const alchemy = new Alchemy(settings)
 
-const { store, setTriggrts, setCountdownDuration } = useGlobalStore()
+const { store, setTriggrts, setCountdownDuration, setGasPrice } = useGlobalStore()
 const message = useMessage()
 
 const activatedId = ref('')
@@ -24,6 +24,7 @@ const triggerData = ref({triggers: []})
 let contractData = []
 let interval = null
 let loopInterval = null
+let gasInterval = null
 
 const getType = (type) => {
   if (type == 'function') {
@@ -357,6 +358,92 @@ const onTime = () => {
   }
 }
 
+const getGas = async () => {
+  let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
+  let GP = await provider.getGasPrice()
+  return (ethers.utils.formatUnits(GP, "gwei") * 1).toFixed(2)
+}
+
+const gasFilter = (conditions, gasPrice) => {
+  let r = true
+  conditions.forEach(e => {
+    let type = e.type
+    let value = e.value
+    let condition = e.condition
+    if (type == 'param') {
+      for (let i = 0; i < params.value.length; i++) {
+        let param = params.value[i]
+        if (param.key == value && param.type == 'param') {
+          value = param.value
+        }
+      }
+    }
+    value = value * 1
+    gasPrice = gasPrice * 1
+    switch(condition) {
+      case '$lt':
+        if (!(gasPrice < value)) {
+          r = false
+        }
+        break
+      case '$lte':
+        if (!(gasPrice <= value)) {
+          r = false
+        }
+        break
+      case '$gt':
+        if (!(gasPrice > value)) {
+          r = false
+        }
+        break
+      case '$gte':
+        if (!(gasPrice >= value)) {
+          r = false
+        }
+        break
+      case '$eq':
+        if (!(gasPrice == value)) {
+          r = false
+        }
+        break
+      case '$ne':
+        if (!(gasPrice != value)) {
+          r = false
+        }
+        break
+    }
+  })
+  return r
+}
+
+const intervalFun = (gasPrice) => {
+  setGasPrice(gasPrice)
+  let triggerFun = triggerData.value.triggers[0]
+  let conditions = triggerFun.conditions
+  if (gasFilter(conditions, gasPrice)) {
+    let list = []
+    if (triggerFun.applyType == 'flow') {
+      let flows = triggerData.value.flows
+      let flow = flows.find(flow => flow.id == triggerFun.flowId)
+      list = JSON.parse(JSON.stringify(flow.handdleList))
+    } else {
+      list = JSON.parse(JSON.stringify(triggerFun.handdleList))
+    }
+    let paramList = JSON.parse(JSON.stringify(params.value))
+    applyFun(list, paramList)
+  }
+}
+
+const onGas = async () => {
+  triggerData.value.status = 'on'
+  let gasPrice = await getGas()
+  intervalFun(gasPrice)
+  gasInterval = setInterval(async () => {
+    gasPrice = await getGas()
+    intervalFun(gasPrice)
+  }, 5000)
+}
+
 const handdleFun = async (list, res, args, index) => {
   if (list && list.length) {
     let item = list.shift()
@@ -438,8 +525,12 @@ const off = async () => {
     if (trigger.type == 'contract') {
       await alchemy.ws.off()
     }
+    if (trigger.type == 'gas') {
+      clearInterval(gasInterval)
+    }
     triggerData.value.status = 'off'
     setCountdownDuration(0)
+    setGasPrice(0)
   }
 }
 
@@ -483,6 +574,10 @@ const on = (index) => {
   let trigger = triggerData.value.triggers[index]
   if (trigger.type == 'time') {
     onTime()
+    return
+  }
+  if (trigger.type == 'gas') {
+    onGas()
     return
   }
   let contractId = trigger.contractId

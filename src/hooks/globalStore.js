@@ -7,7 +7,8 @@ const store = reactive({
     contracts: [],
     wallets: [],
     activatedId: "",
-    countdownDuration: 0
+    countdownDuration: 0,
+    gasPrice: 0
   },
 });
 
@@ -35,11 +36,16 @@ const setCountdownDuration = (countdownDuration) => {
   store.state.countdownDuration = countdownDuration;
 };
 
+const setGasPrice = (gasPrice) => {
+  store.state.gasPrice = gasPrice;
+};
+
 export const useGlobalStore = () => ({
   store,
   setTriggrts,
   setContracts,
   setWallet,
   setActivatedId,
-  setCountdownDuration
+  setCountdownDuration,
+  setGasPrice
 });
