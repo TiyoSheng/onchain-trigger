@@ -6,6 +6,7 @@ import Wallet from './Wallet.vue'
 import Tabs from './Tabs.vue'
 import Share from './form/Share.vue'
 import { useDialog, useMessage } from 'naive-ui'
+import { set } from 'date-fns'
 
 const emit = defineEmits(['createTrigger'])
 
@@ -147,7 +148,7 @@ const getTriggerFun = async (data, id) => {
 
 const asyncFun = () => {
   let tg = JSON.parse(JSON.stringify(triggerData.value))
-  const d = dialog.success({
+  const d = dialog.warning({
     title: '同步版本',
     content: '同步版本后，将会覆盖当前版本，是否继续？',
     negativeText: '取消',
@@ -183,11 +184,14 @@ watch(() => store.state.activatedId, async (activatedId) => {
       let res = await getTriggerInfoFun(trigger.trigger_id, trigger.id)
       console.log(res)
       if (res && res.version != trigger.version) {
-        const d = dialog.success({
+        const d = dialog.warning({
           title: '检测到新版本',
           content: '监测到新版本是否同步，同步后将会覆盖当前版本，是否继续？',
           negativeText: '取消',
           positiveText: '确认',
+          onNegativeClick: () => {
+            triggerData.value.hasNewVersion = true
+          },
           onPositiveClick: async () => {
             d.loading = true
             let data = {
@@ -200,7 +204,7 @@ watch(() => store.state.activatedId, async (activatedId) => {
               data.share_type = 'playground'
             }
             try {
-              await getTriggerFun(data)
+              await getTriggerFun(data, trigger.id)
             } catch (error) {
               message.error(error)
             }
@@ -241,15 +245,15 @@ watch(() => store.state.triggers, (val) => {
         <Tabs :trigger="triggerData" @setTrigger="setTrigger" />
       </div>
       <div class="share flex-center-center">
-        <n-spin v-if="triggerData.trigger_id" style="height: 100%" :show="showSpin">
-          <div v-if="triggerData.trigger_id && !triggerData.isImport" class="flex-center-center update" @click="updateFun">
+        <n-spin v-if="triggerData.trigger_id && (!triggerData.isImport || triggerData.hasNewVersion) " style="height: 100%" :show="showSpin">
+          <div v-if="!triggerData.isImport" class="flex-center-center update" @click="updateFun">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M10 2.49991C14.1421 2.49991 17.5 5.85777 17.5 9.99991C17.5 14.142 14.1421 17.4999 10 17.4999C5.85786 17.4999 2.5 14.142 2.5 9.99991C2.5 7.64385 3.58639 5.54154 5.28555 4.16658" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M2.5 3.74991H5.83333V7.08324" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             <span>更新Trigger</span>
           </div>
-          <div v-if="triggerData.trigger_id && triggerData.isImport" class="flex-center-center update" @click="asyncFun">
+          <div v-if="triggerData.hasNewVersion" class="flex-center-center update" @click="asyncFun">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M10 2.49991C14.1421 2.49991 17.5 5.85777 17.5 9.99991C17.5 14.142 14.1421 17.4999 10 17.4999C5.85786 17.4999 2.5 14.142 2.5 9.99991C2.5 7.64385 3.58639 5.54154 5.28555 4.16658" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M2.5 3.74991H5.83333V7.08324" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
