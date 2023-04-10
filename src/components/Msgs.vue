@@ -374,7 +374,7 @@ const handdleFun = async (list, res, args, index) => {
       gasLimit: (gl * 1.5).toFixed(0)
     }
     if (value) {
-      if (item.args.value && item.args.value.['value(ETH)']) {
+      if (item.args.value && item.args.value['value(ETH)']) {
         sendInfo.value = item.args.value.value
       } else {
         sendInfo.value = value
