@@ -28,7 +28,7 @@ const getTrigger = (id) => {
       <div class="content">
         <n-spin :show="showSpin">
           <div class="title">Select a template.</div>
-          <div class="sub-title">Jumpstart your app development process with our pre-built solutions.</div>
+          <div class="sub-title">Jumpstart your trigger with our pre-built solutions.</div>
           <n-grid :x-gap="14" :y-gap="8" :cols="4">
             <n-grid-item v-for="item in triggerList" :key="item.trigger_id">
               <div class="card" @click="getTrigger(item.trigger_id)">
