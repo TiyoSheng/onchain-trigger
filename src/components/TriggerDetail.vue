@@ -246,10 +246,10 @@ watch(() => store.state.triggers, (val) => {
       </div>
       <div class="share flex-center-center">
         <n-spin v-if="triggerData.trigger_id && (!triggerData.isImport || triggerData.hasNewVersion) " style="height: 100%" :show="showSpin">
-          <div v-if="!triggerData.isImport" class="flex-center-center update" @click="updateFun">
+          <div v-if="!triggerData.isImport" class="flex-center-center update update-btn" @click="updateFun">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M10 2.49991C14.1421 2.49991 17.5 5.85777 17.5 9.99991C17.5 14.142 14.1421 17.4999 10 17.4999C5.85786 17.4999 2.5 14.142 2.5 9.99991C2.5 7.64385 3.58639 5.54154 5.28555 4.16658" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M2.5 3.74991H5.83333V7.08324" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M10 2.49991C14.1421 2.49991 17.5 5.85777 17.5 9.99991C17.5 14.142 14.1421 17.4999 10 17.4999C5.85786 17.4999 2.5 14.142 2.5 9.99991C2.5 7.64385 3.58639 5.54154 5.28555 4.16658" stroke="#262C33" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M2.5 3.74991H5.83333V7.08324" stroke="#262C33" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             <span>更新Trigger</span>
           </div>
@@ -327,7 +327,13 @@ watch(() => store.state.triggers, (val) => {
     span {
       color: #FFFFFF;
     }
-
+    &.update-btn {
+      background: #fff;
+      border-right: 1px solid #EEEFF0;
+      span {
+        color: #262C33;
+      }
+    }
   }
 }
 </style>

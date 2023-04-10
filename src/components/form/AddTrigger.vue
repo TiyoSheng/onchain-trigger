@@ -350,7 +350,7 @@ defineExpose({
     </n-form-item>
     <div v-if="triggerItem.type == 'time' || triggerItem.type == 'gas'">
       <div v-if="triggerItem.type == 'gas'">
-        <n-form-item label="触发条件：">
+        <n-form-item label="当gas的值为：">
           <div style="width: 100%">
             <div class="condition-item flex-center" style="margin-bottom: 12px" v-for="(condition, index) in triggerItem.conditions" :key="index">
               <n-select 
