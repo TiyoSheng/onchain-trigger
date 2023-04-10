@@ -238,7 +238,11 @@ const functionChange = (index) => {
       }
     })
   } else {
-    fun.inputs.forEach(item => {
+    let inputs = JSON.parse(JSON.stringify(fun.inputs))
+    if (fun.stateMutability == 'payable') {
+      inputs.push({name: "value(ETH)", type: "ETH"})
+    }
+    inputs.forEach(item => {
       handdle.args[item.name] = {
         value: '',
         condition: '$eq',
@@ -541,6 +545,7 @@ defineExpose({
                   label-field="label" 
                   value-field="key"
                   @update:value="argsChange(key, val.value, index)"
+                  style="margin-left: 12px"
                 />
                 <n-input style="margin-left:12px" v-if="val.type == 'http'" v-model:value="val.var" placeholder="输入返回值变量名" autocomplete="off" />
               </div>
