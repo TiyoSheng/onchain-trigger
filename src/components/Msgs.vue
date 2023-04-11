@@ -129,6 +129,49 @@ const filterFun = (args, filters) => {
   return r
 }
 
+const runFilter = (keyValue, val, condition) => {
+  let r = true
+  console.log(keyValue, val, condition)
+  switch(condition) {
+    case '$lt':
+      if (!((+keyValue) < (+val))) {
+        r = false
+      }
+      break
+    case '$lte':
+      if (!((+keyValue) <= (+val))) {
+        r = false
+      }
+      break
+    case '$gt':
+      if (!((+keyValue) > (+val))) {
+        r = false
+      }
+      break
+    case '$gte':
+      if (!((+keyValue) >= (+val))) {
+        r = false
+      }
+      break
+    case '$eq':
+      if (!((+keyValue) == (+val))) {
+        r = false
+      }
+      break
+    case '$ne':
+      if (!((+keyValue) != (+val))) {
+        r = false
+      }
+      break
+    case '$in':
+      if (!(val.includes(keyValue) > -1)) {
+        r = false
+      }
+      break
+  }
+  return r
+}
+
 const applyFun = async (list, paramList, time) => {
   if (list.length == 0) {
     if (time) {
@@ -138,6 +181,38 @@ const applyFun = async (list, paramList, time) => {
   }
   setCountdownDuration(0)
   let item = list.shift()
+  if (item.filters?.length) {
+    let p = []
+    let isGo = true
+    item.filters.forEach(e => {
+      let key = e.key
+      let val = e.value
+      let condition = e.condition
+      for (let i = 0; i < paramList.length; i++) {
+        let param = paramList[i]
+        if (param.key == e.key && param.type == e.keyType) {
+          key = param.value
+        }
+        if (param.key == e.value && param.type == e.type) {
+          val = param.value
+        }
+      }
+      if (key && val) {
+        isGo = runFilter(key, val, condition)
+      }
+    })
+    if (!isGo) {
+      let msg = {
+        type: 'flow',
+        name: item.name,
+        result: '条件不满足, 停止执行'
+      }
+      msgs.value.push(msg)
+      triggerData.value.messages = msgs.value
+      setTrigger(triggerData.value)
+      return
+    }
+  }
   if (item.type == 'http') {
     let body = {}
     let headers = {}

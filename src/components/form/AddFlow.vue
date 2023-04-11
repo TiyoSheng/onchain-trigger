@@ -24,10 +24,54 @@ const methods = [{
   label: 'POST'
 }]
 
+const conditions = [{
+  label: '大于',
+  value: '$gt'
+}, {
+  label: '小于',
+  value: '$lt'
+}, {
+  label: '大于等于',
+  value: '$gte'
+}, {
+  label: '小于等于',
+  value: '$lte'
+}, {
+  label: '等于',
+  value: '$eq'
+}, {
+  label: '不等于',
+  value: '$ne'
+}, {
+  label: '包含',
+  value: '$in'
+}]
+
 let handdleIndex = -1
 
 const getParams = (index) => {
   let paramsList = JSON.parse(JSON.stringify(params.value))
+  let handdles = flowItem.value.handdleList.filter((item, i) => i < index)
+  handdles.forEach(item => {
+    if (item.type === 'contract') {
+      paramsList.push({
+        key: `contract_result:${item.name}`,
+        type: 'contract',
+        label: `contract_result: ${item.name}`
+      })
+    } else if (item.type === 'http') {
+      paramsList.push({
+        key: `http_result:${item.name}`,
+        type: 'http',
+        label: `http_result: ${item.name}`
+      })
+    }
+  })
+  return paramsList
+}
+
+const getVariableList = (index) => {
+  let paramsList = []
   let handdles = flowItem.value.handdleList.filter((item, i) => i < index)
   handdles.forEach(item => {
     if (item.type === 'contract') {
@@ -67,7 +111,8 @@ const handleOk = () => {
         type: e.type,
         contractId: e.contractId,
         functionName: e.functionName,
-        args: e.args
+        args: e.args,
+        filters: e.filters
       }
     } else if (e.type == 'http') {
       return {
@@ -77,7 +122,8 @@ const handleOk = () => {
         url: e.url,
         method: e.method,
         params: e.params,
-        headers: e.headers
+        headers: e.headers,
+        filters: e.filters
       }
     }
   })
@@ -123,7 +169,7 @@ const functionChange = (index) => {
 const argsChange = (key, val, index) => {
   let handdle = flowItem.value.handdleList[index]
   if (val) {
-    let param = getParams(index).find(item => item.key === val)
+    let param = getParams(flowItem.value.handdleList.length - 1).find(item => item.key === val)
     if (param) {
       handdle.args[key].type = param.type
     } else {
@@ -148,22 +194,35 @@ const addHanddle = () => {
     headers: [],
     params: [],
     url: '',
-    method: ''
+    method: '',
+    filters: []
   })
 }
 
-const paramChange = (type, index, i) => {
+const addFilter = (index) => {
   let handdle = flowItem.value.handdleList[index]
-  console.log(handdle, type, i)
-  if (handdle[type][i].value) {
-    console.log(getParams(index))
-    let param = getParams(index).find(item => item.key === handdle[type][i].value)
+  if (!handdle.filters) handdle.filters = []
+  handdle.filters.push({
+    key: '',
+    value: '',
+    type: '',
+    keyType: '',
+    condition: '$eq'
+  })
+}
+
+const paramChange = (type, index, i, key = 'type', value ='value') => {
+  console.log(key)
+  let handdle = flowItem.value.handdleList[index]
+  if (handdle[type][i][value]) {
+    let param = getParams(index).find(item => item.key === handdle[type][i][value])
     if (param) {
-      handdle[type][i].type = param.type
+      handdle[type][i][key] = param.type
     } else {
-      handdle[type][i].type = 'var'
+      handdle[type][i][key] = 'var'
     }
   }
+  console.log(handdle)
 }
 
 const addParams = (index, type) => {
@@ -232,6 +291,49 @@ defineExpose({
       </div>
       <n-form-item label="步骤名称：">
         <n-input v-model:value="item.name" placeholder="输入步骤名称" autocomplete="off" />
+      </n-form-item>
+      <n-form-item v-if="index > 0" label="当满足以下条件时流程继续：">
+        <div style="width: 100%">
+          <div v-for="(filter, i) in item.filters" :key="i" class="flex-center" style="width: 100%;margin-bottom: 12px">
+            <n-select 
+              v-model:value="filter.key"
+              :options="getVariableList(index)"
+              label-field="label"
+              value-field="key"
+              placeholder="变量列表"
+              @update:value="paramChange('filters', index, i, 'keyType', 'key')"
+            />
+            <n-input style="margin-left:12px" v-if="filter.keyType == 'http'" v-model:value="filter.var" placeholder="输入返回值变量名" autocomplete="off" />
+            <n-select 
+              v-model:value="filter.condition"
+              :options="conditions"
+              label-field="label"
+              value-field="value"
+              placeholder="变量列表"
+              style="margin-left:12px;width: 120px;flex: 0 0 120px;"
+            />
+            <n-select 
+              v-model:value="filter.value"
+              :options="getParams(index)"
+              filterable tag
+              label-field="label"
+              value-field="key"
+              placeholder="变量列表"
+              style="margin-left:12px;flex: 0 0 200px;width:200px"
+              @update:value="paramChange('filters',index, i)"
+            />
+            <div class="icon" @click="delParams(index, i, 'filters')">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9.33325 6.66663L9.33325 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M6.66675 6.66663L6.66675 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12 4H4V13.3333C4 13.7015 4.29848 14 4.66667 14H11.3333C11.7015 14 12 13.7015 12 13.3333V4Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2.66675 4H13.3334" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9.99992 2H5.99992C5.63173 2 5.33325 2.29848 5.33325 2.66667V4H10.6666V2.66667C10.6666 2.29848 10.3681 2 9.99992 2Z" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="btn" @click="addFilter(index)">添加条件</div>
+        </div>
       </n-form-item>
       <n-form-item label="请求方式：">
         <n-radio-group v-model:value="item.type" name="radio" size="large" @update:value="radioUpdate(index)">
@@ -406,15 +508,6 @@ defineExpose({
     width: 220px;
     flex: 0 0 220px;
   }
-  .icon {
-    margin-left: 12px;
-    font-size: 0;
-    cursor: pointer;
-    &:hover {
-      background: rgba(201, 209, 220, 0.35);
-      border-radius: 2px;
-    }
-  }
 }
 .handdle-item {
   position: relative;
@@ -429,6 +522,15 @@ defineExpose({
         border-radius: 2px;
       }
     }
+  }
+}
+.icon {
+  margin-left: 12px;
+  font-size: 0;
+  cursor: pointer;
+  &:hover {
+    background: rgba(201, 209, 220, 0.35);
+    border-radius: 2px;
   }
 }
 </style>

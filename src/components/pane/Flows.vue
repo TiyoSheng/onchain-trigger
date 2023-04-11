@@ -19,6 +19,50 @@ const params = ref([])
 const addFlowRef = ref(null)
 const loading = ref('')
 
+const filterConditions = [{
+  label: '大于',
+  value: '$gt'
+}, {
+  label: '小于',
+  value: '$lt'
+}, {
+  label: '大于等于',
+  value: '$gte'
+}, {
+  label: '小于等于',
+  value: '$lte'
+}, {
+  label: '等于',
+  value: '$eq'
+}, {
+  label: '不等于',
+  value: '$ne'
+}, {
+  label: '包含',
+  value: '$in'
+}]
+
+const getConditionsName = (val) => {
+  let name = filterConditions.find(item => item.value === val).label
+  return name
+}
+
+const getParamLabel = (item) => {
+  if (item.type == 'param') {
+    let param = params.value.find(param => param.key === item.value)
+    console.log(param)
+    if (param) {
+      return param.label
+    } else {
+      if (item.value == 'currentWalletAddress' && !triggerData?.wallet?.address) {
+        return '请设置钱包'
+      }
+    }
+  } else {
+    return item.value
+  }
+}
+
 const showModal = (item) => {
   addFlowRef.value.showAddModal = true
   addFlowRef.value.params = JSON.parse(JSON.stringify(params.value))
@@ -93,12 +137,86 @@ const getInputs = (contractId, funName) => {
   return inputs
 }
 
+const runFilter = (keyValue, val, condition) => {
+  let r = true
+  console.log(keyValue, val, condition)
+  switch(condition) {
+    case '$lt':
+      if (!((+keyValue) < (+val))) {
+        r = false
+      }
+      break
+    case '$lte':
+      if (!((+keyValue) <= (+val))) {
+        r = false
+      }
+      break
+    case '$gt':
+      if (!((+keyValue) > (+val))) {
+        r = false
+      }
+      break
+    case '$gte':
+      if (!((+keyValue) >= (+val))) {
+        r = false
+      }
+      break
+    case '$eq':
+      if (!((+keyValue) == (+val))) {
+        r = false
+      }
+      break
+    case '$ne':
+      if (!((+keyValue) != (+val))) {
+        r = false
+      }
+      break
+    case '$in':
+      if (!(val.includes(keyValue) > -1)) {
+        r = false
+      }
+      break
+  }
+  return r
+}
+
 const runFunction = async (funList, paramList) => {
   if (funList.length == 0) {
     loading.value = ''
     return
   }
   let item = funList.shift()
+  if (item.filters?.length) {
+    let p = []
+    let isGo = true
+    item.filters.forEach(e => {
+      let key = e.key
+      let val = e.value
+      let condition = e.condition
+      for (let i = 0; i < paramList.length; i++) {
+        let param = paramList[i]
+        if (param.key == e.key && param.type == e.keyType) {
+          key = param.value
+        }
+        if (param.key == e.value && param.type == e.type) {
+          val = param.value
+        }
+      }
+      if (key && val) {
+        isGo = runFilter(key, val, condition)
+      }
+    })
+    if (!isGo) {
+      let msg = {
+        type: 'flow',
+        name: item.name,
+        result: '条件不满足, 停止执行'
+      }
+      emit('setMessage', msg)
+      loading.value = ''
+      return
+    }
+  }
   if (item.type == 'contract') {
     if (!trigger.value.wallet?.address) {
       message.error("请先设置钱包")
@@ -335,6 +453,13 @@ watch(() => props.triggerData, (val) => {
             </div>
             <div class="type">（{{handdle.method}}）</div>
           </div>
+          <div v-if="handdle.filters?.length" class="mt12">
+            <div v-for="(filter, i) in handdle.filters" :key="i" class="filter flex-center">
+              <div class="filter-name flex-center">{{filter.key}} <span v-if="filter.var">({{filter.var}})</span></div>
+              <div class="filter-condition flex-center-center">{{getConditionsName(filter.condition)}}</div>
+              <div class="filter-value flex-center">{{getParamLabel(filter)}}</div>
+            </div>
+          </div>
         </div>
         <div class="btn-primary mt16" @click="apply(item)">执行</div>
       </n-spin>
@@ -434,5 +559,45 @@ watch(() => props.triggerData, (val) => {
 
 .mt12 {
   margin-top: 12px;
+}
+.filter {
+  width: 500px;
+  height: 40px;
+  border: 1px solid #F8F9FA;
+  border-radius: 5px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  .filter-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 16px;
+    color: #5C636B;
+    margin-right: 16px;
+  }
+  .filter-condition {
+    flex: 0 0 64px;
+    width: 64px;
+    height: 24px;
+    background: #F8F9FA;
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 16px;
+    color: #5C636B;
+    margin-right: 16px;
+  }
+  .filter-value {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 16px;
+    color: #5C636B;
+  }
 }
 </style>
