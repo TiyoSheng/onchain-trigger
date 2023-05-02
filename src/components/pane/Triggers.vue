@@ -180,6 +180,7 @@ const getContract = (id, type, funName) => {
 watch(() => props.trigger, (val) => {
   if (val) {
     let trigger = JSON.parse(JSON.stringify(val))
+    console.log(trigger.triggers)
     triggers.value = JSON.parse(JSON.stringify(trigger.triggers))
     let globalParams = JSON.parse(JSON.stringify(trigger.globalParams))
     let address = trigger.wallet?.address
@@ -259,6 +260,38 @@ watch(() => store.state.countdownDuration, (val) => {
                   <div class="params-item-value flex-center">{{getParamLabel(val)}}</div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+        <div v-else-if="item.type == 'uni'">
+          <div class="flex-center-sb">
+            <div class="name">Uni触发器 - {{item.name}}</div>
+            <div class="flex-center">
+              <div class="edit-btn" @click="showModal(item)">编辑</div>
+              <n-popconfirm :show-icon="false" positive-text="确认" negative-text="取消" @positiveClick="del(index)">
+                <template #trigger>
+                  <div class="edit-btn">删除</div>
+                </template>
+                <p style="margin: 10px 0">是否确认删除{{item.name}}?</p>
+              </n-popconfirm>
+            </div>
+          </div>
+          <div class="flex-center mt12">
+            <div class="fun flex-center">
+              <div class="name flex-center">代币地址：</div>
+              <div class="function-name flex-center">{{ item.reserveIn }}</div>
+            </div>
+          </div>
+          <div class="flex-center mt12">
+            <div class="fun flex-center">
+              <div class="name flex-center">输出代币地址：</div>
+              <div class="function-name flex-center">{{ item.reserveOut }}</div>
+            </div>
+          </div>
+          <div class="flex-center mt12">
+            <div class="fun flex-center">
+              <div class="name flex-center">输入代币数量：</div>
+              <div class="function-name flex-center">{{ item.amountIn }}</div>
             </div>
           </div>
         </div>

@@ -42,6 +42,10 @@ const filterConditions = [{
   label: '包含',
   value: '$in'
 }]
+const gasConditions = [{
+  label: '大于等于',
+  value: '$gte'
+}]
 const conditions = [{
   label: '大于',
   value: '$gt'
@@ -184,6 +188,13 @@ const handleOk = () => {
       type: 'gas',
       conditions: trigger.conditions
     }
+  } else if (trigger.type == 'uni') {
+    data = {
+      type: 'uni',
+      reserveIn: trigger.reserveIn,
+      reserveOut: trigger.reserveOut,
+      amountIn: trigger.amountIn
+    }
   } else {
     data = {
       type: 'contract',
@@ -196,8 +207,10 @@ const handleOk = () => {
     data.applyType = 'flow'
     data.flowId = trigger.flowId
   } else {
-    data.applyType = 'contract'
-    data.handdleList = trigger.handdleList
+    if (trigger.type != 'uni') {
+      data.applyType = 'contract'
+      data.handdleList = trigger.handdleList
+    }
   }
   data.name = trigger.name
   data.id = trigger.id || ''
@@ -319,7 +332,11 @@ const radioUpdate = () => {
     triggerItem.value.unit = 's'
   }
   if (triggerItem.value.type === 'gas') {
-    triggerItem.value.conditions = []
+    triggerItem.value.conditions = [{
+      condition: '$gte',
+      value: '',
+      type: ''
+    }]
   }
 }
 
@@ -346,16 +363,55 @@ defineExpose({
         <n-radio-button value="contract">合约触发器</n-radio-button>
         <n-radio-button value="time">时间触发器</n-radio-button>
         <n-radio-button value="gas">Gas触发器</n-radio-button>
+        <n-radio-button value="uni">Uni触发器</n-radio-button>
       </n-radio-group>
     </n-form-item>
-    <div v-if="triggerItem.type == 'time' || triggerItem.type == 'gas'">
+    <div v-if="triggerItem.type == 'uni'">
+      <n-form-item label="代币地址：">
+        <div style="width: 100%">
+          <n-select 
+            v-model:value="triggerItem.reserveIn"
+            filterable 
+            tag 
+            :options="params" 
+            label-field="label" 
+            value-field="key"
+          />
+        </div>
+      </n-form-item>
+      <n-form-item label="输出代币地址：">
+        <div style="width: 100%">
+          <n-select 
+            v-model:value="triggerItem.reserveOut"
+            filterable 
+            tag 
+            :options="params" 
+            label-field="label" 
+            value-field="key"
+          />
+        </div>
+      </n-form-item>
+      <n-form-item label="输入数量：">
+        <div style="width: 100%">
+          <n-select 
+            v-model:value="triggerItem.amountIn"
+            filterable 
+            tag 
+            :options="params" 
+            label-field="label" 
+            value-field="key"
+          />
+        </div>
+      </n-form-item>
+    </div>
+    <div v-else-if="triggerItem.type == 'time' || triggerItem.type == 'gas'">
       <div v-if="triggerItem.type == 'gas'">
         <n-form-item label="当gas的值为：">
           <div style="width: 100%">
             <div class="condition-item flex-center" style="margin-bottom: 12px" v-for="(condition, index) in triggerItem.conditions" :key="index">
               <n-select 
                 v-model:value="condition.condition"
-                :options="conditions"
+                :options="gasConditions"
                 label-field="label" 
                 value-field="value"
               />
@@ -370,7 +426,7 @@ defineExpose({
                 style="margin-left: 12px"
               />
             </div>
-            <div class="btn" @click="addCondition">添加触发条件</div>
+            <!-- <div class="btn" @click="addCondition">添加触发条件</div> -->
           </div>
         </n-form-item>
       </div>
@@ -474,6 +530,7 @@ defineExpose({
             </div>
           </div>
         </div>
+        <div class="btn" @click="addHanddle">添加执行函数</div>
       </div>
     </div>
     <div v-else>
@@ -631,9 +688,9 @@ defineExpose({
             </div>
           </div>
         </div>
+        <div class="btn" @click="addHanddle">添加执行函数</div>
       </div>
     </div>
-    <div v-if="triggerItem.applyType != 'flow'" class="btn" @click="addHanddle">添加执行函数</div>
     <n-form-item style="display: flex;justify-content: flex-end;margin-top: 16px">
       <n-button attr-type="button" @click="cancel">取消</n-button>
       <n-button style="margin-left: 20px" attr-type="button" @click="handleOk">确定</n-button>

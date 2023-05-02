@@ -5,6 +5,7 @@ import { useMessage } from "naive-ui"
 import { ethers } from 'ethers'
 import "vue3-json-viewer/dist/index.css"
 import { useGlobalStore } from "../hooks/globalStore"
+import { decodeExecute } from '../libs/universalDecoder'
 import { Alchemy, Network, AlchemySubscription } from "alchemy-sdk"
 const settings = {
   apiKey: "72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G",
@@ -519,6 +520,32 @@ const onGas = async () => {
   }, 5000)
 }
 
+const onUni = async (index) => {
+  triggerData.value.status = 'on'
+  let trigger = triggerData.value.triggers[index]
+  alchemy.ws.on({
+    method: AlchemySubscription.PENDING_TRANSACTIONS,
+    toAddress: '0x4648a43B2C14Da09FdF82B161150d3F634f40491'
+  }, async (res) => {
+    try {
+      let inputData = decodeExecute(res.input)
+      let path = inputData.path || []
+      if (path[0] == trigger.reserveIn && res.from.toLocaleLowerCase() != triggerData.value.wallet.address.toLocaleLowerCase()) {
+        let msg = {
+          name: trigger.name,
+          result: res,
+          type: 'trigger',
+        }
+        msgs.value.push(msg)
+        triggerData.value.messages = msgs.value
+        setTrigger(triggerData.value)
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  })
+}
+
 const handdleFun = async (list, res, args, index) => {
   if (list && list.length) {
     let item = list.shift()
@@ -597,7 +624,7 @@ const off = async () => {
         clearInterval(loopInterval)
       }
     }
-    if (trigger.type == 'contract') {
+    if (trigger.type == 'contract' || trigger.type == 'uni') {
       await alchemy.ws.off()
     }
     if (trigger.type == 'gas') {
@@ -653,6 +680,10 @@ const on = (index) => {
   }
   if (trigger.type == 'gas') {
     onGas()
+    return
+  }
+  if (trigger.type == 'uni') {
+    onUni(index)
     return
   }
   let contractId = trigger.contractId
