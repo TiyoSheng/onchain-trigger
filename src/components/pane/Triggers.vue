@@ -279,7 +279,7 @@ watch(() => store.state.countdownDuration, (val) => {
           <div class="flex-center mt12">
             <div class="fun flex-center">
               <div class="name flex-center">监控类型：</div>
-              <div class="function-name flex-center">{{ (item.uniType == 0 ? '买入' : '卖出') }}</div>
+              <div class="function-name flex-center">{{ (item.uniType == 1 ? '买入' : '卖出') }}</div>
             </div>
           </div>
           <div class="flex-center mt12">

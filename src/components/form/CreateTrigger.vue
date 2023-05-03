@@ -28,6 +28,9 @@ const handleAddClick = async () => {
   if (!triggerData.value.id) {
     triggerData.value.id = crypto.randomUUID()
     triggers.push(triggerData.value)
+  } else {
+    let index = triggers.findIndex(item => item.id === triggerData.value.id)
+    triggers.splice(index, 1, triggerData.value)
   }
   await setTriggrts(triggers)
   await setActivatedId(triggerData.value.id)
@@ -74,7 +77,7 @@ defineExpose({
           取消
         </n-button>
         <n-button style="margin-left: 20px" attr-type="button" @click="handleAddClick">
-          提交
+          确认
         </n-button>
       </n-form-item>
     </n-modal>

@@ -567,10 +567,11 @@ const onUni = async (index) => {
     try {
       let inputData = decodeExecute(res.input)
       let path = inputData.path || []
+      console.log(path)
       if (path[trigger.uniType].toLocaleLowerCase() == getParam(trigger.daiAddress).toLocaleLowerCase()) {
         let msg = {
           name: trigger.name,
-          result: res,
+          result: `钱包地址 ${getParam(trigger.address)} ${trigger.uniType == 0 ? '卖出' : '买入'} 代币 ${getParam(trigger.daiAddress)} 数量 ${trigger.uniType == 0 ? inputData.amountIn : inputData.amounOut}`,
           type: 'trigger',
         }
         msgs.value.push(msg)
