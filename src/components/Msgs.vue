@@ -520,17 +520,54 @@ const onGas = async () => {
   }, 5000)
 }
 
+const getParam = (e) => {
+  let paramList = JSON.parse(JSON.stringify(params.value))
+  let val = e.value
+  if (e.type == 'param') {
+    for (let i = 0; i < paramList.length; i++) {
+      let param = paramList[i]
+      if (param.key == e.value && param.type == 'param') {
+        val = param.value
+      }
+    }
+  } else if (e.type == 'http') {
+    for (let i = 0; i < paramList.length; i++) {
+      let param = paramList[i]
+      if (param.key == e.value && param.type == 'http') {
+        val = param.value[e.var]
+      }
+    }
+  } else if (e.type == 'contract') {
+    for (let i = 0; i < paramList.length; i++) {
+      let param = paramList[i]
+      if (param.key == e.value && param.type == 'contract') {
+        val = param.value
+      }
+    }
+  }
+  return val
+}
+
 const onUni = async (index) => {
   triggerData.value.status = 'on'
   let trigger = triggerData.value.triggers[index]
+  alchemy.core.getTokenBalances(triggerData.value.wallet?.address).then(async () => {
+    message.success("开始监听")
+    triggerData.value.status = 'on'
+  })
   alchemy.ws.on({
-    method: AlchemySubscription.PENDING_TRANSACTIONS,
-    toAddress: '0x4648a43B2C14Da09FdF82B161150d3F634f40491'
+    method: AlchemySubscription.MINED_TRANSACTIONS,
+    addresses: [{
+      from: getParam(trigger.address),
+      to: "0x4648a43B2C14Da09FdF82B161150d3F634f40491",
+    }]
   }, async (res) => {
+    console.log(res)
+    res = res.transaction
     try {
       let inputData = decodeExecute(res.input)
       let path = inputData.path || []
-      if (path[0] == trigger.reserveIn && res.from.toLocaleLowerCase() != triggerData.value.wallet.address.toLocaleLowerCase()) {
+      if (path[trigger.uniType].toLocaleLowerCase() == getParam(trigger.daiAddress).toLocaleLowerCase()) {
         let msg = {
           name: trigger.name,
           result: res,

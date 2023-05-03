@@ -13,7 +13,6 @@ const params = ref([])
 
 const showModal = () => {
   addParamsRef.value.showAddModal = true
-  addParamsRef.value.params = JSON.parse(JSON.stringify(params.value))
 }
 const handleOk = (val) => {
   emit('setParams', val)

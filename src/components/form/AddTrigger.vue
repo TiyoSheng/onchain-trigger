@@ -3,6 +3,9 @@ import { ref } from 'vue'
 import { useGlobalStore } from '../../hooks/globalStore'
 import AddContract from '../../components/form/AddContract.vue'
 import AddFlow from '../../components/form/AddFlow.vue'
+import AddParams from '../../components/form/AddParams.vue'
+
+let paramsName = ''
 
 const { store, setTriggrts } = useGlobalStore()
 
@@ -10,6 +13,7 @@ const emit = defineEmits(['handleOk'])
 
 const addContractRef = ref(null)
 const addFlowRef = ref(null)
+const addParams = ref(null)
 const showAddModal = ref(false)
 const modalTitle = ref('设置触发器')
 const params = ref([])
@@ -191,9 +195,9 @@ const handleOk = () => {
   } else if (trigger.type == 'uni') {
     data = {
       type: 'uni',
-      reserveIn: trigger.reserveIn,
-      reserveOut: trigger.reserveOut,
-      amountIn: trigger.amountIn
+      daiAddress: trigger.daiAddress,
+      address: trigger.address,
+      uniType: trigger.uniType
     }
   } else {
     data = {
@@ -207,10 +211,8 @@ const handleOk = () => {
     data.applyType = 'flow'
     data.flowId = trigger.flowId
   } else {
-    if (trigger.type != 'uni') {
-      data.applyType = 'contract'
-      data.handdleList = trigger.handdleList
-    }
+    data.applyType = 'contract'
+    data.handdleList = trigger.handdleList
   }
   data.name = trigger.name
   data.id = trigger.id || ''
@@ -250,6 +252,18 @@ const getFitlerParams = (id ,name) => {
       value: e.name
     }
   })
+}
+
+const uniParamsChange = (name) => {
+  let val = triggerItem.value[name].value
+  if (val) {
+    let param = params.value.find(item => item.key === val)
+    if (param) {
+      triggerItem.value[name].type = param.type
+    } else {
+      triggerItem.value[name].type = 'var'
+    }
+  }
 }
 
 const argsChange = (key, val, index) => {
@@ -331,6 +345,17 @@ const radioUpdate = () => {
     triggerItem.value.timeType = 'timing'
     triggerItem.value.unit = 's'
   }
+  if (triggerItem.value.type === 'uni') {
+    triggerItem.value.uniType = '1'
+    triggerItem.value.address = {
+      value: '',
+      type: ''
+    }
+    triggerItem.value.daiAddress = {
+      value: '',
+      type: ''
+    }
+  }
   if (triggerItem.value.type === 'gas') {
     triggerItem.value.conditions = [{
       condition: '$gte',
@@ -338,6 +363,43 @@ const radioUpdate = () => {
       type: ''
     }]
   }
+}
+
+const addParamsSuccess = async (e) => {
+  console.log(e)
+  let triggrts = store.state.triggers
+  let activatedId = store.state.activatedId
+  let triggerData = triggrts.find(item => item.id === activatedId)
+  let index = triggrts.findIndex(item => item.id === activatedId)
+  triggerData.globalParams = e
+  triggrts[index] = triggerData
+  await setTriggrts(triggrts)
+  let item = e[e.length - 1]
+  item.label = `${item.key} (${item.value})`
+  item.type = 'param'
+  params.value.splice(-1, 0, item)
+  if (paramsName) {
+    triggerItem.value[paramsName].value = item.key
+    triggerItem.value[paramsName].type = item.type
+    paramsName = ''
+  }
+
+}
+
+const addParamsFun = (name) => {
+  addParams.value.showAddModal = true
+  paramsName = name
+}
+
+const getOutParams = () => {
+  let p = JSON.parse(JSON.stringify(params.value))
+  p.push({
+    key: 'any',
+    label: '任意',
+    type: 'val'
+  })
+  return p
+  
 }
 
 defineExpose({
@@ -366,45 +428,51 @@ defineExpose({
         <n-radio-button value="uni">Uni触发器</n-radio-button>
       </n-radio-group>
     </n-form-item>
-    <div v-if="triggerItem.type == 'uni'">
-      <n-form-item label="代币地址：">
-        <div style="width: 100%">
-          <n-select 
-            v-model:value="triggerItem.reserveIn"
-            filterable 
-            tag 
-            :options="params" 
-            label-field="label" 
-            value-field="key"
-          />
-        </div>
-      </n-form-item>
-      <n-form-item label="输出代币地址：">
-        <div style="width: 100%">
-          <n-select 
-            v-model:value="triggerItem.reserveOut"
-            filterable 
-            tag 
-            :options="params" 
-            label-field="label" 
-            value-field="key"
-          />
-        </div>
-      </n-form-item>
-      <n-form-item label="输入数量：">
-        <div style="width: 100%">
-          <n-select 
-            v-model:value="triggerItem.amountIn"
-            filterable 
-            tag 
-            :options="params" 
-            label-field="label" 
-            value-field="key"
-          />
-        </div>
-      </n-form-item>
-    </div>
-    <div v-else-if="triggerItem.type == 'time' || triggerItem.type == 'gas'">
+    <div v-if="triggerItem.type == 'time' || triggerItem.type == 'gas' || triggerItem.type == 'uni'">
+      <div v-if="triggerItem.type == 'uni'">
+        <n-form-item label="方向判断：">
+          <n-radio-group v-model:value="triggerItem.uniType" name="radio" size="large" >
+            <n-radio-button value="1">买入</n-radio-button>
+            <n-radio-button value="0">卖出</n-radio-button>
+          </n-radio-group>
+        </n-form-item>
+        <n-form-item label="监控账户地址：">
+          <div style="width: 100%">
+            <n-select 
+              v-model:value="triggerItem.address.value"
+              filterable 
+              tag 
+              :options="params" 
+              label-field="label" 
+              value-field="key"
+              placeholder="Input or Select"
+              @update:value="uniParamsChange('address')"
+            >
+              <template #action>
+                <p @click="addParamsFun('address')" class="add-new-btn">新增全局变量</p>
+              </template>
+            </n-select>
+          </div>
+        </n-form-item>
+        <n-form-item label="监控代币地址：">
+          <div style="width: 100%">
+            <n-select 
+              v-model:value="triggerItem.daiAddress.value"
+              filterable 
+              tag 
+              :options="params" 
+              label-field="label" 
+              value-field="key"
+              placeholder="Input or Select"
+              @update:value="uniParamsChange('daiAddress')"
+            >
+              <template #action>
+                <p @click="addParamsFun('daiAddress')" class="add-new-btn">新增全局变量</p>
+              </template>
+            </n-select>
+          </div>
+        </n-form-item>
+      </div>
       <div v-if="triggerItem.type == 'gas'">
         <n-form-item label="当gas的值为：">
           <div style="width: 100%">
@@ -422,6 +490,7 @@ defineExpose({
                 :options="params" 
                 label-field="label" 
                 value-field="key"
+                placeholder="Input or Select"
                 @update:value="conditionChange(index)"
                 style="margin-left: 12px"
               />
@@ -524,13 +593,13 @@ defineExpose({
                   :options="params" 
                   label-field="label" 
                   value-field="key"
+                  placeholder="Input or Select"
                   @update:value="argsChange(key, val.value, index)"
                 />
               </div>
             </div>
           </div>
         </div>
-        <div class="btn" @click="addHanddle">添加执行函数</div>
       </div>
     </div>
     <div v-else>
@@ -680,6 +749,7 @@ defineExpose({
                   :options="params" 
                   label-field="label" 
                   value-field="key"
+                  placeholder="Input or Select"
                   @update:value="argsChange(key, val.value, index)"
                   style="margin-left: 12px"
                 />
@@ -688,9 +758,9 @@ defineExpose({
             </div>
           </div>
         </div>
-        <div class="btn" @click="addHanddle">添加执行函数</div>
       </div>
     </div>
+    <div v-if="triggerItem.applyType != 'flow'" class="btn" @click="addHanddle">添加执行函数</div>
     <n-form-item style="display: flex;justify-content: flex-end;margin-top: 16px">
       <n-button attr-type="button" @click="cancel">取消</n-button>
       <n-button style="margin-left: 20px" attr-type="button" @click="handleOk">确定</n-button>
@@ -698,6 +768,7 @@ defineExpose({
   </n-modal>
   <AddContract ref="addContractRef" @success="addContractSuccess" />
   <AddFlow ref="addFlowRef" @handleOk="addFlowSuccess" />
+  <AddParams ref="addParams" @handleOk="addParamsSuccess" />
 </template>
 <style lang="scss" scoped>
 .filter-item {

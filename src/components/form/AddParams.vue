@@ -1,5 +1,8 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { useGlobalStore } from '../../hooks/globalStore'
+
+const { store } = useGlobalStore()
 
 const emit = defineEmits(['handleOk'])
 
@@ -30,6 +33,15 @@ const cancel = () => {
   showAddModal.value = false
   params.value = []
 }
+
+watch(() => showAddModal.value, (val) => {
+  if (val) {
+    let triggrts = store.state.triggers
+    let activatedId = store.state.activatedId
+    let triggerData = triggrts.find(item => item.id === activatedId)
+    params.value = JSON.parse(JSON.stringify(triggerData.globalParams))
+  }
+})
 
 defineExpose({
   showAddModal,

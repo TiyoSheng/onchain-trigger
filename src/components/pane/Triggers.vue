@@ -278,20 +278,20 @@ watch(() => store.state.countdownDuration, (val) => {
           </div>
           <div class="flex-center mt12">
             <div class="fun flex-center">
-              <div class="name flex-center">代币地址：</div>
-              <div class="function-name flex-center">{{ item.reserveIn }}</div>
+              <div class="name flex-center">监控类型：</div>
+              <div class="function-name flex-center">{{ (item.uniType == 0 ? '买入' : '卖出') }}</div>
             </div>
           </div>
           <div class="flex-center mt12">
             <div class="fun flex-center">
-              <div class="name flex-center">输出代币地址：</div>
-              <div class="function-name flex-center">{{ item.reserveOut }}</div>
+              <div class="name flex-center">监控账户地址：</div>
+              <div class="function-name flex-center">{{ getParamLabel(item.address) }}</div>
             </div>
           </div>
           <div class="flex-center mt12">
             <div class="fun flex-center">
-              <div class="name flex-center">输入代币数量：</div>
-              <div class="function-name flex-center">{{ item.amountIn }}</div>
+              <div class="name flex-center">监控代币地址：</div>
+              <div class="function-name flex-center">{{ getParamLabel(item.daiAddress) }}</div>
             </div>
           </div>
         </div>
