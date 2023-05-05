@@ -507,7 +507,7 @@ const isAppove = async (item) => {
   let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
   let wallet = new ethers.Wallet(triggerData.value.wallet?.privateKey, provider)
   let ERC20TokenContract = await new ethers.Contract(fromTokenAddress, erc20abi, wallet)
-  let allowance = await ERC20TokenContract.allowance(trigger.value.wallet?.address, '0xF91bB752490473B8342a3E964E855b9f9a2A668e')
+  let allowance = await ERC20TokenContract.allowance(triggerData.value.wallet?.address, '0xF91bB752490473B8342a3E964E855b9f9a2A668e')
   return (allowance.toString() * 1) > (inAmount * 1)
 }
 
