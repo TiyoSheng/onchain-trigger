@@ -606,8 +606,11 @@ defineExpose({
       label-field="label"
       value-field="value"
       placeholder="选择或输入Decimals"
-      @update:value="convert"
     />
+    <n-form-item style="display: flex;justify-content: flex-end;margin-top: 16px">
+      <n-button attr-type="button" @click="convertCancel">取消</n-button>
+      <n-button style="margin-left: 20px" attr-type="button" @click="convert">确定</n-button>
+    </n-form-item>
   </n-modal>
   <AddContract ref="addContractRef" @success="addContractSuccess" />
 </template>
