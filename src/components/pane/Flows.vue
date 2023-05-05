@@ -398,6 +398,7 @@ const runFunction = async (funList, paramList) => {
           result: swapQuoteJSON
         }
         emit('setMessage', msg3)
+        loading.value = ''
         return
       }
       let msg2 = {
@@ -434,6 +435,8 @@ const runFunction = async (funList, paramList) => {
         result: error?.error?.message || error?.message || error
       }
       emit('setMessage', msg1)
+      loading.value = ''
+      return
     }
   }
   runFunction(funList, paramList)
