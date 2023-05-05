@@ -343,7 +343,7 @@ const applyFun = async (list, paramList, time) => {
         appove(item)
       }
       let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
-      let wallet = new ethers.Wallet(trigger.value.wallet?.privateKey, provider)
+      let wallet = new ethers.Wallet(triggerData.value.wallet?.privateKey, provider)
       let data = {
         from: swapQuoteJSON.from,
         to: swapQuoteJSON.to,
