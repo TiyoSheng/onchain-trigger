@@ -955,7 +955,7 @@ watch(() => msgs.value, (val) => {
 <style lang="scss" scoped>
 .msgs {
   flex: 1;
-  max-width: 618px;
+  // max-width: 618px;
   height: calc(100vh - 64px);
   background: #1F1E26;
   overflow-y: auto;

@@ -188,4 +188,7 @@
   padding: 20px 0;
   box-sizing: border-box;
 }
+.n-card > .n-card-header {
+  border-radius: 16px;
+}
 

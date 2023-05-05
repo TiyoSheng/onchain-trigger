@@ -48,7 +48,6 @@ watch(() => props.trigger, (val) => {
 }, {immediate: true})
 </script>
 <template>
-  <n-spin size="small" :show="walletSpin">
     <div class="wallet">
       <div v-if="triggerData.wallet?.address">
         <div class="wallet-hd flex-center">
@@ -68,13 +67,15 @@ watch(() => props.trigger, (val) => {
             切换地址
           </div>
         </div>
-        <div class="wallet-balance flex-center">
-          余额：<span>{{triggerData.wallet?.balance || '0.0'}} ETH</span>
-          <svg @click="getBalance" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M8 2.74994C10.8995 2.74994 13.25 5.10044 13.25 7.99994C13.25 10.8994 10.8995 13.2499 8 13.2499C5.1005 13.2499 2.75 10.8994 2.75 7.99994C2.75 6.3507 3.51047 4.87908 4.69989 3.91661" stroke="#9BA0A8" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M2.75 3.62494H5.08333V5.95827" stroke="#9BA0A8" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
+        <n-spin size="small" :show="walletSpin">
+          <div class="wallet-balance flex-center">
+            余额：<span>{{triggerData.wallet?.balance || '0.0'}} ETH</span>
+            <svg @click="getBalance" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 2.74994C10.8995 2.74994 13.25 5.10044 13.25 7.99994C13.25 10.8994 10.8995 13.2499 8 13.2499C5.1005 13.2499 2.75 10.8994 2.75 7.99994C2.75 6.3507 3.51047 4.87908 4.69989 3.91661" stroke="#9BA0A8" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M2.75 3.62494H5.08333V5.95827" stroke="#9BA0A8" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </n-spin>
       </div>
       <div v-else>
         <div class="btn" @click="showWalletModal">
@@ -87,7 +88,6 @@ watch(() => props.trigger, (val) => {
       </div>
     </div>
     <SetWallet ref="setWalletRef" @success="setWallerSuccess" />
-  </n-spin>
 </template>
 <style lang="scss" scoped>
 .wallet {
