@@ -9,8 +9,13 @@
   },
   "dependencies": {
     "@kangc/v-md-editor": "2.3.15",
+    "@uniswap/sdk": "^3.0.3",
+    "@uniswap/sdk-core": "^3.2.2",
+    "@uniswap/smart-order-router": "^3.11.2",
+    "@vitejs/plugin-vue-jsx": "^3.0.1",
     "alchemy-sdk": "^2.7.0",
     "ethers": "5.6.4",
+    "jsbi": "3.2.5",
     "localforage": "^1.10.0",
     "naive-ui": "^2.34.3",
     "sass": "^1.60.0",
@@ -20,7 +25,7 @@
     "vue3-json-viewer": "^2.2.2"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^4.1.0",
+    "@vitejs/plugin-vue": "^4.2.1",
     "vite": "^4.2.1"
   }
 }

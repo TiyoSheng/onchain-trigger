@@ -3,7 +3,7 @@ import { onBeforeMount } from 'vue'
 import { getLs, setLs } from './libs/storage'
 import { useGlobalStore } from './hooks/globalStore'
 
-const { setTriggrts, setContracts, setWallet, setActivatedId } = useGlobalStore()
+const { setTriggrts, setContracts, setWallet, setActivatedId, setTokens } = useGlobalStore()
 
 
 const themeOverrides = {
@@ -18,17 +18,21 @@ onBeforeMount(async () => {
 })
 
 const init = async () => {
-  let wallet = await getLs('wallet') || []
+  let wallet = await getLs('wallets') || []
   let contracts = await getLs('contracts') || []
   let triggers = await getLs('triggers') || []
   let activatedId = await getLs('activatedId') || ''
   let isV2 = await getLs('isV2') || false
+  let response = await fetch('https://tokens.coingecko.com/uniswap/all.json');
+  let tokenListJSON = await response.json()
+  let tokens = tokenListJSON.tokens
   console.log('isV2',isV2)
   if (!isV2) {
     setLs('isV2', true)
     setLs('triggers', [])
     triggers = []
   }
+  setTokens(tokens)
   setTriggrts(triggers)
   setContracts(contracts)
   setWallet(wallet)

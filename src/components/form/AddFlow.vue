@@ -2,6 +2,8 @@
 import { ref, watch } from 'vue'
 import { useGlobalStore } from '../../hooks/globalStore'
 import AddContract from '../../components/form/AddContract.vue'
+import { useDialog } from "naive-ui"
+const dialog = useDialog()
 
 const { store } = useGlobalStore()
 
@@ -125,6 +127,15 @@ const handleOk = () => {
         headers: e.headers,
         filters: e.filters
       }
+    } else if (e.type == 'uni') {
+      return {
+        id: e.id,
+        name: e.name,
+        type: e.type,
+        inAddress: e.inAddress,
+        outAddress: e.outAddress,
+        inAmount: e.inAmount
+      }
     }
   })
   emit('handleOk', flow)
@@ -211,6 +222,18 @@ const addFilter = (index) => {
   })
 }
 
+const uniParamChange = (type, index, key = 'type', value ='value') => {
+  let handdle = flowItem.value.handdleList[index]
+  if (handdle[type][value]) {
+    let param = getParams(index).find(item => item.key === handdle[type][value])
+    if (param) {
+      handdle[type][key] = param.type
+    } else {
+      handdle[type][key] = 'var'
+    }
+  }
+}
+
 const paramChange = (type, index, i, key = 'type', value ='value') => {
   console.log(key)
   let handdle = flowItem.value.handdleList[index]
@@ -247,6 +270,11 @@ const delParams = (index, i, type) => {
   flowItem.value.handdleList[index] = JSON.parse(JSON.stringify(handdle))
 }
 
+const showConvert = (index) => {
+  
+
+}
+
 const radioUpdate = (index) => {
   let handdle = flowItem.value.handdleList[index]
   handdle.contractId = ''
@@ -257,6 +285,11 @@ const radioUpdate = (index) => {
   handdle.method = ''
   handdle.headers = []
   handdle.params = []
+  handdle.inAddress = {}
+  handdle.inDecimals = {}
+  handdle.outAddress = {}
+  handdle.outDecimals = {}
+  handdle.inAmount = {}
   flowItem.value.handdleList[index] = JSON.parse(JSON.stringify(handdle))
 }
 
@@ -339,9 +372,56 @@ defineExpose({
         <n-radio-group v-model:value="item.type" name="radio" size="large" @update:value="radioUpdate(index)">
           <n-radio-button value="contract">合约</n-radio-button>
           <n-radio-button value="http">HTTP</n-radio-button>
+          <n-radio-button value="uni">UNI交易</n-radio-button>
         </n-radio-group>
       </n-form-item>
-      <div v-if="item.type == 'http'">
+      <div v-if="item.type == 'uni'">
+        <n-form-item label="输入代币：">
+          <n-select 
+            v-model:value="item.inAddress.value"
+            filterable tag
+            :options="getParams(index)"
+            label-field="label"
+            value-field="key"
+            placeholder="输入变量"
+            @update:value="uniParamChange('inAddress', index)"
+          />
+        </n-form-item>
+        <n-form-item label="输出代币：">
+          <n-select 
+            v-model:value="item.outAddress.value"
+            filterable tag
+            :options="getParams(index)"
+            label-field="label"
+            value-field="key"
+            placeholder="输入变量"
+            @update:value="uniParamChange('outAddress', index)"
+          />
+        </n-form-item>
+        <div style="position: relative;">
+          <div class="handdle-item-del" @click="showConvert(index)" style="top:0">
+            <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M10.667 9.16699L12.667 11.167L10.667 13.167" stroke="#858D99" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M3.33301 11.167H12.6663" stroke="#858D99" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M5.33301 7.83301L3.33301 5.83301L5.33301 3.83301" stroke="#858D99" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M12.6663 5.83301L3.33301 5.83301" stroke="#858D99" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+
+          </div>
+          <n-form-item label="输入数量：">
+            <n-select 
+              v-model:value="item.inAmount.value"
+              filterable tag
+              :options="getParams(index)"
+              label-field="label"
+              value-field="key"
+              placeholder="输入变量"
+              @update:value="uniParamChange('inAmount', index)"
+            />
+          </n-form-item>
+        </div>
+      </div>
+      <div v-else-if="item.type == 'http'">
         <n-form-item label="请求地址：">
           <n-input v-model:value="item.url" placeholder="输入请求地址" autocomplete="off" />
         </n-form-item>

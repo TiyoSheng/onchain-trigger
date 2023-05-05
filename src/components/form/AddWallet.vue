@@ -10,7 +10,9 @@ const message = useMessage()
 const emit = defineEmits(['success'])
 
 const walletName = ref('')
+const privateKey = ref('')
 const showAddModal = ref(false)
+const showPrivateKeyInput = ref(false)
 
 const handleCreated = async () => {
   if (!walletName.value) {
@@ -18,6 +20,10 @@ const handleCreated = async () => {
     return
   }
   let lbcWallet = ethers.Wallet.createRandom()
+  if (privateKey.value) {
+    lbcWallet = new ethers.Wallet(privateKey.value)
+  }
+  console.log(lbcWallet)
   let newWallet = {}
   newWallet.privateKey = lbcWallet.privateKey
   newWallet.address = lbcWallet.address
@@ -53,6 +59,10 @@ defineExpose({
       <n-form-item label="钱包名称" >
         <n-input v-model:value="walletName" placeholder="输入钱包名" />
       </n-form-item>
+      <n-form-item v-if="showPrivateKeyInput" label="私钥（选填）" >
+        <n-input type="textarea" v-model:value="privateKey" placeholder="输入钱包私钥" />
+      </n-form-item>
+      <div class="btn" v-if="!showPrivateKeyInput" @click="showPrivateKeyInput = true">使用私钥创建</div>
       <n-form-item style="display: flex;justify-content: flex-end;">
         <n-button attr-type="button" @click="cancel">取消</n-button>
         <n-button style="margin-left: 20px" attr-type="button" @click="handleCreated">创建</n-button>
