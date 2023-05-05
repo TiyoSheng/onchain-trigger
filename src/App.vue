@@ -23,16 +23,16 @@ const init = async () => {
   let triggers = await getLs('triggers') || []
   let activatedId = await getLs('activatedId') || ''
   let isV2 = await getLs('isV2') || false
-  let response = await fetch('https://tokens.coingecko.com/uniswap/all.json');
-  let tokenListJSON = await response.json()
-  let tokens = tokenListJSON.tokens
+  // let response = await fetch('https://tokens.coingecko.com/uniswap/all.json');
+  // let tokenListJSON = await response.json()
+  // let tokens = tokenListJSON.tokens
   console.log('isV2',isV2)
   if (!isV2) {
     setLs('isV2', true)
     setLs('triggers', [])
     triggers = []
   }
-  setTokens(tokens)
+  // setTokens(tokens)
   setTriggrts(triggers)
   setContracts(contracts)
   setWallet(wallet)

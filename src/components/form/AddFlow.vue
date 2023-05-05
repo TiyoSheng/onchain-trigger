@@ -2,8 +2,7 @@
 import { ref, watch } from 'vue'
 import { useGlobalStore } from '../../hooks/globalStore'
 import AddContract from '../../components/form/AddContract.vue'
-import { useDialog } from "naive-ui"
-const dialog = useDialog()
+import { ethers } from 'ethers'
 
 const { store } = useGlobalStore()
 
@@ -11,12 +10,25 @@ const emit = defineEmits(['handleOk'])
 
 const addContractRef = ref(null)
 const showAddModal = ref(false)
+const showConvertModal = ref(false)
+const convertDecimals = ref(18)
 const modalTitle = ref('设置流程')
 const params = ref([])
 const flowItem = ref({
   name: '',
   handdleList: []
 })
+
+const converts = [{
+  label: '18',
+  value: '18'
+}, {
+  label: '9',
+  value: '9'
+}, {
+  label: '6',
+  value: '6'
+}]
 
 const methods = [{
   value: 'GET',
@@ -271,8 +283,30 @@ const delParams = (index, i, type) => {
 }
 
 const showConvert = (index) => {
-  
+  let handdle = flowItem.value.handdleList[index]
+  let inAmount = handdle.inAmount
+  if (inAmount && inAmount.type == 'var') {
+    showConvertModal.value = true
+    handdleIndex = index
+  }
+}
 
+const convert = () => {
+  let index = handdleIndex
+  if (index > -1) {
+    let handdle = flowItem.value.handdleList[index]
+    let inAmount = handdle.inAmount
+    if (inAmount && inAmount.type == 'var') {
+      inAmount.value = ethers.utils.parseUnits(inAmount.value.toString(), convertDecimals.value).toString()
+    }
+  }
+  showConvertModal.value = false
+  handdleIndex = -1
+}
+
+const convertCancel = () => {
+  showConvertModal.value = false
+  handdleIndex = -1
 }
 
 const radioUpdate = (index) => {
@@ -556,6 +590,24 @@ defineExpose({
       <n-button attr-type="button" @click="cancel">取消</n-button>
       <n-button style="margin-left: 20px" attr-type="button" @click="handleOk">确定</n-button>
     </n-form-item>
+  </n-modal>
+  <n-modal 
+    v-model:show="showConvertModal"
+    :mask-closable="false"
+    :style="{width: '400px'}"
+    preset="card"
+    title="选择或输入Decimals"
+    @afterLeave="convertCancel"
+  >
+    <n-select 
+      v-model:value="convertDecimals"
+      filterable tag
+      :options="converts"
+      label-field="label"
+      value-field="value"
+      placeholder="选择或输入Decimals"
+      @update:value="convert"
+    />
   </n-modal>
   <AddContract ref="addContractRef" @success="addContractSuccess" />
 </template>
