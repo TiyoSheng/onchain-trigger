@@ -294,6 +294,31 @@ watch(() => store.state.countdownDuration, (val) => {
               <div class="function-name flex-center">{{ getParamLabel(item.daiAddress) }}</div>
             </div>
           </div>
+          <div class="mt16 sub-title">触发后执行</div>
+          <div v-if="item.applyType == 'flow'" class="mt12">
+            <div class="fun flex-center">
+              <div class="name flex-center">执行流程</div>
+              <div class="function-name flex-center">{{getFlowName(item.flowId)}}</div>
+            </div>
+          </div>
+          <div v-else>
+            <div v-for="(handdle,i) in item.handdleList" :key="i">
+              <div class="mt12 flex-center">
+                <div class="fun flex-center">
+                  <div class="name flex-center">{{getContract(handdle.contractId, 'name')}}</div>
+                  <div class="function-name flex-center">{{handdle.functionName}}</div>
+                </div>
+                <div class="type">（{{getContract(handdle.contractId, 'type', handdle.functionName)}}）</div>
+              </div>
+              <div class="mt16 sub-title">参数</div>
+              <div class="params mt12" v-if="Object.keys(handdle.args).length">
+                <div class="params-item flex-center" v-for="(val, key) in handdle.args" :key="key">
+                  <div class="params-item-key flex-center">{{key}}</div>
+                  <div class="params-item-value flex-center">{{getParamLabel(val)}}</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <div v-else-if="item.type == 'time'">
           <div class="flex-center-sb">

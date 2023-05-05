@@ -316,7 +316,7 @@ const applyFun = async (list, paramList, time) => {
     let inAmount = getParam(item.inAmount, paramList)
     try {
       const headers = {'0x-api-key': '4243850c-a27b-4f20-bfaf-765641b1d1b2'}
-      const response = await fetch(`https://goerli.api.0x.org/swap/v1/quote?sellToken=${inToken}&buyToken=${outToken}&sellAmount=${inAmount}&takerAddress=${trigger.value.wallet?.address}`)
+      const response = await fetch(`https://goerli.api.0x.org/swap/v1/quote?sellToken=${inToken}&buyToken=${outToken}&sellAmount=${inAmount}&takerAddress=${triggerData.value.wallet?.address}`)
       let swapQuoteJSON = await response.json()
       console.log("Quote: ", swapQuoteJSON)
       if (swapQuoteJSON.code) {
