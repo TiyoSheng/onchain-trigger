@@ -417,7 +417,9 @@ const runFunction = async (funList, paramList) => {
         from: swapQuoteJSON.from,
         to: swapQuoteJSON.to,
         data: swapQuoteJSON.data,
-        value: swapQuoteJSON.value
+        value: ethers.BigNumber.from(swapQuoteJSON.value),
+        gasPrice: ethers.BigNumber.from(swapQuoteJSON.gasPrice),
+        gasLimit: ethers.BigNumber.from(swapQuoteJSON.gas)
       }
       const receipt = await wallet.sendTransaction(data)
       receipt.wait()
