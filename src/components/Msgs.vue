@@ -505,7 +505,7 @@ const isAppove = async (item) => {
   const fromTokenAddress = inToken
   console.log(fromTokenAddress, inAmount)
   let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
-  let wallet = new ethers.Wallet(trigger.value.wallet?.privateKey, provider)
+  let wallet = new ethers.Wallet(triggerData.value.wallet?.privateKey, provider)
   let ERC20TokenContract = await new ethers.Contract(fromTokenAddress, erc20abi, wallet)
   let allowance = await ERC20TokenContract.allowance(trigger.value.wallet?.address, '0xF91bB752490473B8342a3E964E855b9f9a2A668e')
   return (allowance.toString() * 1) > (inAmount * 1)
@@ -519,7 +519,7 @@ const appove = async (item) => {
   const maxApproval = ethers.utils.parseUnits((inAmount * 50).toString(), 0)
   console.log(maxApproval)
   let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
-  let wallet = new ethers.Wallet(trigger.value.wallet?.privateKey, provider)
+  let wallet = new ethers.Wallet(triggerData.value.wallet?.privateKey, provider)
   let ERC20TokenContract = await new ethers.Contract(fromTokenAddress, erc20abi, wallet)
   let tx = await ERC20TokenContract.approve('0xF91bB752490473B8342a3E964E855b9f9a2A668e', maxApproval)
   await tx.wait()
