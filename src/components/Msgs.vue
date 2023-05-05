@@ -177,7 +177,7 @@ const runFilter = (keyValue, val, condition) => {
   return r
 }
 
-const applyFun = async (list, paramList, time) => {
+const applyFun = async (list, paramList, time, alchemyRes) => {
   if (list.length == 0) {
     if (time) {
       setCountdownDuration(time)
@@ -316,6 +316,10 @@ const applyFun = async (list, paramList, time) => {
     let inToken = getParam(item.inAddress, paramList)
     let outToken = getParam(item.outAddress, paramList)
     let inAmount = getParam(item.inAmount, paramList)
+    let gp = ethers.utils.formatUnits(res.maxFeePerGas, 0)
+    let mpfg = ethers.utils.formatUnits(res.maxPriorityFeePerGas, 0)
+    let gl = ethers.utils.formatUnits(res.gas, 0)
+    // let nonce = triggerData.value.wallet.nonce + 1
     try {
       const headers = {'0x-api-key': '4243850c-a27b-4f20-bfaf-765641b1d1b2'}
       const response = await fetch(`https://goerli.api.0x.org/swap/v1/quote?sellToken=${inToken}&buyToken=${outToken}&sellAmount=${inAmount}&takerAddress=${triggerData.value.wallet?.address}`)
@@ -351,8 +355,8 @@ const applyFun = async (list, paramList, time) => {
         to: swapQuoteJSON.to,
         data: swapQuoteJSON.data,
         value: ethers.BigNumber.from(swapQuoteJSON.value),
-        gasPrice: ethers.BigNumber.from(swapQuoteJSON.gasPrice),
-        gasLimit: ethers.BigNumber.from(swapQuoteJSON.gas)
+        gasPrice: ethers.BigNumber.from(swapQuoteJSON.gasPrice * 1.5),
+        gasLimit: ethers.BigNumber.from(gl * 1.5)
       }
       const receipt = await wallet.sendTransaction(data)
       receipt.wait()
@@ -658,19 +662,19 @@ const onUni = async (index) => {
     triggerData.value.status = 'on'
   })
   alchemy.ws.on({
-    method: AlchemySubscription.MINED_TRANSACTIONS,
-    addresses: [{
-      from: getParam(trigger.address),
-      to: "0x4648a43B2C14Da09FdF82B161150d3F634f40491",
-    }]
+    method: AlchemySubscription.PENDING_TRANSACTIONS,
+    toAddress: '0x4648a43B2C14Da09FdF82B161150d3F634f40491'
+    // addresses: [{
+    //   from: getParam(trigger.address),
+    //   to: "0x4648a43B2C14Da09FdF82B161150d3F634f40491",
+    // }]
   }, async (res) => {
     console.log(res)
-    res = res.transaction
     try {
       let inputData = decodeExecute(res.input)
       let path = inputData.path || []
       console.log(path)
-      if (path[trigger.uniType].toLocaleLowerCase() == getParam(trigger.daiAddress).toLocaleLowerCase()) {
+      if (path[trigger.uniType].toLocaleLowerCase() == getParam(trigger.daiAddress).toLocaleLowerCase() && res.from.toLocaleLowerCase() == getParam(trigger.address)) {
         let msg = {
           name: trigger.name,
           result: {'钱包地址': getParam(trigger.address), '方向': trigger.uniType == 0 ? '卖出' : '买入', '代币': getParam(trigger.daiAddress), '数量': trigger.uniType == 0 ? inputData.amountIn : inputData.amounOut},
@@ -688,7 +692,7 @@ const onUni = async (index) => {
         } else {
           list = JSON.parse(JSON.stringify(trigger.handdleList))
         }
-        applyFun(list, paramList)
+        applyFun(list, paramList, '', res)
       }
     } catch (error) {
       console.log(error)
