@@ -21,6 +21,7 @@ const params = ref([])
 const addFlowRef = ref(null)
 const loading = ref('')
 const appoveIng = ref(false)
+const isShowAppove = ref(false)
 
 const filterConditions = [{
   label: '大于',
@@ -425,14 +426,21 @@ const runFunction = async (funList, paramList) => {
 }
 
 const isAppove = async (item) => {
-  // let paramList = JSON.parse(JSON.stringify(params.value))
-  // let inToken = getParam(item.inAddress, paramList)
-  // const fromTokenAddress = inToken
-  // let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
-  // let wallet = new ethers.Wallet(trigger.value.wallet?.privateKey, provider)
-  // let ERC20TokenContract = await new ethers.Contract(fromTokenAddress, erc20abi, wallet)
-  // let allowance = await ERC20TokenContract.allowance(trigger.value.wallet?.address, fromTokenAddress)
-  // console.log(allowance)
+  let paramList = JSON.parse(JSON.stringify(params.value))
+  let inToken = getParam(item.inAddress, paramList)
+  let inAmount = getParam(item.inAmount, paramList)
+  const fromTokenAddress = inToken
+  console.log(fromTokenAddress, inAmount)
+  let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
+  let wallet = new ethers.Wallet(trigger.value.wallet?.privateKey, provider)
+  let ERC20TokenContract = await new ethers.Contract(fromTokenAddress, erc20abi, wallet)
+  let allowance = await ERC20TokenContract.allowance(trigger.value.wallet?.address, '0xF91bB752490473B8342a3E964E855b9f9a2A668e')
+  console.log(allowance.toString(), (allowance.toString() * 1) < (inAmount * 1))
+  if ((allowance.toString() * 1) > (inAmount * 1)) {
+    isShowAppove.value = false
+  } else {
+    isShowAppove.value = true
+  }
   return true
 }
 
@@ -575,7 +583,7 @@ watch(() => props.triggerData, (val) => {
                 <div class="function-name flex-center">{{getParamLabel(handdle.inAmount)}}</div>
               </div>
             </div>
-            <div class="flex-center-sb mt12" v-if="isAppove(handdle)">
+            <div class="flex-center-sb mt12" v-if="isAppove(handdle) && isShowAppove">
               <div>
                 <div class="name mt12" >提前授权Token</div>
                 <div class="sub-title mt12">交易模块使用0x协议(链接)需要提前授权token</div>
