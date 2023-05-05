@@ -319,6 +319,17 @@ const applyFun = async (list, paramList, time) => {
       const response = await fetch(`https://goerli.api.0x.org/swap/v1/quote?sellToken=${inToken}&buyToken=${outToken}&sellAmount=${inAmount}&takerAddress=${trigger.value.wallet?.address}`)
       let swapQuoteJSON = await response.json()
       console.log("Quote: ", swapQuoteJSON)
+      if (swapQuoteJSON.code) {
+        let msg3 = {
+          type: 'uni',
+          name: 'swapQuote-error',
+          result: swapQuoteJSON
+        }
+        msgs.value.push(msg3)
+        triggerData.value.messages = msgs.value
+        setTrigger(triggerData.value)
+        return
+      }
       let msg2 = {
         type: 'uni',
         name: 'swapQuote',
@@ -327,6 +338,10 @@ const applyFun = async (list, paramList, time) => {
       msgs.value.push(msg2)
       triggerData.value.messages = msgs.value
       setTrigger(triggerData.value)
+      let isAppoved = await isAppove(item)
+      if (!isAppoved) {
+        appove(item)
+      }
       let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
       let wallet = new ethers.Wallet(trigger.value.wallet?.privateKey, provider)
       let data = {
@@ -337,6 +352,7 @@ const applyFun = async (list, paramList, time) => {
         gasPrice: swapQuoteJSON.gasPrice,
       }
       const receipt = await wallet.sendTransaction(data)
+      receipt.wait()
       console.log("receipt: ", receipt);
       let msg1 = {
         type: 'uni',
@@ -480,6 +496,41 @@ const onTime = () => {
       applyFun(list, paramList, time)
     }, time)
   }
+}
+
+const isAppove = async (item) => {
+  let paramList = JSON.parse(JSON.stringify(params.value))
+  let inToken = getParam(item.inAddress, paramList)
+  let inAmount = getParam(item.inAmount, paramList)
+  const fromTokenAddress = inToken
+  console.log(fromTokenAddress, inAmount)
+  let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
+  let wallet = new ethers.Wallet(trigger.value.wallet?.privateKey, provider)
+  let ERC20TokenContract = await new ethers.Contract(fromTokenAddress, erc20abi, wallet)
+  let allowance = await ERC20TokenContract.allowance(trigger.value.wallet?.address, '0xF91bB752490473B8342a3E964E855b9f9a2A668e')
+  return (allowance.toString() * 1) > (inAmount * 1)
+}
+
+const appove = async (item) => {
+  let paramList = JSON.parse(JSON.stringify(params.value))
+  let inToken = getParam(item.inAddress, paramList)
+  let inAmount = getParam(item.inAmount, paramList)
+  const fromTokenAddress = inToken
+  const maxApproval = ethers.utils.parseUnits((inAmount * 50).toString(), 0)
+  console.log(maxApproval)
+  let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
+  let wallet = new ethers.Wallet(trigger.value.wallet?.privateKey, provider)
+  let ERC20TokenContract = await new ethers.Contract(fromTokenAddress, erc20abi, wallet)
+  let tx = await ERC20TokenContract.approve('0xF91bB752490473B8342a3E964E855b9f9a2A668e', maxApproval)
+  await tx.wait()
+  let msg = {
+    type: 'uni',
+    name: 'Approval',
+    result: tx
+  }
+  msgs.value.push(msg)
+  triggerData.value.messages = msgs.value
+  setTrigger(triggerData.value)
 }
 
 const getGas = async () => {

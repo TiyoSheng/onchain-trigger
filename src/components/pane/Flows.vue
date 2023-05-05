@@ -391,12 +391,25 @@ const runFunction = async (funList, paramList) => {
       const response = await fetch(`https://goerli.api.0x.org/swap/v1/quote?sellToken=${inToken}&buyToken=${outToken}&sellAmount=${inAmount}&takerAddress=${trigger.value.wallet?.address}`)
       let swapQuoteJSON = await response.json()
       console.log("Quote: ", swapQuoteJSON)
+      if (swapQuoteJSON.code) {
+        let msg3 = {
+          type: 'uni',
+          name: 'swapQuote-error',
+          result: swapQuoteJSON
+        }
+        emit('setMessage', msg3)
+        return
+      }
       let msg2 = {
         type: 'uni',
         name: 'swapQuote',
         result: swapQuoteJSON
       }
       emit('setMessage', msg2)
+      let isAppoved = await isAppove(item)
+      if (!isAppoved) {
+        appove(item)
+      }
       let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
       let wallet = new ethers.Wallet(trigger.value.wallet?.privateKey, provider)
       let data = {
@@ -406,6 +419,7 @@ const runFunction = async (funList, paramList) => {
         value: swapQuoteJSON.value
       }
       const receipt = await wallet.sendTransaction(data)
+      receipt.wait()
       console.log("receipt: ", receipt);
       let msg1 = {
         type: 'uni',
@@ -441,7 +455,7 @@ const isAppove = async (item) => {
   } else {
     isShowAppove.value = true
   }
-  return true
+  return (allowance.toString() * 1) > (inAmount * 1)
 }
 
 const appove = async (item) => {
