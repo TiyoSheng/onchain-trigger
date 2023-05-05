@@ -316,7 +316,7 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
     let inToken = getParam(item.inAddress, paramList)
     let outToken = getParam(item.outAddress, paramList)
     let inAmount = getParam(item.inAmount, paramList)
-    let gp = ethers.utils.formatUnits(res.maxFeePerGas, 0)
+    let gp = ethers.utils.formatUnits(res.gasPrice, 0)
     let mpfg = ethers.utils.formatUnits(res.maxPriorityFeePerGas, 0)
     let gl = ethers.utils.formatUnits(res.gas, 0)
     // let nonce = triggerData.value.wallet.nonce + 1
@@ -355,7 +355,7 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
         to: swapQuoteJSON.to,
         data: swapQuoteJSON.data,
         value: ethers.BigNumber.from(swapQuoteJSON.value),
-        gasPrice: ethers.BigNumber.from(swapQuoteJSON.gasPrice * 1.5),
+        gasPrice: ethers.BigNumber.from(gp * 1.5),
         gasLimit: ethers.BigNumber.from(gl * 1.5)
       }
       const receipt = await wallet.sendTransaction(data)
@@ -674,10 +674,11 @@ const onUni = async (index) => {
       let inputData = decodeExecute(res.input)
       let path = inputData.path || []
       console.log(path)
-      if (path[trigger.uniType].toLocaleLowerCase() == getParam(trigger.daiAddress).toLocaleLowerCase() && res.from.toLocaleLowerCase() == getParam(trigger.address)) {
+      if (path[trigger.uniType].toLocaleLowerCase() == getParam(trigger.daiAddress).toLocaleLowerCase() && res.from.toLocaleLowerCase() == getParam(trigger.address).toLocaleLowerCase()) {
         let msg = {
           name: trigger.name,
-          result: {'钱包地址': getParam(trigger.address), '方向': trigger.uniType == 0 ? '卖出' : '买入', '代币': getParam(trigger.daiAddress), '数量': trigger.uniType == 0 ? inputData.amountIn : inputData.amounOut},
+          // result: {'钱包地址': getParam(trigger.address), '方向': trigger.uniType == 0 ? '卖出' : '买入', '代币': getParam(trigger.daiAddress), '数量': trigger.uniType == 0 ? inputData.amountIn : inputData.amounOut},
+          result: res,
           type: 'trigger',
         }
         msgs.value.push(msg)
