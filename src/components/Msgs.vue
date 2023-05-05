@@ -670,12 +670,14 @@ const onUni = async (index) => {
       if (path[trigger.uniType].toLocaleLowerCase() == getParam(trigger.daiAddress).toLocaleLowerCase()) {
         let msg = {
           name: trigger.name,
-          result: `钱包地址 ${getParam(trigger.address)} ${trigger.uniType == 0 ? '卖出' : '买入'} 代币 ${getParam(trigger.daiAddress)} 数量 ${trigger.uniType == 0 ? inputData.amountIn : inputData.amounOut}`,
+          result: {'钱包地址': getParam(trigger.address), '方向': trigger.uniType == 0 ? '卖出' : '买入', '代币': getParam(trigger.daiAddress), '数量': trigger.uniType == 0 ? inputData.amountIn : inputData.amounOut},
           type: 'trigger',
         }
         msgs.value.push(msg)
         triggerData.value.messages = msgs.value
         setTrigger(triggerData.value)
+        let paramList = JSON.parse(JSON.stringify(params.value))
+        applyFun(list, paramList)
       }
     } catch (error) {
       console.log(error)
