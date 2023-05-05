@@ -677,6 +677,14 @@ const onUni = async (index) => {
         triggerData.value.messages = msgs.value
         setTrigger(triggerData.value)
         let paramList = JSON.parse(JSON.stringify(params.value))
+        let list = []
+        if (trigger.applyType == 'flow') {
+          let flows = triggerData.value.flows
+          let flow = flows.find(flow => flow.id == trigger.flowId)
+          list = JSON.parse(JSON.stringify(flow.handdleList))
+        } else {
+          list = JSON.parse(JSON.stringify(trigger.handdleList))
+        }
         applyFun(list, paramList)
       }
     } catch (error) {
