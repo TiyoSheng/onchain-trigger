@@ -20,7 +20,7 @@ const flows = ref([])
 const params = ref([])
 const addFlowRef = ref(null)
 const loading = ref('')
-const appoveIng = ref(false)
+const appoveIng = ref([])
 const isShowAppove = ref(false)
 
 const filterConditions = [{
@@ -454,7 +454,6 @@ const isAppove = async (item) => {
   let wallet = new ethers.Wallet(trigger.value.wallet?.privateKey, provider)
   let ERC20TokenContract = await new ethers.Contract(fromTokenAddress, erc20abi, wallet)
   let allowance = await ERC20TokenContract.allowance(trigger.value.wallet?.address, '0xF91bB752490473B8342a3E964E855b9f9a2A668e')
-  console.log(allowance.toString(), (allowance.toString() * 1) < (inAmount * 1))
   if ((allowance.toString() * 1) > (inAmount * 1)) {
     isShowAppove.value = false
   } else {
@@ -464,10 +463,10 @@ const isAppove = async (item) => {
 }
 
 const appove = async (item) => {
-  appoveIng.value = true
   let paramList = JSON.parse(JSON.stringify(params.value))
   let inToken = getParam(item.inAddress, paramList)
   let inAmount = getParam(item.inAmount, paramList)
+  appoveIng.value.push(inToken)
   const fromTokenAddress = inToken
   const maxApproval = ethers.utils.parseUnits((inAmount * 50).toString(), 0)
   console.log(maxApproval)
@@ -482,10 +481,12 @@ const appove = async (item) => {
     result: tx
   }
   emit('setMessage', msg)
-  appoveIng.value = false
+  
+  let index = appoveIng.value.findIndex(e => e == inToken)
+  appoveIng.value.splice(index, 1)
 }
 
-const getParam = (item, paramList) => {
+const getParam = (item, paramList = params.value) => {
   let val = item.value
   if (item.type == 'param') {
     for (let i = 0; i < paramList.length; i++) {
@@ -522,7 +523,6 @@ const apply = (item) => {
 const init = (val) => {
   let triggerData = store.state.triggers.find(item => item.id === val)
   trigger.value = JSON.parse(JSON.stringify(triggerData))
-  flows.value = trigger.value.flows
   let globalParams = trigger.value.globalParams
   let address = trigger.value.wallet?.address
   if (address && !globalParams.find(item => item.key === 'currentWalletAddress')) {
@@ -541,6 +541,19 @@ const init = (val) => {
     }
   })
   params.value = globalParams || []
+  let fl = trigger.value.flows
+  if (trigger.value.wallet?.address) {
+    fl.forEach(e => {
+      let handdleList = e.handdleList
+      handdleList.forEach(async el => {
+        if (el.type == 'uni') {
+          el.isAppove = await isAppove(el) ? '1' : '2'
+        }
+      })
+    })
+  }
+  console.log('fl', fl)
+  flows.value = fl
 }
 
 watch(() => props.triggerData, (val) => {
@@ -602,12 +615,12 @@ watch(() => props.triggerData, (val) => {
                 <div class="function-name flex-center">{{getParamLabel(handdle.inAmount)}}</div>
               </div>
             </div>
-            <div class="flex-center-sb mt12" v-if="isAppove(handdle) && isShowAppove">
+            <div class="flex-center-sb mt12" v-if="handdle.isAppove == 2">
               <div>
                 <div class="name mt12" >提前授权Token</div>
                 <div class="sub-title mt12">交易模块使用0x协议(链接)需要提前授权token</div>
               </div>
-              <n-spin :show="appoveIng">
+              <n-spin :show="appoveIng.indexOf(getParam(handdle.inAddress)) > -1">
                 <div class="btn" style="width:100px;height:36px" @click="appove(handdle)">APPROVE</div>
               </n-spin>
             </div>
