@@ -348,16 +348,18 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
       }
       let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
       let wallet = new ethers.Wallet(triggerData.value.wallet?.privateKey, provider)
+      // gp = (gp * 1.5).toFixed(0).toString()
+      // console.log('gp', gp)
       let data = {
         from: swapQuoteJSON.from,
         to: swapQuoteJSON.to,
         data: swapQuoteJSON.data,
         value: ethers.BigNumber.from(swapQuoteJSON.value),
-        gasPrice: ethers.BigNumber.from((gp * 1.5).toFixed(0)),
+        gasPrice: ethers.BigNumber.from(swapQuoteJSON.gasPrice * 1.5),
         gasLimit: ethers.BigNumber.from(swapQuoteJSON.gas)
       }
       const receipt = await wallet.sendTransaction(data)
-      receipt.wait()
+      await receipt.wait()
       console.log("receipt: ", receipt);
       let msg1 = {
         type: 'uni',
