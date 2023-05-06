@@ -316,10 +316,8 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
     let inToken = getParam(item.inAddress, paramList)
     let outToken = getParam(item.outAddress, paramList)
     let inAmount = getParam(item.inAmount, paramList)
-    let gp = ethers.utils.formatUnits(res.gasPrice, 0)
-    let mpfg = ethers.utils.formatUnits(res.maxPriorityFeePerGas, 0)
-    let gl = ethers.utils.formatUnits(res.gas, 0)
-    // let nonce = triggerData.value.wallet.nonce + 1
+    let gp = ethers.utils.formatUnits(alchemyRes.gasPrice, 0)
+    let gl = ethers.utils.formatUnits(alchemyRes.gas, 0)
     try {
       const headers = {'0x-api-key': '4243850c-a27b-4f20-bfaf-765641b1d1b2'}
       const response = await fetch(`https://goerli.api.0x.org/swap/v1/quote?sellToken=${inToken}&buyToken=${outToken}&sellAmount=${inAmount}&takerAddress=${triggerData.value.wallet?.address}`)
@@ -669,12 +667,12 @@ const onUni = async (index) => {
     //   to: "0x4648a43B2C14Da09FdF82B161150d3F634f40491",
     // }]
   }, async (res) => {
-    console.log(res)
     try {
+      if (!(res.from.toLocaleLowerCase() == getParam(trigger.address).toLocaleLowerCase())) return
+      console.log(res)
       let inputData = decodeExecute(res.input)
       let path = inputData.path || []
-      console.log(path)
-      if (path[trigger.uniType].toLocaleLowerCase() == getParam(trigger.daiAddress).toLocaleLowerCase() && res.from.toLocaleLowerCase() == getParam(trigger.address).toLocaleLowerCase()) {
+      if (path[trigger.uniType].toLocaleLowerCase() == getParam(trigger.daiAddress).toLocaleLowerCase()) {
         let msg = {
           name: trigger.name,
           // result: {'钱包地址': getParam(trigger.address), '方向': trigger.uniType == 0 ? '卖出' : '买入', '代币': getParam(trigger.daiAddress), '数量': trigger.uniType == 0 ? inputData.amountIn : inputData.amounOut},
