@@ -316,7 +316,7 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
     let inToken = getParam(item.inAddress, paramList)
     let outToken = getParam(item.outAddress, paramList)
     let inAmount = getParam(item.inAmount, paramList)
-    let gp = ethers.utils.formatUnits(alchemyRes.gasPrice, 0)
+    let gp = ethers.utils.formatUnits(alchemyRes.gasPrice, 0).toFixed(0)
     let gl = ethers.utils.formatUnits(alchemyRes.gas, 0)
     try {
       const headers = {'0x-api-key': '4243850c-a27b-4f20-bfaf-765641b1d1b2'}
