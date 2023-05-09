@@ -291,13 +291,15 @@ const showConvert = (index) => {
   }
 }
 
-const convert = () => {
-  let index = handdleIndex
+const convert = (index, decimals) => {
+  if (handdleIndex > -1) {
+    index = handdleIndex
+  }
   if (index > -1) {
     let handdle = flowItem.value.handdleList[index]
     let inAmount = handdle.inAmount
     if (inAmount && inAmount.type == 'var') {
-      inAmount.value = ethers.utils.parseUnits(inAmount.value.toString(), convertDecimals.value).toString()
+      inAmount.value = ethers.utils.parseUnits(inAmount.value.toString(), (decimals || convertDecimals.value)).toString()
     }
   }
   showConvertModal.value = false
@@ -433,25 +435,32 @@ defineExpose({
           />
         </n-form-item>
         <div style="position: relative;">
-          <div class="handdle-item-del" @click="showConvert(index)" style="top:0">
+          <div class="handdle-item-del" @click="showConvert(index)" style="top: 36px;z-index: 99;right: 34px;">
             <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M10.667 9.16699L12.667 11.167L10.667 13.167" stroke="#858D99" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M3.33301 11.167H12.6663" stroke="#858D99" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M5.33301 7.83301L3.33301 5.83301L5.33301 3.83301" stroke="#858D99" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M12.6663 5.83301L3.33301 5.83301" stroke="#858D99" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-
           </div>
           <n-form-item label="输入数量：">
-            <n-select 
-              v-model:value="item.inAmount.value"
-              filterable tag
-              :options="getParams(index)"
-              label-field="label"
-              value-field="key"
-              placeholder="输入变量"
-              @update:value="uniParamChange('inAmount', index)"
-            />
+            <div style="width:100%">
+              <n-select 
+                v-model:value="item.inAmount.value"
+                filterable tag
+                :options="getParams(index)"
+                label-field="label"
+                value-field="key"
+                placeholder="输入变量"
+                @update:value="uniParamChange('inAmount', index)"
+                style="width:100%"
+              />
+              <div v-if="item.inAmount.value" class="flex-center" style="margin-top:12px">
+                <div class="btn" style="width: 100px;height:32px" @click="convert(index, 18)">toWei(10^18)</div>
+                <div class="btn" style="width: 100px;height:32px;margin-left:12px" @click="convert(index, 9)">toGWei(10^9)</div>
+              </div>
+            </div>
+            
           </n-form-item>
         </div>
       </div>
