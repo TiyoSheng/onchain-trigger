@@ -468,8 +468,7 @@ const appove = async (item) => {
   let inAmount = getParam(item.inAmount, paramList)
   appoveIng.value.push(inToken)
   const fromTokenAddress = inToken
-  const maxApproval = ethers.utils.parseUnits((inAmount * 50).toString(), 0)
-  console.log(maxApproval)
+  const maxApproval = ethers.constants.MaxUint256
   let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
   let wallet = new ethers.Wallet(trigger.value.wallet?.privateKey, provider)
   let ERC20TokenContract = await new ethers.Contract(fromTokenAddress, erc20abi, wallet)
