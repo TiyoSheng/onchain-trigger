@@ -31,10 +31,17 @@
     <div v-else>
       <n-result status="success" title="Share success" description="Share your link">
         <template #footer>
-          <div class="input flex-center" @click="copy(link)">
-            <div class="link flex-center" >{{link}}</div>
-            <div class="copy-btn flex-center-center">Copy link</div>
+          <div>
+            <div class="input flex-center" @click="copy(link)">
+              <div class="link flex-center" >{{link}}</div>
+              <div class="copy-btn flex-center-center">Copy link</div>
+            </div>
+            <div class="input flex-center">
+              <input class="link flex-center" v-model="mirrorLink" ref="input" />
+              <div class="copy-btn flex-center-center" @click="copy(mirrorLink)">Share To Mirror</div>
+            </div>
           </div>
+          
         </template>
       </n-result>
     </div>
@@ -56,6 +63,7 @@ export default {
     const showModal = ref(false)
     const isSpin = ref(false)
     const link = ref('')
+    const mirrorLink = ref('')
     const info = ref({
       type: 'playground'
     })
@@ -152,8 +160,10 @@ export default {
     watch(() => info.value.triggerId, () => {
       let origin = window.location.origin
       link.value = `${origin}/${info.value.triggerId}`
+      mirrorLink.value = `${link.value}?display=iframe&height=800&width=1024&size=large`
     })
     return {
+      mirrorLink,
       isSpin,
       options,
       link,
@@ -169,7 +179,7 @@ export default {
 </script>
 <style lang="scss" scoped>
 .input {
-  margin-top: 32px;
+  margin-top: 16px;
   padding: 5px 5px 5px 16px;
   height: 50px;
   background: #fff;
@@ -188,7 +198,7 @@ export default {
     outline: none;
   }
   .copy-btn {
-    width: 98px;
+    width: 108px;
     height: 40px;
     background: #2152Ec;
     border-radius: 4px;

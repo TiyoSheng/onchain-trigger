@@ -2,16 +2,19 @@ import { useMessage } from 'naive-ui'
 
 export const useUtils = () => {
   const message = useMessage();
-  const copy = (text) => {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text);
+  const copy = (value) => {
+    if (!navigator.clipboard || window.top != window.self) {
+      let textarea = document.createElement('textarea')
+      document.body.appendChild(textarea)
+      textarea.style.position = 'fixed'
+      textarea.style.clip = 'rect(0 0 0 0)'
+      textarea.style.top = '10px'
+      textarea.value = value
+      textarea.select()
+      document.execCommand('copy', true)
+      document.body.removeChild(textarea)
     } else {
-      const el = document.createElement('textarea');
-      el.value = text;
-      document.body.appendChild(el);
-      el.select();
-      document.execCommand('copy');
-      document.body.removeChild(el);
+      navigator.clipboard.writeText(value)
     }
     message.success('Copy successful');
   };

@@ -29,7 +29,7 @@ const showWalletModal = () => {
 const getBalance = async () => {
   walletSpin.value = true
   if (triggerData.value.wallet?.address) {
-    let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
+    let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/xQr0n2BqF1Hkkuw5_0YiEXeyQdSYoW1u')
     let balance = await provider.getBalance(triggerData.value.wallet?.address)
     triggerData.value.wallet.balance = ethers.utils.formatEther(balance)
   }

@@ -1,12 +1,21 @@
+<script setup>
+import { useGlobalStore } from '../hooks/globalStore'
+const { store } = useGlobalStore()
+
+const openOT = () => {
+  window.open('https://onchain-trigger.jetable.xyz/')
+}
+</script>
 <template>
   <div class="nav flex-center">
     <div class="logo flex-center">
       <img src="../assets/images/logo.svg" alt="">
     </div>
-    <div class="menu flex-center">
+    <div class="menu flex-center" v-if="!store.state.isIframe">
       <div class="menu-item"><router-link to="/">Trigger</router-link></div>
       <div class="menu-item"><router-link to="/playground">Playground</router-link></div>
     </div>
+    <div v-else class="btn" @click="openOT">Open In DR</div>
   </div>
 </template>
 <style lang="scss" scoped>
@@ -42,5 +51,23 @@
       }
     }
   }
+}
+.btn {
+  margin-left: 16px;
+  padding: 0 12px;
+  border: 1px solid rgba(133, 141, 153, 0.15);
+  border-radius: 10px;
+  font-family: 'Montserrat-Medium';
+  font-size: 13px;
+  line-height: 18px;
+  color: #000;
+  height: 34px;
+  cursor: pointer;
+  width: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  margin-left: auto;
 }
 </style>

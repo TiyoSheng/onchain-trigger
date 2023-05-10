@@ -57,9 +57,10 @@ const submit = (val) => {
       delete trigger.contracts
       let triggers = store.state.triggers
       // findtrigger
+      console.log('findtrigger', triggers)
       if (triggers.find(item => item.trigger_id == trigger.trigger_id)) {
-        message.error('触发器已存在')
         isSpin.value = false
+        await setActivatedId(trigger.id)
         router.replace({
           path: '/'
         })
@@ -187,6 +188,7 @@ const changeMenu = async (id) => {
           :native-scrollbar="false"
           width="200px"
           bordered
+          v-if="!store.state.isIframe"
         >
           <div class="menu">
             <div class="menu-hd flex-center-sb">Trigger列表
@@ -277,7 +279,7 @@ const changeMenu = async (id) => {
           </div>
         </n-layout-sider>
         <n-layout :native-scrollbar="false">
-          <div class="flex-start">
+          <div class="flex-start" :style="{border: store.state.isIframe ?  '1px solid #EEEFF0' : 'none'}">
             <TriggerDetail @createTrigger="showModal('trigger')" />
             <Msgs />
           </div>

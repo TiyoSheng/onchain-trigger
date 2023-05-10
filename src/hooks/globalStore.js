@@ -9,7 +9,8 @@ const store = reactive({
     tokens: [],
     activatedId: "",
     countdownDuration: 0,
-    gasPrice: 0
+    gasPrice: 0,
+    isIframe: false
   },
 });
 
@@ -45,6 +46,10 @@ const setTokens = (tokens) => {
   store.state.tokens = tokens
 }
 
+const setIsIframe = (isIframe) => {
+  store.state.isIframe = isIframe
+}
+
 export const useGlobalStore = () => ({
   store,
   setTriggrts,
@@ -53,5 +58,6 @@ export const useGlobalStore = () => ({
   setActivatedId,
   setCountdownDuration,
   setGasPrice,
-  setTokens
+  setTokens,
+  setIsIframe
 });

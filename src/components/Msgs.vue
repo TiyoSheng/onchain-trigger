@@ -8,7 +8,7 @@ import { useGlobalStore } from "../hooks/globalStore"
 import { decodeExecute } from '../libs/universalDecoder'
 import { Alchemy, Network, AlchemySubscription } from "alchemy-sdk"
 const settings = {
-  apiKey: "72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G",
+  apiKey: "xQr0n2BqF1Hkkuw5_0YiEXeyQdSYoW1u",
   network: Network.ETH_GOERLI
 }
 const alchemy = new Alchemy(settings)
@@ -71,7 +71,7 @@ const setContract = async (contractId) => {
       cd = e
     }
   })
-  let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
+  let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/xQr0n2BqF1Hkkuw5_0YiEXeyQdSYoW1u')
   wallet = new ethers.Wallet(triggerData.value.wallet?.privateKey, provider)
   let C = await new ethers.Contract(cd.address, cd.abi, wallet)
   return C
@@ -346,21 +346,18 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
       if (!isAppoved) {
         appove(item)
       }
-      let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
+      let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/xQr0n2BqF1Hkkuw5_0YiEXeyQdSYoW1u')
       let wallet = new ethers.Wallet(triggerData.value.wallet?.privateKey, provider)
-      // gp = (gp * 1.5).toFixed(0).toString()
-      // console.log('gp', gp)
+      gp = (gp * 1.5).toFixed(0).toString()
       let data = {
         from: swapQuoteJSON.from,
         to: swapQuoteJSON.to,
         data: swapQuoteJSON.data,
         value: ethers.BigNumber.from(swapQuoteJSON.value),
-        gasPrice: ethers.BigNumber.from(swapQuoteJSON.gasPrice * 1.5),
-        gasLimit: ethers.BigNumber.from(swapQuoteJSON.gas)
+        gasPrice: ethers.BigNumber.from((swapQuoteJSON.gasPrice * 1.5).toFixed(0).toString()),
+        gasLimit: ethers.BigNumber.from((swapQuoteJSON.gas * 1.5).toFixed(0).toString())
       }
       const receipt = await wallet.sendTransaction(data)
-      await receipt.wait()
-      console.log("receipt: ", receipt);
       let msg1 = {
         type: 'uni',
         name: 'sendTransaction',
@@ -369,6 +366,8 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
       msgs.value.push(msg1)
       triggerData.value.messages = msgs.value
       setTrigger(triggerData.value)
+      await receipt.wait()
+      console.log("receipt: ", receipt);
     } catch (error) {
       let msg1 = {
         type: 'uni',
@@ -511,7 +510,7 @@ const isAppove = async (item) => {
   let inAmount = getParam(item.inAmount, paramList)
   const fromTokenAddress = inToken
   console.log(fromTokenAddress, inAmount)
-  let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
+  let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/xQr0n2BqF1Hkkuw5_0YiEXeyQdSYoW1u')
   let wallet = new ethers.Wallet(triggerData.value.wallet?.privateKey, provider)
   let ERC20TokenContract = await new ethers.Contract(fromTokenAddress, erc20abi, wallet)
   let allowance = await ERC20TokenContract.allowance(triggerData.value.wallet?.address, '0xF91bB752490473B8342a3E964E855b9f9a2A668e')
@@ -525,7 +524,7 @@ const appove = async (item) => {
   const fromTokenAddress = inToken
   const maxApproval = ethers.utils.parseUnits((inAmount * 50).toString(), 0)
   console.log(maxApproval)
-  let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
+  let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/xQr0n2BqF1Hkkuw5_0YiEXeyQdSYoW1u')
   let wallet = new ethers.Wallet(triggerData.value.wallet?.privateKey, provider)
   let ERC20TokenContract = await new ethers.Contract(fromTokenAddress, erc20abi, wallet)
   let tx = await ERC20TokenContract.approve('0xF91bB752490473B8342a3E964E855b9f9a2A668e', maxApproval)
@@ -541,7 +540,7 @@ const appove = async (item) => {
 }
 
 const getGas = async () => {
-  let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
+  let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/xQr0n2BqF1Hkkuw5_0YiEXeyQdSYoW1u')
   let GP = await provider.getGasPrice()
   return (ethers.utils.formatUnits(GP, "gwei") * 1).toFixed(2)
 }

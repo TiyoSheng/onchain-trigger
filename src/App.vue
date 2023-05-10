@@ -2,8 +2,7 @@
 import { onBeforeMount } from 'vue'
 import { getLs, setLs } from './libs/storage'
 import { useGlobalStore } from './hooks/globalStore'
-const { setTriggrts, setContracts, setWallet, setActivatedId, setTokens } = useGlobalStore()
-
+const { setTriggrts, setContracts, setWallet, setActivatedId, setTokens, setIsIframe } = useGlobalStore()
 
 const themeOverrides = {
   common: {
@@ -13,6 +12,11 @@ const themeOverrides = {
 }
 
 onBeforeMount(async () => {
+  if (window.top === window.self) {
+    setIsIframe(false)
+  } else {
+    setIsIframe(true)
+  }
   await init()
 })
 

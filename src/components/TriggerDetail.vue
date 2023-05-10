@@ -261,7 +261,7 @@ watch(() => store.state.triggers, (val) => {
             <span>同步Trigger</span>
           </div>
         </n-spin>
-        <div @click="showShare"  class="flex-center-center">
+        <div v-if="!store.state.isIframe" @click="showShare"  class="flex-center-center">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M11.2083 5.66667C12.0137 5.66667 12.6667 5.01374 12.6667 4.20833C12.6667 3.40292 12.0137 2.75 11.2083 2.75C10.4029 2.75 9.75 3.40292 9.75 4.20833C9.75 5.01374 10.4029 5.66667 11.2083 5.66667Z" stroke="#4C4F53" stroke-linejoin="round"/>
             <path d="M4.79171 9.45817C5.59712 9.45817 6.25004 8.80525 6.25004 7.99984C6.25004 7.19443 5.59712 6.5415 4.79171 6.5415C3.9863 6.5415 3.33337 7.19443 3.33337 7.99984C3.33337 8.80525 3.9863 9.45817 4.79171 9.45817Z" stroke="#4C4F53" stroke-linejoin="round"/>

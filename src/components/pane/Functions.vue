@@ -75,7 +75,7 @@ const setContract = async (contractId) => {
   let wallets = store.state.wallets
   wallets.forEach(async (el) => {
     if (el.address == walletAddress.value) {
-      let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/72nGqLuxAL9xmlekqc_Ep33qNh0Z-C4G')
+      let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/xQr0n2BqF1Hkkuw5_0YiEXeyQdSYoW1u')
       wallet = new ethers.Wallet(el.privateKey, provider)
     }
   })
