@@ -2,7 +2,6 @@
 import { onBeforeMount } from 'vue'
 import { getLs, setLs } from './libs/storage'
 import { useGlobalStore } from './hooks/globalStore'
-
 const { setTriggrts, setContracts, setWallet, setActivatedId, setTokens } = useGlobalStore()
 
 
