@@ -373,8 +373,8 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
       msgs.value.push(msg4)
       triggerData.value.messages = msgs.value
       setTrigger(triggerData.value)
-      console.log("receipt: ", receipt);
     } catch (error) {
+      console.log('error', error)
       let msg1 = {
         type: 'uni',
         name: 'error',
