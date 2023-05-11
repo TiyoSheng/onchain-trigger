@@ -368,7 +368,7 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
       let msg4 = {
         type: 'uni',
         name: 'sendTransaction',
-        result: '合约已执行完成'
+        result: '执行完成：' + receipt.hash
       }
       msgs.value.push(msg4)
       triggerData.value.messages = msgs.value

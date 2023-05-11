@@ -433,7 +433,7 @@ const runFunction = async (funList, paramList) => {
       let msg4 = {
         type: 'uni',
         name: 'sendTransaction',
-        result: '合约已执行完成'
+        result: '执行完成：' + receipt.hash
       }
       emit('setMessage', msg4)
     } catch (error) {
