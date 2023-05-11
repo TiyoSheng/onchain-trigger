@@ -354,8 +354,8 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
         to: swapQuoteJSON.to,
         data: swapQuoteJSON.data,
         value: ethers.BigNumber.from(swapQuoteJSON.value),
-        gasPrice: ethers.BigNumber.from((swapQuoteJSON.gasPrice * 3).toFixed(0).toString()),
-        gasLimit: ethers.BigNumber.from((swapQuoteJSON.gas * 3).toFixed(0).toString())
+        gasPrice: ethers.BigNumber.from((swapQuoteJSON.gasPrice * 2).toFixed(0).toString()),
+        gasLimit: ethers.BigNumber.from((swapQuoteJSON.gas * 2).toFixed(0).toString())
       }
       const receipt = await wallet.sendTransaction(data)
       let msg1 = {
