@@ -15,7 +15,7 @@ const openOT = () => {
       <div class="menu-item"><router-link to="/">Trigger</router-link></div>
       <div class="menu-item"><router-link to="/playground">Playground</router-link></div>
     </div>
-    <div v-else class="btn" @click="openOT">Open In DR</div>
+    <div v-else class="btn" @click="openOT">Open In Jetable OS</div>
   </div>
 </template>
 <style lang="scss" scoped>
@@ -63,7 +63,7 @@ const openOT = () => {
   color: #000;
   height: 34px;
   cursor: pointer;
-  width: 100px;
+  width: 140px;
   display: flex;
   align-items: center;
   justify-content: center;

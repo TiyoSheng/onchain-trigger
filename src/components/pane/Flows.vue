@@ -430,6 +430,12 @@ const runFunction = async (funList, paramList) => {
       }
       emit('setMessage', msg1)
       await receipt.wait()
+      let msg4 = {
+        type: 'uni',
+        name: 'sendTransaction',
+        result: '合约已执行完成'
+      }
+      emit('setMessage', msg4)
     } catch (error) {
       let msg1 = {
         type: 'uni',

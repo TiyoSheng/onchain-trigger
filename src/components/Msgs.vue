@@ -342,10 +342,10 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
       msgs.value.push(msg2)
       triggerData.value.messages = msgs.value
       setTrigger(triggerData.value)
-      let isAppoved = await isAppove(item)
-      if (!isAppoved) {
-        appove(item)
-      }
+      // let isAppoved = await isAppove(item)
+      // if (!isAppoved) {
+      //   appove(item)
+      // }
       let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/xQr0n2BqF1Hkkuw5_0YiEXeyQdSYoW1u')
       let wallet = new ethers.Wallet(triggerData.value.wallet?.privateKey, provider)
       gp = (gp * 1.5).toFixed(0).toString()
@@ -354,8 +354,8 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
         to: swapQuoteJSON.to,
         data: swapQuoteJSON.data,
         value: ethers.BigNumber.from(swapQuoteJSON.value),
-        gasPrice: ethers.BigNumber.from((swapQuoteJSON.gasPrice * 1.5).toFixed(0).toString()),
-        gasLimit: ethers.BigNumber.from((swapQuoteJSON.gas * 1.5).toFixed(0).toString())
+        gasPrice: ethers.BigNumber.from((swapQuoteJSON.gasPrice * 3).toFixed(0).toString()),
+        gasLimit: ethers.BigNumber.from((swapQuoteJSON.gas * 3).toFixed(0).toString())
       }
       const receipt = await wallet.sendTransaction(data)
       let msg1 = {
@@ -364,9 +364,15 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
         result: receipt
       }
       msgs.value.push(msg1)
+      await receipt.wait()
+      let msg4 = {
+        type: 'uni',
+        name: 'sendTransaction',
+        result: '合约已执行完成'
+      }
+      msgs.value.push(msg4)
       triggerData.value.messages = msgs.value
       setTrigger(triggerData.value)
-      await receipt.wait()
       console.log("receipt: ", receipt);
     } catch (error) {
       let msg1 = {

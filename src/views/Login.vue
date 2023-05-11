@@ -35,7 +35,12 @@ export default {
         console.log(res)
         if (res.code == 0) {
           localStorage.setItem('token', res.access_token)
-          router.push('/')
+          // 返回上一页
+          try {
+            router.go(-1)
+          } catch (error) {
+            router.push('/')
+          }
         } else {
           message.error(res.msg)
         }

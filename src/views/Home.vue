@@ -61,9 +61,9 @@ const submit = (val) => {
       if (triggers.find(item => item.trigger_id == trigger.trigger_id)) {
         isSpin.value = false
         await setActivatedId(trigger.id)
-        router.replace({
-          path: '/'
-        })
+        // router.replace({
+        //   path: '/'
+        // })
         return
       }
       // 根据id 去重
@@ -81,9 +81,9 @@ const submit = (val) => {
       await setContracts(newContractsArr)
       await setActivatedId(trigger.id)
 
-      router.replace({
-        path: '/'
-      })
+      // router.replace({
+      //   path: '/'
+      // })
     } else {
       message.error(res.msg)
     }
@@ -177,9 +177,9 @@ const changeMenu = async (id) => {
 
 </script>
 <template>
-<div>
+<div >
   <n-spin size="small" :show="isSpin">
-    <n-layout class="layout">
+    <n-layout class="layout" :style="{border: store.state.isIframe ?  '1px solid #EEEFF0' : 'none'}">
       <Nav />
       <n-layout class="layout-body" has-sider>
         <n-layout-sider
@@ -279,7 +279,7 @@ const changeMenu = async (id) => {
           </div>
         </n-layout-sider>
         <n-layout :native-scrollbar="false">
-          <div class="flex-start" :style="{border: store.state.isIframe ?  '1px solid #EEEFF0' : 'none'}">
+          <div class="flex-start">
             <TriggerDetail @createTrigger="showModal('trigger')" />
             <Msgs />
           </div>
