@@ -50,6 +50,7 @@ const inputFun = [{
 
 const getFlowName = (id) => {
   let flow = triggerData.value.flows.find(item => item.id === id)
+  if (!flow) return '<span style="color:red">流程不存在</span>'
   return flow.name
 }
 
@@ -241,7 +242,7 @@ watch(() => store.state.countdownDuration, (val) => {
           <div v-if="item.applyType == 'flow'" class="mt12">
             <div class="fun flex-center">
               <div class="name flex-center">执行流程</div>
-              <div class="function-name flex-center">{{getFlowName(item.flowId)}}</div>
+              <div class="function-name flex-center" v-html="getFlowName(item.flowId)"></div>
             </div>
           </div>
           <div v-else>
@@ -298,7 +299,7 @@ watch(() => store.state.countdownDuration, (val) => {
           <div v-if="item.applyType == 'flow'" class="mt12">
             <div class="fun flex-center">
               <div class="name flex-center">执行流程</div>
-              <div class="function-name flex-center">{{getFlowName(item.flowId)}}</div>
+              <div class="function-name flex-center" v-html="getFlowName(item.flowId)"></div>
             </div>
           </div>
           <div v-else>
@@ -354,7 +355,7 @@ watch(() => store.state.countdownDuration, (val) => {
           <div v-if="item.applyType == 'flow'" class="mt12">
             <div class="fun flex-center">
               <div class="name flex-center">执行流程</div>
-              <div class="function-name flex-center">{{getFlowName(item.flowId)}}</div>
+              <div class="function-name flex-center" v-html="getFlowName(item.flowId)"></div>
             </div>
           </div>
           <div v-else>
@@ -378,7 +379,7 @@ watch(() => store.state.countdownDuration, (val) => {
         </div>
         <div v-else>
           <div class="flex-center-sb">
-            <div class="name">合约触发器名称 - {{item.name}}</div>
+            <div class="name">合约触发器 - {{item.name}}</div>
             <div class="flex-center">
               <div class="edit-btn" @click="showModal(item)">编辑</div>
               <n-popconfirm :show-icon="false" positive-text="确认" negative-text="取消" @positiveClick="del(index)">
@@ -409,7 +410,7 @@ watch(() => store.state.countdownDuration, (val) => {
           <div v-if="item.applyType == 'flow'" class="mt12">
             <div class="fun flex-center">
               <div class="name flex-center">执行流程</div>
-              <div class="function-name flex-center">{{getFlowName(item.flowId)}}</div>
+              <div class="function-name flex-center" v-html="getFlowName(item.flowId)"></div>
             </div>
           </div>
           <div v-else>

@@ -13,7 +13,7 @@ const openOT = () => {
   <div class="nav flex-center">
     <div class="logo flex-center">
       <img src="../assets/images/logo.svg" alt="">
-      <span v-if="!href.includes('https://onchain-trigger.jetable.xyz/')">当前是内测环境</span>
+      <span v-if="!href.includes('https://onchain-trigger.jetable.xyz/')">当前是测试环境</span>
     </div>
     <div class="menu flex-center" v-if="!store.state.isIframe">
       <div class="menu-item"><router-link to="/">Trigger</router-link></div>

@@ -31,8 +31,8 @@ watch(() => props.params, (val) => {
     <div class="card" v-if="params && params.length">
       <div class="flex-center-sb params-hd">
         <div class="flex-center">
-          <p>变量名称</p>
-          <p>值</p>
+          <p>变量列表</p>
+          <!-- <p>值</p> -->
         </div>
         <div class="flex-center" @click="showModal">
           <div class="edit-btn">编辑</div>

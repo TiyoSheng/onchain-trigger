@@ -181,7 +181,7 @@ watch(() => props.triggerData, (val) => {
     <div class="card" v-for="(item, index) in functions" :key="item.id">
       <n-spin :show="functionLoading == item.id">
         <div class="flex-center-sb">
-          <div class="fun-name">附加函数备注名称 - {{item.name}}</div>
+          <div class="fun-name">{{item.name}}</div>
           <div class="flex-center">
             <div class="edit-btn" @click="showModal(item)">编辑</div>
             <n-popconfirm :show-icon="false" positive-text="确认" negative-text="取消" @positiveClick="del(index)">

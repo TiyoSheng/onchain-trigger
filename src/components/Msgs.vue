@@ -694,7 +694,11 @@ const onUni = async (index) => {
         if (trigger.applyType == 'flow') {
           let flows = triggerData.value.flows
           let flow = flows.find(flow => flow.id == trigger.flowId)
-          list = JSON.parse(JSON.stringify(flow.handdleList))
+          if (flow) {
+            list = JSON.parse(JSON.stringify(flow.handdleList))
+          } else {
+            list = []
+          }
         } else {
           list = JSON.parse(JSON.stringify(trigger.handdleList))
         }
