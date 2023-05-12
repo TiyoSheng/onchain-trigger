@@ -60,6 +60,10 @@ const submit = (val) => {
       console.log('findtrigger', triggers)
       if (triggers.find(item => item.trigger_id == trigger.trigger_id)) {
         isSpin.value = false
+        // item.id == trigger.trigger_id
+        let index = triggers.findIndex(item => item.trigger_id == trigger.trigger_id)
+        triggers[index].id = trigger.id
+        await setTriggrts(triggers)
         await setActivatedId(trigger.id)
         // router.replace({
         //   path: '/'
