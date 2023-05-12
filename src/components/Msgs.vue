@@ -346,7 +346,7 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
       // if (!isAppoved) {
       //   appove(item)
       // }
-      let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/xQr0n2BqF1Hkkuw5_0YiEXeyQdSYoW1u')
+      let provider = new ethers.providers.JsonRpcProvider('https://goerli.infura.io/v3/1b74591d94b048ff94dc0d04dd4f1eda')
       let wallet = new ethers.Wallet(triggerData.value.wallet?.privateKey, provider)
       gp = (gp * 1.5).toFixed(0).toString()
       let data = {
