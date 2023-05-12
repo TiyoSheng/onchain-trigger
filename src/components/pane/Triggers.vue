@@ -7,7 +7,7 @@ import AddTrigger from '../../components/form/AddTrigger.vue'
 const { store } = useGlobalStore()
 const message = useMessage()
 
-const emit = defineEmits(['setTrigger', 'setMessage'])
+const emit = defineEmits(['setTrigger', 'setMessage', 'setError'])
 const props = defineProps({
   trigger: Object
 })
@@ -50,8 +50,14 @@ const inputFun = [{
 
 const getFlowName = (id) => {
   let flow = triggerData.value.flows.find(item => item.id === id)
-  if (!flow) return '<span style="color:red">流程不存在</span>'
-  return flow.name
+  if (!flow) {
+    emit('setError', 3)
+    return '<span style="color:red">流程不存在</span>'
+  } else {
+    emit('setError', -1)
+    return flow.name
+  }
+  
 }
 
 const getUnit = (unit) => {

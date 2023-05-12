@@ -14,6 +14,7 @@ const emit = defineEmits(['setTrigger'])
 const triggerData = ref({})
 const editRemarkRef = ref(null)
 const tabIndex = ref(0)
+const errorIndex = ref(-1)
 const tabs = [
   {label: '全局变量', name: 'globalParams'},
   {label: '流程', name: 'flows'},
@@ -34,38 +35,13 @@ const getName = () => {
 }
 
 const getRemark = () => {
-  if (tabIndex.value === 0) {
-    return triggerData.value.remark.params
-  } else if (tabIndex.value === 1) {
-    return triggerData.value.remark.flows
-  } else if (tabIndex.value === 2) {
-    return triggerData.value.remark.functions
-  } else if (tabIndex.value === 3) {
-    return triggerData.value.remark.triggers
-  } else {
-    return ''
-  }
+    return triggerData.value.remark?.global || ''
 }
 
 const showEditRemark = () => {
-  console.log('showEditRemark', editRemarkRef.value)
-  if (tabIndex.value == 0) {
-    editRemarkRef.value.modalType = 'params'
-    editRemarkRef.value.modalTitle = '全局变量备注'
-    editRemarkRef.value.text = triggerData.value.remark.params
-  } else if (tabIndex.value == 1) {
-    editRemarkRef.value.modalType = 'flows'
-    editRemarkRef.value.modalTitle = '流程备注'
-    editRemarkRef.value.text = triggerData.value.remark.flows
-  } else if (tabIndex.value == 2) {
-    editRemarkRef.value.modalType = 'functions'
-    editRemarkRef.value.modalTitle = '附加函数备注'
-    editRemarkRef.value.text = triggerData.value.remark.functions
-  } else if (tabIndex.value == 3) {
-    editRemarkRef.value.modalType = 'triggers'
-    editRemarkRef.value.modalTitle = '触发器备注'
-    editRemarkRef.value.text = triggerData.value.remark.triggers
-  }
+  editRemarkRef.value.modalType = 'global'
+  editRemarkRef.value.modalTitle = '项目备注'
+  editRemarkRef.value.text = triggerData.value.remark.global
   editRemarkRef.value.isShowModal = true
 }
 
@@ -115,13 +91,26 @@ watch(() => props.trigger, (val) => {
 </script>
 <template>
   <div class="tabs">
+    <n-collapse>
+      <template #header-extra>
+        <p class="edit-btn" @click.stop="showEditRemark">编辑备注</p>
+      </template>
+      <n-collapse-item title="项目介绍" name="1" class="collapse-item">
+        <div class="remark">
+          <v-md-preview v-if="getRemark()" :text="getRemark()"></v-md-preview>
+          <p v-else>暂未添加备注</p>
+        </div>
+      </n-collapse-item>
+    </n-collapse>
     <div class="tab-hd-w">
       <div class="tab-hd flex-center">
-        <div v-for="(item, index) in tabs" :key="index" class="tab-item flex-center-center" :class="[index == tabIndex - 1 ? 'tab-item-active-pre' : '', index == tabIndex ? 'tab-item-actived' : '']" @click="tabIndex = index">{{item.label}} ({{triggerData[item.name].length}})</div>
+        <div v-for="(item, index) in tabs" :key="index" class="tab-item flex-center-center" :class="[index == tabIndex - 1 ? 'tab-item-active-pre' : '', index == tabIndex ? 'tab-item-actived' : '']" @click="tabIndex = index">{{item.label}} ({{triggerData[item.name].length}})
+          <svg v-if="errorIndex == index" t="1683882739574" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2374" width="12" height="12"><path d="M512 0C229.205333 0 0 229.205333 0 512s229.205333 512 512 512 512-229.205333 512-512S794.794667 0 512 0z m0 796.458667A56.917333 56.917333 0 1 1 511.957333 682.666667 56.917333 56.917333 0 0 1 512 796.458667z m54.186667-227.797334h0.128a60.501333 60.501333 0 0 1-53.802667 55.893334c2.048 0.256 3.882667 1.152 5.973333 1.152h-11.818666c2.048 0 3.84-0.981333 5.845333-1.109334a59.093333 59.093333 0 0 1-53.162667-55.893333l-13.056-284.16a54.314667 54.314667 0 0 1 54.613334-57.045333h26.282666a52.992 52.992 0 0 1 54.186667 57.002666l-15.146667 284.16z" fill="#d81e06" p-id="2375"></path></svg>
+        </div>
       </div>
     </div>
     <div class="tab-pane">
-      <div class="remark">
+      <!-- <div class="remark">
         <div class="remark-hd flex-center-sb">
           <p class="name">{{getName()}}备注</p>
           <p class="edit-btn" @click="showEditRemark">编辑备注</p>
@@ -130,7 +119,7 @@ watch(() => props.trigger, (val) => {
           <v-md-preview v-if="getRemark()" :text="getRemark()"></v-md-preview>
           <p v-else>暂未添加备注</p>
         </div>
-      </div>
+      </div> -->
       <div v-if="tabIndex == 0">
         <Params :params="triggerData.globalParams" @setParams="setParams" />
       </div>
@@ -149,7 +138,7 @@ watch(() => props.trigger, (val) => {
         />
       </div>
       <div v-if="tabIndex == 3">
-        <Triggers :trigger="triggerData" @setTrigger="setTriggers" @setMessage="setMessage" />
+        <Triggers :trigger="triggerData" @setTrigger="setTriggers" @setMessage="setMessage" @setError="(e) => errorIndex = e" />
       </div>
     </div>
   </div>
@@ -179,6 +168,12 @@ watch(() => props.trigger, (val) => {
       color: #9BA0A8;
       box-sizing: border-box;
       cursor: pointer;
+      position: relative;
+      svg {
+        position: absolute;
+        right: 8px;
+        top: 8px;
+      }
       & ~ .tab-item {
         position: relative;
         &::after {
@@ -228,39 +223,46 @@ watch(() => props.trigger, (val) => {
     border: 1px solid #D9D9D9;
     border-radius: 0px 8px 8px 8px;
     margin-top: -1px;
-    .remark {
-      margin-top: 16px;
-      padding: 0 16px;
-      box-sizing: border-box;
-    }
-    .remark-hd {
-      .name {
-        font-weight: 600;
-        font-size: 13px;
-        line-height: 16px;
-        color: #262C33;
-      }
-      .edit-btn {
-        font-size: 12px;
-        line-height: 16px;
-        color: #4C4F53;
-        margin-left: 8px;
-        cursor: pointer;
-      }
-    }
-    .remark-bd {
-      padding: 12px 12px 0;
-      box-sizing: border-box;
-      border: 1px solid rgb(239, 239, 245);
-      border-radius: 6px;
-      font-size: 12px;
-      line-height: 16px;
-      color: #4C4F53;
-      p {
-        margin-bottom: 12px;
-        opacity: .4;
-      }
-    }
+  }
+}
+.collapse-item {
+  border: 1px solid #D9D9D9;
+  border-radius: 8px;
+  box-sizing: border-box;
+  margin-bottom: 24px;
+  padding: 12px;
+}
+.edit-btn {
+  font-size: 12px;
+  line-height: 16px;
+  color: #4C4F53;
+  margin-left: 8px;
+  cursor: pointer;
+}
+.remark {
+  // margin-top: 16px;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+.remark-hd {
+  .name {
+    font-weight: 600;
+    font-size: 13px;
+    line-height: 16px;
+    color: #262C33;
+  }
+}
+.remark-bd {
+  padding: 12px 12px 0;
+  box-sizing: border-box;
+  border: 1px solid rgb(239, 239, 245);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 16px;
+  color: #4C4F53;
+  p {
+    margin-bottom: 12px;
+    opacity: .4;
   }
 }
 .mt12 {
