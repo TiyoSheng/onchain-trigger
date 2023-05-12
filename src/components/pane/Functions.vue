@@ -180,47 +180,50 @@ watch(() => props.triggerData, (val) => {
   <div class="function">
     <div class="card" v-for="(item, index) in functions" :key="item.id">
       <n-spin :show="functionLoading == item.id">
-        <div class="flex-center-sb">
-          <div class="fun-name">{{item.name}}</div>
-          <div class="flex-center">
-            <div class="edit-btn" @click="showModal(item)">编辑</div>
-            <n-popconfirm :show-icon="false" positive-text="确认" negative-text="取消" @positiveClick="del(index)">
-              <template #trigger>
-                <div class="edit-btn">删除</div>
-              </template>
-              <p style="margin: 10px 0">是否确认删除{{item.name}}?</p>
-            </n-popconfirm>
-          </div>
-        </div>
-        <div class="mt12 sub-title">触发函数</div>
-        <div class="mt12 flex-center">
-          <div class="fun flex-center">
-            <div class="name flex-center">{{getContract(item.contractId, 'name')}}</div>
-            <div class="function-name flex-center">{{item.functionName}}</div>
-          </div>
-          <div class="type">（{{getContract(item.contractId, 'type', item.functionName)}}）</div>
-        </div>
-        <div class="mt16 sub-title flex-center">
-          <div class="k">参数</div>
-          <div class="v">值</div>
-        </div>
-        <div class="mt12 params">
-          <div class="params-item flex-center" v-for="(val, key) in item.args" :key="key">
-            <div class="params-item-key flex-center">{{key}}</div>
-            <div class="params-item-value flex-center">
-              <n-select class="params-select"
-                v-model:value="item.args[key].value"
-                filterable tag
-                :options="params"
-                label-field="label"
-                value-field="key"
-                @update:value="setFunctions"
-              />
-              <!-- <n-input v-model:value="item.args[key]" /> -->
+        <n-collapse>
+          <template #header-extra>
+            <div class="flex-center" @click.stop>
+              <div class="edit-btn" @click.stop="showModal(item)">编辑</div>
+              <n-popconfirm :show-icon="false" positive-text="确认" negative-text="取消" @positiveClick="del(index)">
+                <template #trigger>
+                  <div class="edit-btn">删除</div>
+                </template>
+                <p style="margin: 10px 0">是否确认删除{{item.name}}?</p>
+              </n-popconfirm>
             </div>
-          </div>
-        </div>
-        <div class="btn-primary mt16" @click="apply(item)">执行</div>
+          </template>
+          <n-collapse-item :title="item.name" name="1" class="collapse-item">
+            <div class="mt12 sub-title">触发函数</div>
+            <div class="mt12 flex-center">
+              <div class="fun flex-center">
+                <div class="name flex-center">{{getContract(item.contractId, 'name')}}</div>
+                <div class="function-name flex-center">{{item.functionName}}</div>
+              </div>
+              <div class="type">（{{getContract(item.contractId, 'type', item.functionName)}}）</div>
+            </div>
+            <div class="mt16 sub-title flex-center">
+              <div class="k">参数</div>
+              <div class="v">值</div>
+            </div>
+            <div class="mt12 params">
+              <div class="params-item flex-center" v-for="(val, key) in item.args" :key="key">
+                <div class="params-item-key flex-center">{{key}}</div>
+                <div class="params-item-value flex-center">
+                  <n-select class="params-select"
+                    v-model:value="item.args[key].value"
+                    filterable tag
+                    :options="params"
+                    label-field="label"
+                    value-field="key"
+                    @update:value="setFunctions"
+                  />
+                  <!-- <n-input v-model:value="item.args[key]" /> -->
+                </div>
+              </div>
+            </div>
+            <div class="btn-primary mt16" @click="apply(item)">执行</div>
+          </n-collapse-item>
+        </n-collapse>
       </n-spin>
     </div>
     <div class="btn" @click="showModal">
