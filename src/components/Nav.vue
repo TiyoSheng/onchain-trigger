@@ -146,6 +146,7 @@ onMounted(async () => {
     height: 14px;
   }
   .address {
+    font-weight: 500;
     margin-right: 24px;
   }
   .icon {
@@ -160,7 +161,7 @@ onMounted(async () => {
       height: 18px;
     }
     p {
-      font-weight: 400;
+      font-weight: 500;
       font-size: 13px;
       line-height: 17px;
       margin-left: 8px;
