@@ -2,14 +2,18 @@
 import { useGlobalStore } from '../hooks/globalStore'
 const { store } = useGlobalStore()
 
+const href = window.location.href
+console.log(href)
+
 const openOT = () => {
-  window.open('https://onchain-trigger.jetable.xyz/')
+  window.open(href)
 }
 </script>
 <template>
   <div class="nav flex-center">
     <div class="logo flex-center">
       <img src="../assets/images/logo.svg" alt="">
+      <span v-if="!href.includes('https://onchain-trigger.jetable.xyz/')">当前是内测环境</span>
     </div>
     <div class="menu flex-center" v-if="!store.state.isIframe">
       <div class="menu-item"><router-link to="/">Trigger</router-link></div>
@@ -25,11 +29,15 @@ const openOT = () => {
   border-bottom: 1px solid rgb(239, 239, 245);
   box-sizing: border-box;
   .logo {
-    flex: 0 0 200px;
+    flex: 0 0 400px;
     height: 100%;
     img {
       height: 92px;
       height: auto;
+    }
+    span {
+      font-size: 12px;
+      margin-left: 12px;
     }
   }
   .menu {

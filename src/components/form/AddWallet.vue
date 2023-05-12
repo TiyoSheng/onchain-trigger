@@ -60,7 +60,7 @@ defineExpose({
         <n-input v-model:value="walletName" placeholder="输入钱包名" />
       </n-form-item>
       <n-form-item v-if="showPrivateKeyInput" label="私钥（选填）" >
-        <n-input type="textarea" v-model:value="privateKey" placeholder="输入钱包私钥" />
+        <n-input type="textarea" v-model:value="privateKey" placeholder="导入请粘贴私钥,新建钱包请直接点击创建" />
       </n-form-item>
       <div class="btn" v-if="!showPrivateKeyInput" @click="showPrivateKeyInput = true">使用私钥创建</div>
       <n-form-item style="display: flex;justify-content: flex-end;">
