@@ -2,10 +2,12 @@
 import { ref, onMounted } from 'vue'
 import { ethers } from 'ethers'
 import { useGlobalStore } from '../hooks/globalStore'
+import { defaultChains, icons } from '../libs/chains'
 const { store } = useGlobalStore()
 
 const href = window.location.href
 const gasPrice = ref(0)
+const chainId = ref(5)
 console.log(href)
 
 const openOT = () => {
@@ -30,9 +32,28 @@ onMounted(async () => {
       <span v-if="!href.includes('https://onchain-trigger.jetable.xyz/')">当前是测试环境</span>
     </div>
     <div class="flex-center">
-      <div class="flex-center-center gas-price">
-        <img src="../assets/images/gas.gif" alt="">
-        <p>{{gasPrice}}</p>
+      <div class="wallet flex-center-sb chain-w">
+        <div class="flex-center">
+          <img :src="chain && icons[chainId] ? `https://icons.llamao.fi/icons/chains/rsz_${icons[chainId]}.jpg` : 'https://chainlist.org/unknown-logo.png'" alt="" class="icon">
+          <div class="address">{{defaultChains[0].name}}</div>
+        </div>
+        
+        <div class="flex-center-center gas-price">
+          <img src="../assets/images/gas.gif" alt="">
+          <p>{{gasPrice}}</p>
+        </div>
+        <div class="block"></div>
+        <div class="chain-list" v-if="defaultChains && defaultChains.length">
+          <div v-for="item in defaultChains" :key="item.chainId" @click="switchChain(item.chainId)" :class="['chain-item', 'flex-center-sb', chainId == item.chainId ? 'chain-item-active' : '']">
+            <div class="flex-center" style="width: 100%">
+              <img :src="icons[item.chainId] ? `https://icons.llamao.fi/icons/chains/rsz_${icons[item.chainId]}.jpg` : 'https://chainlist.org/unknown-logo.png'" alt="" class="icon">
+              <div class="chain-name">{{item.name}}</div>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M13.7491 5.65717C14.042 5.95006 14.042 6.42494 13.7491 6.71783L8.12408 12.3428C7.83119 12.6357 7.35631 12.6357 7.06342 12.3428L4.25092 9.53033C3.95803 9.23744 3.95803 8.76256 4.25092 8.46967C4.54381 8.17678 5.01869 8.17678 5.31158 8.46967L7.59375 10.7518L12.6884 5.65717C12.9813 5.36428 13.4562 5.36428 13.7491 5.65717Z" fill="#375CFF"/>
+            </svg>
+          </div>
+        </div>
       </div>
       <div class="menu flex-center" v-if="!store.state.isIframe">
         <div class="menu-item"><router-link to="/">Trigger</router-link></div>
@@ -97,27 +118,136 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  margin-left: auto;
 }
-.gas-price {
+.wallet {
+  margin-left: 16px;
+  padding: 0 12px;
   border: 1px solid rgba(133, 141, 153, 0.15);
-  padding: 0 12px;
   border-radius: 10px;
-  padding: 0 12px;
+  font-family: 'Montserrat-Medium';
+  font-size: 13px;
+  line-height: 18px;
   height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  img {
-    width: 18px;
-    height: 18px;
+  cursor: pointer;
+  &.wallet-btn {
+    &:hover {
+      background: rgba(133, 141, 153, 0.3);
+    }
   }
-  p {
-    font-weight: 400;
-    font-size: 12px;
-    line-height: 17px;
-    margin-left: 8px;
-    font-weight: 600;
+  .line {
+    height: 12px;
+    width: 1px;
+    margin: 0 12px;
+    background: #FFFFFF;
+  }
+  .avatar {
+    margin-right: 6px;
+    width: 14px;
+    height: 14px;
+  }
+  .address {
+    margin-right: 24px;
+  }
+  .icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    margin-right: 6px;
+  }
+  .gas-price {
+    img {
+      width: 18px;
+      height: 18px;
+    }
+    p {
+      font-weight: 400;
+      font-size: 13px;
+      line-height: 17px;
+      margin-left: 8px;
+    }
+  }
+  &.chain-w {
+    position: relative;
+    &:hover {
+      .chain-list {
+        display: block;
+      }
+    }
+    .block {
+      position: absolute;
+      top: 34px;
+      left: 0;
+      right: 0;
+      height: 10px;
+      font-size: 0;
+    }
+    .chain-list {
+      display: none;
+      position: absolute;
+      top: 42px;
+      left: 0;
+      right: 0;
+      max-height: 350px;
+      overflow-y: auto;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(133, 141, 153, 0.15);
+      box-shadow: 0px 12px 30px rgba(10, 10, 12, 0.3);
+      backdrop-filter: blur(10px);
+      border-radius: 10px;
+      padding: 5px;
+      box-sizing: border-box;
+      z-index: 99;
+      .chain-item {
+        padding: 0 12px;
+        height: 34px;
+        border-radius: 6px;
+        box-sizing: border-box;
+        font-size: 13px;
+        line-height: 18px;
+        text-transform: capitalize;
+        color: #FFFFFF;
+        .chain-name {
+          flex: 1;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        &:hover {
+          background: rgba(133, 141, 153, 0.15);
+        }
+        &.chain-item-active {
+          background: rgba(55, 92, 255, 0.15);
+          color: #375CFF;
+          svg {
+            display: inline-block;
+          }
+        }
+        img {
+          width: 18px;
+          height: 18px;
+          border-radius: 10px;
+          margin-right: 6px;
+        }
+        svg {
+          display: none;
+        }
+      }
+      .add-btn {
+        background: rgba(133, 141, 153, 0.3);
+        border-radius: 6px;
+        height: 34px;
+        cursor: pointer;
+        &:hover {
+          background: #375CFF;
+        }
+        span {
+          font-weight: 400;
+          font-size: 15px;
+          line-height: 18px;
+          text-transform: capitalize;
+        }
+      }
+    }
   }
 }
 </style>
