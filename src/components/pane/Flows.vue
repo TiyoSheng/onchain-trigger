@@ -4,9 +4,13 @@ import { useGlobalStore } from '../../hooks/globalStore'
 import { ethers, BigNumber } from 'ethers'
 import { useMessage } from 'naive-ui'
 import AddFlow from '../form/AddFlow.vue'
+import { defaultChains } from '../../libs/chains'
+import SwapRouterABI from '@uniswap/v3-periphery/artifacts/contracts/interfaces/ISwapRouter.sol/ISwapRouter.json'
+
+import { get } from '../../http/axios'
 
 const erc20abi = [{ "inputs": [ { "internalType": "string", "name": "name", "type": "string" }, { "internalType": "string", "name": "symbol", "type": "string" }, { "internalType": "uint256", "name": "max_supply", "type": "uint256" } ], "stateMutability": "nonpayable", "type": "constructor" }, { "anonymous": false, "inputs": [ { "indexed": true, "internalType": "address", "name": "owner", "type": "address" }, { "indexed": true, "internalType": "address", "name": "spender", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "value", "type": "uint256" } ], "name": "Approval", "type": "event" }, { "anonymous": false, "inputs": [ { "indexed": true, "internalType": "address", "name": "from", "type": "address" }, { "indexed": true, "internalType": "address", "name": "to", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "value", "type": "uint256" } ], "name": "Transfer", "type": "event" }, { "inputs": [ { "internalType": "address", "name": "owner", "type": "address" }, { "internalType": "address", "name": "spender", "type": "address" } ], "name": "allowance", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "spender", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "approve", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "account", "type": "address" } ], "name": "balanceOf", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "burn", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "account", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "burnFrom", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [], "name": "decimals", "outputs": [ { "internalType": "uint8", "name": "", "type": "uint8" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "spender", "type": "address" }, { "internalType": "uint256", "name": "subtractedValue", "type": "uint256" } ], "name": "decreaseAllowance", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "spender", "type": "address" }, { "internalType": "uint256", "name": "addedValue", "type": "uint256" } ], "name": "increaseAllowance", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [], "name": "name", "outputs": [ { "internalType": "string", "name": "", "type": "string" } ], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "symbol", "outputs": [ { "internalType": "string", "name": "", "type": "string" } ], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "totalSupply", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "recipient", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "transfer", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "sender", "type": "address" }, { "internalType": "address", "name": "recipient", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "transferFrom", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }]
-
+const SWAP_ROUTER_ADDRESS = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
 const { store } = useGlobalStore()
 const message = useMessage()
 
@@ -45,6 +49,13 @@ const filterConditions = [{
   label: '包含',
   value: '$in'
 }]
+
+
+const getProvider = () => {
+  let chainId = trigger.value.chainId || 5
+  let rpc = defaultChains.find(item => item.chainId === chainId).rpcUrl
+  return new ethers.providers.JsonRpcProvider(rpc)
+}
 
 const getConditionsName = (val) => {
   let name = filterConditions.find(item => item.value === val).label
@@ -119,7 +130,7 @@ const setContract = async (contractId) => {
       cd = e
     }
   })
-  let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/xQr0n2BqF1Hkkuw5_0YiEXeyQdSYoW1u')
+  let provider = getProvider()
   wallet = new ethers.Wallet(trigger.value.wallet?.privateKey, provider)
   let C = await new ethers.Contract(cd.address, cd.abi, wallet)
   return C
@@ -387,42 +398,96 @@ const runFunction = async (funList, paramList) => {
     let outToken = getParam(item.outAddress, paramList)
     let inAmount = getParam(item.inAmount, paramList)
     try {
-      const headers = {'0x-api-key': '4243850c-a27b-4f20-bfaf-765641b1d1b2'}
-      const response = await fetch(`https://goerli.api.0x.org/swap/v1/quote?sellToken=${inToken}&buyToken=${outToken}&sellAmount=${inAmount}&takerAddress=${trigger.value.wallet?.address}`)
-      let swapQuoteJSON = await response.json()
-      console.log("Quote: ", swapQuoteJSON)
-      if (swapQuoteJSON.code) {
-        let msg3 = {
-          type: 'uni',
-          name: 'swapQuote-error',
-          result: swapQuoteJSON
-        }
-        emit('setMessage', msg3)
-        loading.value = ''
-        return
-      }
-      let msg2 = {
-        type: 'uni',
-        name: 'swapQuote',
-        result: swapQuoteJSON
-      }
-      emit('setMessage', msg2)
+      let chainId = trigger.value.chainId || 5
+      let receipt = ''
+      let provider = getProvider()
+      let wallet = new ethers.Wallet(trigger.value.wallet?.privateKey, provider)
+      // const headers = {'0x-api-key': '4243850c-a27b-4f20-bfaf-765641b1d1b2'}
+      // const response = await fetch(`https://goerli.api.0x.org/swap/v1/quote?sellToken=${inToken}&buyToken=${outToken}&sellAmount=${inAmount}&takerAddress=${trigger.value.wallet?.address}`)
+      // let swapQuoteJSON = await response.json()
+      // console.log("Quote: ", swapQuoteJSON)
+      // if (swapQuoteJSON.code) {
+      //   let msg3 = {
+      //     type: 'uni',
+      //     name: 'swapQuote-error',
+      //     result: swapQuoteJSON
+      //   }
+      //   emit('setMessage', msg3)
+      //   loading.value = ''
+      //   return
+      // }
+      // let msg2 = {
+      //   type: 'uni',
+      //   name: 'swapQuote',
+      //   result: swapQuoteJSON
+      // }
+      // emit('setMessage', msg2)
+      // let isAppoved = await isAppove(item)
+      // if (!isAppoved) {
+      //   appove(item)
+      // }
+      // let provider = new ethers.providers.JsonRpcProvider('https://goerli.infura.io/v3/1b74591d94b048ff94dc0d04dd4f1eda')
+      // let wallet = new ethers.Wallet(trigger.value.wallet?.privateKey, provider)
+      // let data = {
+      //   from: swapQuoteJSON.from,
+      //   to: swapQuoteJSON.to,
+      //   data: swapQuoteJSON.data,
+      //   value: ethers.BigNumber.from(swapQuoteJSON.value),
+      //   gasPrice: ethers.BigNumber.from((swapQuoteJSON.gasPrice)),
+      //   gasLimit: ethers.BigNumber.from((swapQuoteJSON.gas))
+      // }
+      // const receipt = await wallet.sendTransaction(data)
       let isAppoved = await isAppove(item)
       if (!isAppoved) {
-        appove(item)
+        await appove(item)
       }
-      let provider = new ethers.providers.JsonRpcProvider('https://goerli.infura.io/v3/1b74591d94b048ff94dc0d04dd4f1eda')
-      let wallet = new ethers.Wallet(trigger.value.wallet?.privateKey, provider)
-      let data = {
-        from: swapQuoteJSON.from,
-        to: swapQuoteJSON.to,
-        data: swapQuoteJSON.data,
-        value: ethers.BigNumber.from(swapQuoteJSON.value),
-        gasPrice: ethers.BigNumber.from((swapQuoteJSON.gasPrice)),
-        gasLimit: ethers.BigNumber.from((swapQuoteJSON.gas))
+      if (chainId == 5) {
+        const headers = {'0x-api-key': '4243850c-a27b-4f20-bfaf-765641b1d1b2'}
+        const response = await fetch(`https://goerli.api.0x.org/swap/v1/quote?sellToken=${inToken}&buyToken=${outToken}&sellAmount=${inAmount}&takerAddress=${trigger.value.wallet?.address}`)
+        let swapQuoteJSON = await response.json()
+        console.log("Quote: ", swapQuoteJSON)
+        if (swapQuoteJSON.code) {
+          let msg3 = {
+            type: 'uni',
+            name: 'swapQuote-error',
+            result: swapQuoteJSON
+          }
+          emit('setMessage', msg3)
+          loading.value = ''
+          return
+        }
+        let msg2 = {
+          type: 'uni',
+          name: 'swapQuote',
+          result: swapQuoteJSON
+        }
+        emit('setMessage', msg2)
+        let data = {
+          from: swapQuoteJSON.from,
+          to: swapQuoteJSON.to,
+          data: swapQuoteJSON.data,
+          value: ethers.BigNumber.from(swapQuoteJSON.value),
+          gasLimit: ethers.BigNumber.from((swapQuoteJSON.gas * 1).toFixed(0).toString()),
+          gasPrice: ethers.BigNumber.from((swapQuoteJSON.gasPrice * 1).toFixed(0).toString())
+        }
+        receipt = await wallet.sendTransaction(data)
+      } else {
+        const swapRouterContract = new ethers.Contract(SWAP_ROUTER_ADDRESS, SwapRouterABI.abi, wallet)
+        const params = {
+          tokenIn: ethers.utils.getAddress(inToken),
+          tokenOut: ethers.utils.getAddress(outToken),
+          fee: 3000,
+          recipient: ethers.utils.getAddress(trigger.value.wallet?.address),
+          deadline: Math.floor(Date.now() / 1000) + 60 * 20,
+          amountIn: inAmount,
+          amountOutMinimum: 0,
+          sqrtPriceLimitX96: 0,
+        }
+        const sendInfo = {
+          gasLimit: ethers.BigNumber.from(1000000)
+        }
+        receipt = await swapRouterContract.exactInputSingle(params, sendInfo)
       }
-      const receipt = await wallet.sendTransaction(data)
-      console.log("receipt: ", receipt);
       let msg1 = {
         type: 'uni',
         name: 'sendTransaction',
@@ -456,10 +521,10 @@ const isAppove = async (item) => {
   let inAmount = getParam(item.inAmount, paramList)
   const fromTokenAddress = inToken
   console.log(fromTokenAddress, inAmount)
-  let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/xQr0n2BqF1Hkkuw5_0YiEXeyQdSYoW1u')
+  let provider = getProvider()
   let wallet = new ethers.Wallet(trigger.value.wallet?.privateKey, provider)
   let ERC20TokenContract = await new ethers.Contract(fromTokenAddress, erc20abi, wallet)
-  let allowance = await ERC20TokenContract.allowance(trigger.value.wallet?.address, '0xF91bB752490473B8342a3E964E855b9f9a2A668e')
+  let allowance = await ERC20TokenContract.allowance(trigger.value.wallet?.address, '0xE592427A0AEce92De3Edee1F18E0157C05861564')
   if ((allowance.toString() * 1) > (inAmount * 1)) {
     isShowAppove.value = false
   } else {
@@ -475,10 +540,10 @@ const appove = async (item) => {
   appoveIng.value.push(inToken)
   const fromTokenAddress = inToken
   const maxApproval = ethers.constants.MaxUint256
-  let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/xQr0n2BqF1Hkkuw5_0YiEXeyQdSYoW1u')
+  let provider = getProvider()
   let wallet = new ethers.Wallet(trigger.value.wallet?.privateKey, provider)
   let ERC20TokenContract = await new ethers.Contract(fromTokenAddress, erc20abi, wallet)
-  let tx = await ERC20TokenContract.approve('0xF91bB752490473B8342a3E964E855b9f9a2A668e', maxApproval)
+  let tx = await ERC20TokenContract.approve('0xE592427A0AEce92De3Edee1F18E0157C05861564', maxApproval)
   await tx.wait()
   let msg = {
     type: 'uni',

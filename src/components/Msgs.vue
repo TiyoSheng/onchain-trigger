@@ -6,15 +6,13 @@ import { ethers } from 'ethers'
 import "vue3-json-viewer/dist/index.css"
 import { useGlobalStore } from "../hooks/globalStore"
 import { decodeExecute } from '../libs/universalDecoder'
+import { defaultChains } from '../libs/chains'
+import { quote } from '../libs/qq'
 import { Alchemy, Network, AlchemySubscription } from "alchemy-sdk"
-const settings = {
-  apiKey: "xQr0n2BqF1Hkkuw5_0YiEXeyQdSYoW1u",
-  network: Network.ETH_GOERLI
-}
-const alchemy = new Alchemy(settings)
+import SwapRouterABI from '@uniswap/v3-periphery/artifacts/contracts/interfaces/ISwapRouter.sol/ISwapRouter.json'
+let alchemies = []
 const erc20abi = [{ "inputs": [ { "internalType": "string", "name": "name", "type": "string" }, { "internalType": "string", "name": "symbol", "type": "string" }, { "internalType": "uint256", "name": "max_supply", "type": "uint256" } ], "stateMutability": "nonpayable", "type": "constructor" }, { "anonymous": false, "inputs": [ { "indexed": true, "internalType": "address", "name": "owner", "type": "address" }, { "indexed": true, "internalType": "address", "name": "spender", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "value", "type": "uint256" } ], "name": "Approval", "type": "event" }, { "anonymous": false, "inputs": [ { "indexed": true, "internalType": "address", "name": "from", "type": "address" }, { "indexed": true, "internalType": "address", "name": "to", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "value", "type": "uint256" } ], "name": "Transfer", "type": "event" }, { "inputs": [ { "internalType": "address", "name": "owner", "type": "address" }, { "internalType": "address", "name": "spender", "type": "address" } ], "name": "allowance", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "spender", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "approve", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "account", "type": "address" } ], "name": "balanceOf", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "burn", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "account", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "burnFrom", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [], "name": "decimals", "outputs": [ { "internalType": "uint8", "name": "", "type": "uint8" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "spender", "type": "address" }, { "internalType": "uint256", "name": "subtractedValue", "type": "uint256" } ], "name": "decreaseAllowance", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "spender", "type": "address" }, { "internalType": "uint256", "name": "addedValue", "type": "uint256" } ], "name": "increaseAllowance", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [], "name": "name", "outputs": [ { "internalType": "string", "name": "", "type": "string" } ], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "symbol", "outputs": [ { "internalType": "string", "name": "", "type": "string" } ], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "totalSupply", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "recipient", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "transfer", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "sender", "type": "address" }, { "internalType": "address", "name": "recipient", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "transferFrom", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }]
-
-
+const SWAP_ROUTER_ADDRESS = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
 const { store, setTriggrts, setCountdownDuration, setGasPrice } = useGlobalStore()
 const message = useMessage()
 
@@ -28,6 +26,24 @@ let contractData = []
 let interval = null
 let loopInterval = null
 let gasInterval = null
+
+const getProvider = () => {
+  let chainId = triggerData.value.chainId || 5
+  let rpc = defaultChains.find(item => item.chainId === chainId).rpcUrl
+  return new ethers.providers.JsonRpcProvider(rpc)
+  // new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/xQr0n2BqF1Hkkuw5_0YiEXeyQdSYoW1u')
+}
+
+const getAlchemy = () => {
+  let chainId = triggerData.value.chainId || 5
+  let chainData = defaultChains.find(item => item.chainId === chainId)
+  let settings = {
+    apiKey: chainData.alchemyKey,
+    network: chainData.network
+  }
+  let alchemy = new Alchemy(settings)
+  return alchemy
+}
 
 const getType = (type) => {
   if (type == 'function') {
@@ -71,7 +87,7 @@ const setContract = async (contractId) => {
       cd = e
     }
   })
-  let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/xQr0n2BqF1Hkkuw5_0YiEXeyQdSYoW1u')
+  let provider = getProvider()
   wallet = new ethers.Wallet(triggerData.value.wallet?.privateKey, provider)
   let C = await new ethers.Contract(cd.address, cd.abi, wallet)
   return C
@@ -316,48 +332,64 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
     let inToken = getParam(item.inAddress, paramList)
     let outToken = getParam(item.outAddress, paramList)
     let inAmount = getParam(item.inAmount, paramList)
-    let gp = ethers.utils.formatUnits(alchemyRes.gasPrice, 0)
-    let gl = ethers.utils.formatUnits(alchemyRes.gas, 0)
     try {
-      const headers = {'0x-api-key': '4243850c-a27b-4f20-bfaf-765641b1d1b2'}
-      const response = await fetch(`https://goerli.api.0x.org/swap/v1/quote?sellToken=${inToken}&buyToken=${outToken}&sellAmount=${inAmount}&takerAddress=${triggerData.value.wallet?.address}`)
-      let swapQuoteJSON = await response.json()
-      console.log("Quote: ", swapQuoteJSON)
-      if (swapQuoteJSON.code) {
-        let msg3 = {
+      let chainId = triggerData.value.chainId || 5
+      let receipt = ''
+      let provider = getProvider()
+      let wallet = new ethers.Wallet(triggerData.value.wallet?.privateKey, provider)
+      if (chainId == 51) {
+        const headers = {'0x-api-key': '4243850c-a27b-4f20-bfaf-765641b1d1b2'}
+        const response = await fetch(`https://goerli.api.0x.org/swap/v1/quote?sellToken=${inToken}&buyToken=${outToken}&sellAmount=${inAmount}&takerAddress=${triggerData.value.wallet?.address}`)
+        let swapQuoteJSON = await response.json()
+        console.log("Quote: ", swapQuoteJSON)
+        if (swapQuoteJSON.code) {
+          let msg3 = {
+            type: 'uni',
+            name: 'swapQuote-error',
+            result: swapQuoteJSON
+          }
+          msgs.value.push(msg3)
+          triggerData.value.messages = msgs.value
+          setTrigger(triggerData.value)
+          return
+        }
+        let msg2 = {
           type: 'uni',
-          name: 'swapQuote-error',
+          name: 'swapQuote',
           result: swapQuoteJSON
         }
-        msgs.value.push(msg3)
+        msgs.value.push(msg2)
         triggerData.value.messages = msgs.value
         setTrigger(triggerData.value)
-        return
+        let data = {
+          from: swapQuoteJSON.from,
+          to: swapQuoteJSON.to,
+          data: swapQuoteJSON.data,
+          value: ethers.BigNumber.from(swapQuoteJSON.value),
+          gasLimit: ethers.BigNumber.from((swapQuoteJSON.gas * 1.5).toFixed(0).toString()),
+          gasPrice: ethers.BigNumber.from((swapQuoteJSON.gasPrice * 1.5).toFixed(0).toString())
+        }
+        receipt = await wallet.sendTransaction(data)
+      } else {
+        const swapRouterContract = new ethers.Contract(SWAP_ROUTER_ADDRESS, SwapRouterABI.abi, wallet)
+        const params = {
+          tokenIn: ethers.utils.getAddress(inToken),
+          tokenOut: ethers.utils.getAddress(outToken),
+          fee: 3000,
+          recipient: ethers.utils.getAddress(triggerData.value.wallet?.address),
+          deadline: Math.floor(Date.now() / 1000) + 60 * 20,
+          amountIn: inAmount,
+          amountOutMinimum: 0,
+          sqrtPriceLimitX96: 0,
+        }
+        const sendInfo = {
+          value: alchemyRes.value,
+          maxFeePerGas: ethers.BigNumber.from((ethers.utils.formatUnits(alchemyRes.maxFeePerGas, 0) * 1.5).toFixed(0).toString()),
+          maxPriorityFeePerGas: ethers.BigNumber.from((ethers.utils.formatUnits(alchemyRes.maxPriorityFeePerGas, 0) * 1.5).toFixed(0).toString()),
+          gasLimit: ethers.BigNumber.from((ethers.utils.formatUnits(alchemyRes.gas, 0) * 1.5).toFixed(0).toString())
+        }
+        receipt = await swapRouterContract.exactInputSingle(params, sendInfo)
       }
-      let msg2 = {
-        type: 'uni',
-        name: 'swapQuote',
-        result: swapQuoteJSON
-      }
-      msgs.value.push(msg2)
-      triggerData.value.messages = msgs.value
-      setTrigger(triggerData.value)
-      // let isAppoved = await isAppove(item)
-      // if (!isAppoved) {
-      //   appove(item)
-      // }
-      let provider = new ethers.providers.JsonRpcProvider('https://goerli.infura.io/v3/1b74591d94b048ff94dc0d04dd4f1eda')
-      let wallet = new ethers.Wallet(triggerData.value.wallet?.privateKey, provider)
-      gp = (gp * 1.5).toFixed(0).toString()
-      let data = {
-        from: swapQuoteJSON.from,
-        to: swapQuoteJSON.to,
-        data: swapQuoteJSON.data,
-        value: ethers.BigNumber.from(swapQuoteJSON.value),
-        gasPrice: ethers.BigNumber.from((swapQuoteJSON.gasPrice * 2).toFixed(0).toString()),
-        gasLimit: ethers.BigNumber.from((swapQuoteJSON.gas * 2).toFixed(0).toString())
-      }
-      const receipt = await wallet.sendTransaction(data)
       let msg1 = {
         type: 'uni',
         name: 'sendTransaction',
@@ -453,14 +485,12 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
   applyFun(list, paramList, time)
 }
 
-const onTime = () => {
+const onTime = (triggerFun) => {
   triggerData.value.status = 'on'
-  let triggerFun = triggerData.value.triggers[0]
   if (triggerFun.timeType == 'timing') {
     let nowData = new Date().getTime()
     if (nowData > triggerFun.timestamp) {
       message.error('时间已过')
-      off()
       return
     }
     interval = setInterval(() => {
@@ -494,6 +524,7 @@ const onTime = () => {
     } else if (unit == 'd') {
       time = triggerInterval * 1000 * 60 * 60 * 24
     }
+    console.log(time)
     setCountdownDuration(time)
     loopInterval = setInterval(() => {
       let list = []
@@ -510,43 +541,8 @@ const onTime = () => {
   }
 }
 
-const isAppove = async (item) => {
-  let paramList = JSON.parse(JSON.stringify(params.value))
-  let inToken = getParam(item.inAddress, paramList)
-  let inAmount = getParam(item.inAmount, paramList)
-  const fromTokenAddress = inToken
-  console.log(fromTokenAddress, inAmount)
-  let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/xQr0n2BqF1Hkkuw5_0YiEXeyQdSYoW1u')
-  let wallet = new ethers.Wallet(triggerData.value.wallet?.privateKey, provider)
-  let ERC20TokenContract = await new ethers.Contract(fromTokenAddress, erc20abi, wallet)
-  let allowance = await ERC20TokenContract.allowance(triggerData.value.wallet?.address, '0xF91bB752490473B8342a3E964E855b9f9a2A668e')
-  return (allowance.toString() * 1) > (inAmount * 1)
-}
-
-const appove = async (item) => {
-  let paramList = JSON.parse(JSON.stringify(params.value))
-  let inToken = getParam(item.inAddress, paramList)
-  let inAmount = getParam(item.inAmount, paramList)
-  const fromTokenAddress = inToken
-  const maxApproval = ethers.utils.parseUnits((inAmount * 50).toString(), 0)
-  console.log(maxApproval)
-  let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/xQr0n2BqF1Hkkuw5_0YiEXeyQdSYoW1u')
-  let wallet = new ethers.Wallet(triggerData.value.wallet?.privateKey, provider)
-  let ERC20TokenContract = await new ethers.Contract(fromTokenAddress, erc20abi, wallet)
-  let tx = await ERC20TokenContract.approve('0xF91bB752490473B8342a3E964E855b9f9a2A668e', maxApproval)
-  await tx.wait()
-  let msg = {
-    type: 'uni',
-    name: 'Approval',
-    result: tx
-  }
-  msgs.value.push(msg)
-  triggerData.value.messages = msgs.value
-  setTrigger(triggerData.value)
-}
-
 const getGas = async () => {
-  let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/xQr0n2BqF1Hkkuw5_0YiEXeyQdSYoW1u')
+  let provider = getProvider()
   let GP = await provider.getGasPrice()
   return (ethers.utils.formatUnits(GP, "gwei") * 1).toFixed(2)
 }
@@ -603,9 +599,8 @@ const gasFilter = (conditions, gasPrice) => {
   return r
 }
 
-const intervalFun = (gasPrice) => {
+const intervalFun = (gasPrice, triggerFun) => {
   setGasPrice(gasPrice)
-  let triggerFun = triggerData.value.triggers[0]
   let conditions = triggerFun.conditions
   if (gasFilter(conditions, gasPrice)) {
     let list = []
@@ -621,13 +616,13 @@ const intervalFun = (gasPrice) => {
   }
 }
 
-const onGas = async () => {
+const onGas = async (triggerFun) => {
   triggerData.value.status = 'on'
   let gasPrice = await getGas()
-  intervalFun(gasPrice)
+  intervalFun(gasPrice, triggerFun)
   gasInterval = setInterval(async () => {
     gasPrice = await getGas()
-    intervalFun(gasPrice)
+    intervalFun(gasPrice, triggerFun)
   }, 5000)
 }
 
@@ -662,6 +657,8 @@ const getParam = (e) => {
 const onUni = async (index) => {
   triggerData.value.status = 'on'
   let trigger = triggerData.value.triggers[index]
+  const alchemy = getAlchemy()
+  alchemies.push(alchemy)
   alchemy.core.getTokenBalances(triggerData.value.wallet?.address).then(async () => {
     message.success("开始监听")
     triggerData.value.status = 'on'
@@ -669,10 +666,6 @@ const onUni = async (index) => {
   alchemy.ws.on({
     method: AlchemySubscription.PENDING_TRANSACTIONS,
     toAddress: '0x4648a43B2C14Da09FdF82B161150d3F634f40491'
-    // addresses: [{
-    //   from: getParam(trigger.address),
-    //   to: "0x4648a43B2C14Da09FdF82B161150d3F634f40491",
-    // }]
   }, async (res) => {
     try {
       if (!(res.from.toLocaleLowerCase() == getParam(trigger.address).toLocaleLowerCase())) return
@@ -682,8 +675,7 @@ const onUni = async (index) => {
       if (path[trigger.uniType].toLocaleLowerCase() == getParam(trigger.daiAddress).toLocaleLowerCase()) {
         let msg = {
           name: trigger.name,
-          // result: {'钱包地址': getParam(trigger.address), '方向': trigger.uniType == 0 ? '卖出' : '买入', '代币': getParam(trigger.daiAddress), '数量': trigger.uniType == 0 ? inputData.amountIn : inputData.amounOut},
-          result: res,
+          result: {'钱包地址': getParam(trigger.address), '方向': trigger.uniType == 0 ? '卖出' : '买入', '代币': getParam(trigger.daiAddress), '数量': trigger.uniType == 0 ? inputData.amountIn : inputData.amounOut},
           type: 'trigger',
         }
         msgs.value.push(msg)
@@ -720,7 +712,6 @@ const handdleFun = async (list, res, args, index) => {
     let mpfg = ethers.utils.formatUnits(res.maxPriorityFeePerGas, 0)
     let gl = ethers.utils.formatUnits(res.gas, 0)
     let value = ethers.utils.formatUnits(res.value, 0)
-    // let nonce = triggerData.value.wallet.nonce + 1
     let sendInfo = {
       maxFeePerGas: (gp * 1.5).toFixed(0),
       maxPriorityFeePerGas: (mpfg * 1.5).toFixed(0),
@@ -779,25 +770,29 @@ const handdleFun = async (list, res, args, index) => {
 }
 
 const off = async () => {
-  let trigger = triggerData.value?.triggers[0]
-  if (trigger) {
-    if (trigger.type == 'time') {
-      if (trigger.timeType == 'timing') {
-        clearInterval(interval)
-      } else {
-        clearInterval(loopInterval)
+  let triggers = triggerData.value?.triggers
+  triggers.forEach(async (trigger, index) => {
+    if (trigger) {
+      if (trigger.type == 'time') {
+        if (trigger.timeType == 'timing') {
+          clearInterval(interval)
+        } else {
+          clearInterval(loopInterval)
+        }
       }
+      if (trigger.type == 'contract' || trigger.type == 'uni') {
+        alchemies.forEach(async e => {
+          await e.ws.off()
+        })
+      }
+      if (trigger.type == 'gas') {
+        clearInterval(gasInterval)
+      }
+      triggerData.value.status = 'off'
     }
-    if (trigger.type == 'contract' || trigger.type == 'uni') {
-      await alchemy.ws.off()
-    }
-    if (trigger.type == 'gas') {
-      clearInterval(gasInterval)
-    }
-    triggerData.value.status = 'off'
-    setCountdownDuration(0)
-    setGasPrice(0)
-  }
+  })
+  setCountdownDuration(0)
+  setGasPrice(0)
 }
 
 const getTriggerData = () => {
@@ -826,6 +821,14 @@ const getTriggerData = () => {
   params.value = globalParams || []
 }
 
+const runOn = () => {
+  off()
+  let triggers = triggerData.value.triggers
+  triggers.forEach((e, index) => {
+    on(index)
+  })
+}
+
 const on = (index) => {
   getTriggerData()
   if (!(triggerData.value.wallet && triggerData.value.wallet.address)) {
@@ -836,14 +839,13 @@ const on = (index) => {
     message.error("请先设置触发器");
     return
   }
-  off()
   let trigger = triggerData.value.triggers[index]
   if (trigger.type == 'time') {
-    onTime()
+    onTime(trigger)
     return
   }
   if (trigger.type == 'gas') {
-    onGas()
+    onGas(trigger)
     return
   }
   if (trigger.type == 'uni') {
@@ -859,6 +861,8 @@ const on = (index) => {
       contractAbi = JSON.parse(e.abi)
     }
   })
+  const alchemy = getAlchemy()
+  alchemies.push(alchemy)
   alchemy.core.getTokenBalances(triggerData.value.wallet?.address).then(async () => {
     if (trigger.handdleList) {
       for (let i = 0; i < trigger.handdleList.length; i++) {
@@ -974,7 +978,7 @@ watch(() => msgs.value, (val) => {
       <div class="ft-r flex-center">
         <div class="ft-btn-clear flex-center-center" @click="clear">Clear</div>
         <div v-show="triggerData.status == 'on'" class="ft-btn flex-center-center" style="background:#F98080" @click="off">停止监听</div>
-        <div v-show="triggerData.status != 'on'" class="ft-btn flex-center-center" style="background:#2152EC" @click="on(0)">立即监听</div>
+        <div v-show="triggerData.status != 'on'" class="ft-btn flex-center-center" style="background:#2152EC" @click="runOn">立即监听</div>
       </div>
     </div>
   </div>

@@ -39,27 +39,27 @@ async function getOutputQuote(route, CurrentConfig) {
 
 export async function quote(tokenA, tokenB, amountIn, walletAddress) {
   const IN_TOKEN = new Token(
-  SupportedChainId.GOERLI,
-  tokenA.address,
-  tokenA.decimals,
-  'TokenA',
-  'TokenA'
-)
+    SupportedChainId.GOERLI,
+    tokenA.address,
+    tokenA.decimals,
+    'TokenA',
+    'TokenA'
+  )
 
-const OUT_TOKEN = new Token(
-  SupportedChainId.GOERLI,
-  tokenB.address,
-  tokenB.decimals,
-  'TokenB',
-  'TokenB'
-)
+  const OUT_TOKEN = new Token(
+    SupportedChainId.GOERLI,
+    tokenB.address,
+    tokenB.decimals,
+    'TokenB',
+    'TokenB'
+  )
 
 amountIn = ethers.utils.formatUnits(amountIn, tokenA.decimals)
 
 const CurrentConfig = {
   tokens: {
     in: IN_TOKEN,
-    amountIn: 0.1,
+    amountIn: amountIn,
     out: OUT_TOKEN,
     poolFee: FeeAmount.MEDIUM,
   },
@@ -133,14 +133,15 @@ const CurrentConfig = {
 
   const methodParameters = SwapRouter.swapCallParameters([uncheckedTrade], options)
   console.log(methodParameters)
-  const SWAP_ROUTER_ADDRESS = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
-  const tx = {
-    data: methodParameters.calldata,
-    to: SWAP_ROUTER_ADDRESS,
-    value: ethers.BigNumber.from(methodParameters.value),
-    from: walletAddress,
-  }
-  return tx
+  return methodParameters
+  // const SWAP_ROUTER_ADDRESS = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
+  // const tx = {
+  //   data: methodParameters.calldata,
+  //   to: SWAP_ROUTER_ADDRESS,
+  //   value: ethers.BigNumber.from(methodParameters.value),
+  //   from: walletAddress,
+  // }
+  // return tx
   // let tt = await connectedWallet.sendTransaction(tx)
   // console.log(tt)
 

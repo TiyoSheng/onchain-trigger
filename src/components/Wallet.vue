@@ -5,6 +5,8 @@ import { useUtils } from '../hooks/utils'
 import { useMessage } from "naive-ui"
 import SetWallet from './form/SetWallet.vue'
 import { ethers } from 'ethers'
+import { defaultChains } from '../libs/chains'
+import { get } from '../http/axios'
 
 const { store, setTriggrts } = useGlobalStore()
 const { copy } = useUtils()
@@ -26,12 +28,17 @@ const showWalletModal = () => {
   }
 }
 
+
+
 const getBalance = async () => {
   walletSpin.value = true
   if (triggerData.value.wallet?.address) {
-    let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/xQr0n2BqF1Hkkuw5_0YiEXeyQdSYoW1u')
+    let chainId = triggerData.value.chainId || 5
+    let chain = defaultChains.find(item => item.chainId === chainId)
+    let provider = new ethers.providers.JsonRpcProvider(chain.rpcUrl)
     let balance = await provider.getBalance(triggerData.value.wallet?.address)
-    triggerData.value.wallet.balance = ethers.utils.formatEther(balance)
+
+    triggerData.value.wallet.balance = ethers.utils.formatEther(balance) + ' ' + chain.symbol
   }
   walletSpin.value = false
 }
@@ -79,7 +86,7 @@ watch(() => props.trigger, (val) => {
         </div>
         <n-spin size="small" :show="walletSpin">
           <div class="wallet-balance flex-center">
-            余额：<span>{{triggerData.wallet?.balance || '0.0'}} ETH</span>
+            余额：<span>{{triggerData.wallet?.balance || '0.0'}} </span>
             <svg @click="getBalance" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M8 2.74994C10.8995 2.74994 13.25 5.10044 13.25 7.99994C13.25 10.8994 10.8995 13.2499 8 13.2499C5.1005 13.2499 2.75 10.8994 2.75 7.99994C2.75 6.3507 3.51047 4.87908 4.69989 3.91661" stroke="#9BA0A8" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M2.75 3.62494H5.08333V5.95827" stroke="#9BA0A8" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"/>

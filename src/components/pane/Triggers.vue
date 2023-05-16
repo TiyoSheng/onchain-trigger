@@ -221,8 +221,8 @@ watch(() => store.state.countdownDuration, (val) => {
 </script>
 <template>
   <div class="trigger">
-    <div v-if="triggers && triggers.length" class="card">
-      <div v-for="(item, index) in triggers" :key="item.id" class="trigger-item">
+    <div class="card">
+      <div v-for="(item, index) in triggers" :key="item.id" class="trigger-item mt16">
         <div v-if="item.type == 'gas'">
           <div class="flex-center-sb">
             <div class="name">Gas触发器 - {{item.name}}</div>
@@ -441,7 +441,7 @@ watch(() => store.state.countdownDuration, (val) => {
         </div>
       </div>
     </div>
-    <div v-else class="btn" @click="showModal">
+    <div class="btn mt16" @click="showModal">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M3 8H13" stroke="#2152EC" stroke-linecap="round" stroke-linejoin="round"/>
         <path d="M8 13L8 3" stroke="#2152EC" stroke-linecap="round" stroke-linejoin="round"/>

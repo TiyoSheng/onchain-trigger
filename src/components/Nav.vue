@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { ethers } from 'ethers'
 import { useGlobalStore } from '../hooks/globalStore'
 import { defaultChains, icons } from '../libs/chains'
@@ -8,15 +8,31 @@ const { store } = useGlobalStore()
 const href = window.location.href
 const gasPrice = ref(0)
 const chainId = ref(5)
+const loading= ref(false)
 console.log(href)
 
 const openOT = () => {
   window.open(href)
 }
+const getProvider = () => {
+  let chain = defaultChains.find(item => item.chainId === chainId.value)
+  let provider = new ethers.providers.JsonRpcProvider(chain.rpcUrl)
+  return provider
+}
 const getGas = async () => {
-  let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/xQr0n2BqF1Hkkuw5_0YiEXeyQdSYoW1u')
+  let provider = getProvider()
   let GP = await provider.getGasPrice()
   return (ethers.utils.formatUnits(GP, "gwei") * 1).toFixed(2)
+}
+const getChainName = () => {
+  let chain = defaultChains.find(item => item.chainId === chainId.value)
+  return chain?.name || 'Goerli'
+}
+const switchChain = async (id) => {
+  chainId.value = id
+  loading.value = true
+  gasPrice.value = await getGas()
+  loading.value = false
 }
 onMounted(async () => {
   gasPrice.value = await getGas()
@@ -24,6 +40,12 @@ onMounted(async () => {
     gasPrice.value = await getGas()
   }, 5000)
 })
+watch(() => store.state.activatedId, (val) => {
+  let triggers = store.state.triggers
+  let trigger = triggers.find(item => item.id === val)
+  let cId = trigger?.chainId || 5
+  switchChain(cId)
+}, {immediate: true, deep: true})
 </script>
 <template>
   <div class="nav flex-center">
@@ -35,13 +57,15 @@ onMounted(async () => {
       <div class="wallet flex-center-sb chain-w">
         <div class="flex-center">
           <img :src="chain && icons[chainId] ? `https://icons.llamao.fi/icons/chains/rsz_${icons[chainId]}.jpg` : 'https://chainlist.org/unknown-logo.png'" alt="" class="icon">
-          <div class="address">{{defaultChains[0].name}}</div>
+          <div class="address">{{getChainName()}}</div>
         </div>
+        <n-spin :show="loading">
+          <div class="flex-center-center gas-price">
+            <img src="../assets/images/gas.gif" alt="">
+            <p>{{gasPrice}}</p>
+          </div>
+        </n-spin>
         
-        <div class="flex-center-center gas-price">
-          <img src="../assets/images/gas.gif" alt="">
-          <p>{{gasPrice}}</p>
-        </div>
         <div class="block"></div>
         <div class="chain-list" v-if="defaultChains && defaultChains.length">
           <div v-for="item in defaultChains" :key="item.chainId" @click="switchChain(item.chainId)" :class="['chain-item', 'flex-center-sb', chainId == item.chainId ? 'chain-item-active' : '']">
@@ -138,7 +162,7 @@ onMounted(async () => {
     height: 12px;
     width: 1px;
     margin: 0 12px;
-    background: #FFFFFF;
+    background: #000;
   }
   .avatar {
     margin-right: 6px;
@@ -206,7 +230,7 @@ onMounted(async () => {
         font-size: 13px;
         line-height: 18px;
         text-transform: capitalize;
-        color: #FFFFFF;
+        color: #000;
         .chain-name {
           flex: 1;
           overflow: hidden;
