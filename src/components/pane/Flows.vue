@@ -57,6 +57,15 @@ const getProvider = () => {
   return new ethers.providers.JsonRpcProvider(rpc)
 }
 
+const getApproveAddress = () => {
+  let chainId = trigger.value.chainId || 5
+  if (chainId == 5) {
+    return '0xf91bb752490473b8342a3e964e855b9f9a2a668e'
+  } else {
+    return '0xE592427A0AEce92De3Edee1F18E0157C05861564'
+  }
+}
+
 const getConditionsName = (val) => {
   let name = filterConditions.find(item => item.value === val).label
   return name
@@ -402,41 +411,6 @@ const runFunction = async (funList, paramList) => {
       let receipt = ''
       let provider = getProvider()
       let wallet = new ethers.Wallet(trigger.value.wallet?.privateKey, provider)
-      // const headers = {'0x-api-key': '4243850c-a27b-4f20-bfaf-765641b1d1b2'}
-      // const response = await fetch(`https://goerli.api.0x.org/swap/v1/quote?sellToken=${inToken}&buyToken=${outToken}&sellAmount=${inAmount}&takerAddress=${trigger.value.wallet?.address}`)
-      // let swapQuoteJSON = await response.json()
-      // console.log("Quote: ", swapQuoteJSON)
-      // if (swapQuoteJSON.code) {
-      //   let msg3 = {
-      //     type: 'uni',
-      //     name: 'swapQuote-error',
-      //     result: swapQuoteJSON
-      //   }
-      //   emit('setMessage', msg3)
-      //   loading.value = ''
-      //   return
-      // }
-      // let msg2 = {
-      //   type: 'uni',
-      //   name: 'swapQuote',
-      //   result: swapQuoteJSON
-      // }
-      // emit('setMessage', msg2)
-      // let isAppoved = await isAppove(item)
-      // if (!isAppoved) {
-      //   appove(item)
-      // }
-      // let provider = new ethers.providers.JsonRpcProvider('https://goerli.infura.io/v3/1b74591d94b048ff94dc0d04dd4f1eda')
-      // let wallet = new ethers.Wallet(trigger.value.wallet?.privateKey, provider)
-      // let data = {
-      //   from: swapQuoteJSON.from,
-      //   to: swapQuoteJSON.to,
-      //   data: swapQuoteJSON.data,
-      //   value: ethers.BigNumber.from(swapQuoteJSON.value),
-      //   gasPrice: ethers.BigNumber.from((swapQuoteJSON.gasPrice)),
-      //   gasLimit: ethers.BigNumber.from((swapQuoteJSON.gas))
-      // }
-      // const receipt = await wallet.sendTransaction(data)
       let isAppoved = await isAppove(item)
       if (!isAppoved) {
         await appove(item)
@@ -522,9 +496,10 @@ const isAppove = async (item) => {
   const fromTokenAddress = inToken
   console.log(fromTokenAddress, inAmount)
   let provider = getProvider()
+  let approveAddress = getApproveAddress()
   let wallet = new ethers.Wallet(trigger.value.wallet?.privateKey, provider)
   let ERC20TokenContract = await new ethers.Contract(fromTokenAddress, erc20abi, wallet)
-  let allowance = await ERC20TokenContract.allowance(trigger.value.wallet?.address, '0xE592427A0AEce92De3Edee1F18E0157C05861564')
+  let allowance = await ERC20TokenContract.allowance(trigger.value.wallet?.address, approveAddress)
   if ((allowance.toString() * 1) > (inAmount * 1)) {
     isShowAppove.value = false
   } else {
@@ -541,9 +516,10 @@ const appove = async (item) => {
   const fromTokenAddress = inToken
   const maxApproval = ethers.constants.MaxUint256
   let provider = getProvider()
+  let approveAddress = getApproveAddress()
   let wallet = new ethers.Wallet(trigger.value.wallet?.privateKey, provider)
   let ERC20TokenContract = await new ethers.Contract(fromTokenAddress, erc20abi, wallet)
-  let tx = await ERC20TokenContract.approve('0xE592427A0AEce92De3Edee1F18E0157C05861564', maxApproval)
+  let tx = await ERC20TokenContract.approve(approveAddress, maxApproval)
   await tx.wait()
   let msg = {
     type: 'uni',
