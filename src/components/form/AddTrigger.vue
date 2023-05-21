@@ -192,6 +192,12 @@ const handleOk = () => {
       type: 'gas',
       conditions: trigger.conditions
     }
+  } else if (trigger.type == 'event') {
+    data = {
+      type: 'event',
+      contractId: trigger.contractId,
+      functionName: trigger.functionName
+    }
   } else if (trigger.type == 'uni') {
     data = {
       type: 'uni',
@@ -236,10 +242,14 @@ const getTirggerFlows = () => {
   return trigger.flows || []
 }
 
-const getAbi = (id) => {
+const getAbi = (id, type) => {
   if (!id) return []
   let contract = store.state.contracts.find(item => item.id === id)
-  return JSON.parse(contract.abi).filter(e => e.type == 'function')
+  if (type == 'event') {
+    return JSON.parse(contract.abi).filter(e => e.type == 'event')
+  } else {
+    return JSON.parse(contract.abi).filter(e => e.type == 'function')
+  }
 }
 
 const getFitlerParams = (id ,name) => {
@@ -426,9 +436,37 @@ defineExpose({
         <n-radio-button value="time">时间触发器</n-radio-button>
         <n-radio-button value="gas">Gas触发器</n-radio-button>
         <n-radio-button value="uni">Uni触发器</n-radio-button>
+        <n-radio-button value="event">Event触发器</n-radio-button>
       </n-radio-group>
     </n-form-item>
-    <div v-if="triggerItem.type == 'time' || triggerItem.type == 'gas' || triggerItem.type == 'uni'">
+    <div v-if="triggerItem.type == 'time' || triggerItem.type == 'gas' || triggerItem.type == 'uni' || triggerItem.type == 'event'">
+      <div v-if="triggerItem.type == 'event'">
+        <n-form-item label="选择合约：">
+          <n-select
+            v-model:value="triggerItem.contractId"
+            placeholder="选择合约"
+            filterable
+            :options="store.state.contracts"
+            label-field="name"
+            value-field="id"
+            @update:value="contractChange(-1)"
+          >
+            <template #action>
+              <p @click="addContract(-1)" class="add-new-btn">添加新合约</p>
+            </template>
+          </n-select>
+        </n-form-item>
+        <n-form-item label="选择Event：">
+          <n-select
+            v-model:value="triggerItem.functionName"
+            placeholder="选择Event"
+            :options="getAbi(triggerItem?.contractId, 'event')"
+            filterable
+            label-field="name"
+            value-field="name"
+          />
+        </n-form-item>
+      </div>
       <div v-if="triggerItem.type == 'uni'">
         <n-form-item label="方向判断：">
           <n-radio-group v-model:value="triggerItem.uniType" name="radio" size="large" >

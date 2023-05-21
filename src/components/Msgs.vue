@@ -10,7 +10,6 @@ import { defaultChains } from '../libs/chains'
 import { quote } from '../libs/qq'
 import { Alchemy, Network, AlchemySubscription } from "alchemy-sdk"
 import SwapRouterABI from '@uniswap/v3-periphery/artifacts/contracts/interfaces/ISwapRouter.sol/ISwapRouter.json'
-let alchemies = []
 const erc20abi = [{ "inputs": [ { "internalType": "string", "name": "name", "type": "string" }, { "internalType": "string", "name": "symbol", "type": "string" }, { "internalType": "uint256", "name": "max_supply", "type": "uint256" } ], "stateMutability": "nonpayable", "type": "constructor" }, { "anonymous": false, "inputs": [ { "indexed": true, "internalType": "address", "name": "owner", "type": "address" }, { "indexed": true, "internalType": "address", "name": "spender", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "value", "type": "uint256" } ], "name": "Approval", "type": "event" }, { "anonymous": false, "inputs": [ { "indexed": true, "internalType": "address", "name": "from", "type": "address" }, { "indexed": true, "internalType": "address", "name": "to", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "value", "type": "uint256" } ], "name": "Transfer", "type": "event" }, { "inputs": [ { "internalType": "address", "name": "owner", "type": "address" }, { "internalType": "address", "name": "spender", "type": "address" } ], "name": "allowance", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "spender", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "approve", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "account", "type": "address" } ], "name": "balanceOf", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "burn", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "account", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "burnFrom", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [], "name": "decimals", "outputs": [ { "internalType": "uint8", "name": "", "type": "uint8" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "spender", "type": "address" }, { "internalType": "uint256", "name": "subtractedValue", "type": "uint256" } ], "name": "decreaseAllowance", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "spender", "type": "address" }, { "internalType": "uint256", "name": "addedValue", "type": "uint256" } ], "name": "increaseAllowance", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [], "name": "name", "outputs": [ { "internalType": "string", "name": "", "type": "string" } ], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "symbol", "outputs": [ { "internalType": "string", "name": "", "type": "string" } ], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "totalSupply", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "recipient", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "transfer", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "sender", "type": "address" }, { "internalType": "address", "name": "recipient", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "transferFrom", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }]
 const SWAP_ROUTER_ADDRESS = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
 const { store, setTriggrts, setCountdownDuration, setGasPrice } = useGlobalStore()
@@ -26,6 +25,8 @@ let contractData = []
 let interval = null
 let loopInterval = null
 let gasInterval = null
+let alchemies = []
+let eventContract = []
 
 const getProvider = () => {
   let chainId = triggerData.value.chainId || 5
@@ -56,6 +57,8 @@ const getType = (type) => {
     return '监听后执行'
   } else if (type == 'uni') {
     return 'uni交易'
+  } else if (type == 'event') {
+    return '监听event'
   }
 }
 
@@ -337,7 +340,7 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
       let receipt = ''
       let provider = getProvider()
       let wallet = new ethers.Wallet(triggerData.value.wallet?.privateKey, provider)
-      if (chainId == 51) {
+      if (chainId == 5) {
         const headers = {'0x-api-key': '4243850c-a27b-4f20-bfaf-765641b1d1b2'}
         const response = await fetch(`https://goerli.api.0x.org/swap/v1/quote?sellToken=${inToken}&buyToken=${outToken}&sellAmount=${inAmount}&takerAddress=${triggerData.value.wallet?.address}`)
         let swapQuoteJSON = await response.json()
@@ -388,7 +391,7 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
           maxPriorityFeePerGas: ethers.BigNumber.from((ethers.utils.formatUnits(alchemyRes.maxPriorityFeePerGas, 0) * 1.5).toFixed(0).toString()),
           gasLimit: ethers.BigNumber.from((ethers.utils.formatUnits(alchemyRes.gas, 0) * 1.5).toFixed(0).toString())
         }
-        receipt = await swapRouterContract.exactInputSingle(params, sendInfo)
+        receipt = await swapRouterContract.populateTransaction.exactInputSingle(params, sendInfo)
       }
       let msg1 = {
         type: 'uni',
@@ -654,6 +657,57 @@ const getParam = (e) => {
   return val
 }
 
+const onEvent = async (trigger) => {
+  let contractId = trigger.contractId
+  let functionName = trigger.functionName
+  let contracts = store.state.contracts
+  let cd = {}
+  let args = []
+  let provider = getProvider()
+  contracts.forEach(e => {
+    if (e.id == contractId) {
+      cd = e
+    }
+  })
+  let wallet = new ethers.Wallet(triggerData.value.wallet?.privateKey, provider)
+  let contract = await new ethers.Contract(cd.address, cd.abi, wallet)
+  let abi = JSON.parse(cd.abi)
+  abi.forEach(e => {
+    if (e.name == functionName) {
+      let inputs = e.inputs
+      args = inputs.map(el => el.name)
+    }
+  })
+  args.push('eventData')
+  eventContract.push(contract)
+  contract.on(functionName, (...args) => {
+    console.log('Received event:', args)
+    let msg = {
+      name: functionName,
+      result: args,
+      type: 'event',
+    }
+    msgs.value.push(msg)
+    triggerData.value.messages = msgs.value
+    setTrigger(triggerData.value)
+    let paramList = JSON.parse(JSON.stringify(params.value))
+    let list = []
+    if (trigger.applyType == 'flow') {
+      let flows = triggerData.value.flows
+      let flow = flows.find(flow => flow.id == trigger.flowId)
+      if (flow) {
+        list = JSON.parse(JSON.stringify(flow.handdleList))
+      } else {
+        list = []
+      }
+    } else {
+      list = JSON.parse(JSON.stringify(trigger.handdleList))
+    }
+    applyFun(list, paramList)
+  })
+
+}
+
 const onUni = async (index) => {
   triggerData.value.status = 'on'
   let trigger = triggerData.value.triggers[index]
@@ -785,6 +839,16 @@ const off = async () => {
           await e.ws.off()
         })
       }
+      if (trigger.type == 'event') {
+        console.log(eventContract)
+        eventContract.forEach(async e => {
+          let listenerCount = await e.listenerCount()
+          if (listenerCount) {
+            let listener = await e.listeners(trigger.functionName)[0]
+            await e.off(trigger.functionName, listener)
+          }
+        })
+      }
       if (trigger.type == 'gas') {
         clearInterval(gasInterval)
       }
@@ -850,6 +914,10 @@ const on = (index) => {
   }
   if (trigger.type == 'uni') {
     onUni(index)
+    return
+  }
+  if (trigger.type == 'event') {
+    onEvent(trigger)
     return
   }
   let contractId = trigger.contractId

@@ -383,6 +383,53 @@ watch(() => store.state.countdownDuration, (val) => {
             </div>
           </div>
         </div>
+        <div v-else-if="item.type == 'event'">
+          <div class="flex-center-sb">
+            <div class="name">Event触发器 - {{item.name}}</div>
+            <div class="flex-center">
+              <div class="edit-btn" @click="showModal(item)">编辑</div>
+              <n-popconfirm :show-icon="false" positive-text="确认" negative-text="取消" @positiveClick="del(index)">
+                <template #trigger>
+                  <div class="edit-btn">删除</div>
+                </template>
+                <p style="margin: 10px 0">是否确认删除{{item.name}}?</p>
+              </n-popconfirm>
+            </div>
+          </div>
+          <div class="mt16 sub-title">触发函数</div>
+          <div class="mt12 flex-center">
+            <div class="fun flex-center">
+              <div class="name flex-center">{{getContract(item.contractId, 'name')}}</div>
+              <div class="function-name flex-center">{{item.functionName}}</div>
+            </div>
+            <div class="type">（{{getContract(item.contractId, 'type', item.functionName)}}）</div>
+          </div>
+          <div class="mt16 sub-title">触发后执行</div>
+          <div v-if="item.applyType == 'flow'" class="mt12">
+            <div class="fun flex-center">
+              <div class="name flex-center">执行流程</div>
+              <div class="function-name flex-center" v-html="getFlowName(item.flowId)"></div>
+            </div>
+          </div>
+          <div v-else>
+            <div v-for="(handdle,i) in item.handdleList" :key="i">
+              <div class="mt12 flex-center">
+                <div class="fun flex-center">
+                  <div class="name flex-center">{{getContract(handdle.contractId, 'name')}}</div>
+                  <div class="function-name flex-center">{{handdle.functionName}}</div>
+                </div>
+                <div class="type">（{{getContract(handdle.contractId, 'type', handdle.functionName)}}）</div>
+              </div>
+              <div class="mt16 sub-title">参数</div>
+              <div class="params mt12" v-if="Object.keys(handdle.args).length">
+                <div class="params-item flex-center" v-for="(val, key) in handdle.args" :key="key">
+                  <div class="params-item-key flex-center">{{key}}</div>
+                  <div class="params-item-value flex-center">{{getParamLabel(val)}}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div v-else>
           <div class="flex-center-sb">
             <div class="name">合约触发器 - {{item.name}}</div>
