@@ -115,9 +115,9 @@ export const execute = async (path, amountIn, connectedWallet, sendInfo) => {
 		let pathStr = encodeAddress(ethers.utils.getAddress(path[0]), ethers.utils.getAddress(path[1]), 3000)
 		let inputs = []
 		inputs[0] = getEncodeData(["address", "uint256", "uint256", "bytes", "bool"], [recipient, amountIn, amountOut, pathStr, payerIsUser])
-		inputs[1] = getEncodeData(["address", "uint256"], ['0x0000000000000000000000000000000000000001', amountOut])
+		// inputs[1] = getEncodeData(["address", "uint256"], ['0x0000000000000000000000000000000000000001', amountOut])
 		console.log(inputs)
-		contract.execute('0x000c', inputs, deadline, sendInfo).then((res) => {
+		contract.execute('0x00', inputs, deadline, sendInfo).then((res) => {
 			console.log(res)
 			resolve(res)
 		}).catch((err) => {
