@@ -74,9 +74,11 @@ function decodeExecute(transactionInput) {
   let inputForFunction;
   commandsSplit.forEach(
     commandCode => {
+      console.log(Object.keys(swapCodes), Object.keys(swapCodes).indexOf(commandCode))
       const currentIndex = Object.keys(swapCodes).indexOf(commandCode)
       if (currentIndex !== -1) {
         foundFunction = commandCode;
+        console.log(commandsSplit.indexOf(commandCode))
         inputForFunction = parsedTx.args[1][commandsSplit.indexOf(commandCode)];
       }
     }
