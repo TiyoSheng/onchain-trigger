@@ -95,7 +95,7 @@ watch(() => props.trigger, (val) => {
       <template #header-extra>
         <p class="edit-btn" @click.stop="showEditRemark">编辑备注</p>
       </template>
-      <n-collapse-item title="项目介绍" name="1" class="collapse-item">
+      <n-collapse-item title="Document" name="1" class="collapse-item">
         <div class="remark">
           <v-md-preview v-if="getRemark()" :text="getRemark()"></v-md-preview>
           <p v-else>暂未添加备注</p>

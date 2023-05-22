@@ -50,7 +50,7 @@ watch(() => store.state.activatedId, (val) => {
 <template>
   <div class="nav flex-center">
     <div class="logo flex-center">
-      <img src="../assets/images/logo.svg" alt="">
+      <a href="/"><img src="../assets/images/logo.svg" alt="" /></a>
       <span v-if="!href.includes('https://onchain-trigger.jetable.xyz/')">当前是测试环境</span>
     </div>
     <div class="flex-center">
