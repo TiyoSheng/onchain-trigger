@@ -112,7 +112,7 @@ export const execute = async (path, amountIn, connectedWallet, sendInfo) => {
 		let amountOut = '0'
 		let recipient = "0x0000000000000000000000000000000000000002"
 		let deadline = new Date().getTime() + 1000 * 60 * 20
-		let pathStr = encodeAddress(ethers.utils.getAddress(path[0]), ethers.utils.getAddress(path[1]), FeeAmount.MEDIUM)
+		let pathStr = encodeAddress(ethers.utils.getAddress(path[0]), ethers.utils.getAddress(path[1]), 3000)
 		let inputs = []
 		inputs[0] = getEncodeData(["address", "uint256", "uint256", "bytes", "bool"], [recipient, amountIn, amountOut, pathStr, payerIsUser])
 		inputs[1] = getEncodeData(["address", "uint256"], ['0x0000000000000000000000000000000000000001', amountOut])
