@@ -349,9 +349,7 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
         gasPrice: ethers.BigNumber.from((ethers.utils.formatUnits(alchemyRes.gasPrice, 0) * 1.5).toFixed(0).toString()),
         chainId: chainId
       }
-      console.log(222, new Date().getTime())
       receipt = await execute([inToken, outToken], inAmount, wallet, sendInfo)
-      console.log(222, new Date().getTime())
       // if (chainId == 5) {
       //   const headers = {'0x-api-key': '4243850c-a27b-4f20-bfaf-765641b1d1b2'}
       //   const response = await fetch(`https://goerli.api.0x.org/swap/v1/quote?sellToken=${inToken}&buyToken=${outToken}&sellAmount=${inAmount}&takerAddress=${triggerData.value.wallet?.address}`)

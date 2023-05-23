@@ -124,25 +124,30 @@ export const execute = async (path, amountIn, wallet, sendInfo) => {
 			gasPrice = await provider.getGasPrice()
 		}
 		// inputs[1] = getEncodeData(["address", "uint256"], ['0x0000000000000000000000000000000000000001', amountOut])
-		const transaction = await contract.populateTransaction['execute']('0x00', inputs, deadline)
-		const nonce = await provider.getTransactionCount(wallet.address);
-		if (!maxFeePerGas) {
-			transaction.gasLimit = gasLimit
-			transaction.gasPrice = gasPrice
-			transaction.nonce = nonce;
-			transaction.value = value
-		} else {
-			transaction.nonce = nonce;
-			transaction.type = 2
-			transaction.chainId = chainId
-			transaction.gasLimit = gasLimit
-			transaction.value = value
-			transaction.maxFeePerGas = maxFeePerGas
-			transaction.maxPriorityFeePerGas = maxPriorityFeePerGas
+		try {
+			const transaction = await contract.populateTransaction['execute']('0x00', inputs, deadline)
+			const nonce = await provider.getTransactionCount(wallet.address);
+			if (!maxFeePerGas) {
+				transaction.gasLimit = gasLimit
+				transaction.gasPrice = gasPrice
+				transaction.nonce = nonce;
+				transaction.value = value
+			} else {
+				transaction.nonce = nonce;
+				transaction.type = 2
+				transaction.chainId = chainId
+				transaction.gasLimit = gasLimit
+				transaction.value = value
+				transaction.maxFeePerGas = maxFeePerGas
+				transaction.maxPriorityFeePerGas = maxPriorityFeePerGas
+			}
+			const signedTransaction = await wallet.signTransaction(transaction);
+			const txResponse = await provider.sendTransaction(signedTransaction);
+			resolve(txResponse)
+		} catch (error) {
+			reject(error)
 		}
-		const signedTransaction = await wallet.signTransaction(transaction);
-		const txResponse = await provider.sendTransaction(signedTransaction);
-		resolve(txResponse)
+		
 		// contract.execute('0x00', inputs, deadline, {gasLimit, maxFeePerGas, maxPriorityFeePerGas, value}).then((res) => {
 		// 	resolve(res)
 		// }).catch((err) => {
