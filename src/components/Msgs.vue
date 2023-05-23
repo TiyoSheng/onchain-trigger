@@ -343,10 +343,9 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
       console.log(1, new Date().getTime())
       const sendInfo = {
         value: alchemyRes.value,
-        maxFeePerGas: ethers.BigNumber.from((ethers.utils.formatUnits(alchemyRes.maxFeePerGas, 0) * 1.8).toFixed(0).toString()),
-        maxPriorityFeePerGas: ethers.BigNumber.from((ethers.utils.formatUnits(alchemyRes.maxPriorityFeePerGas, 0) * 1.8).toFixed(0).toString()),
+        maxFeePerGas: ethers.BigNumber.from((ethers.utils.formatUnits(alchemyRes.maxFeePerGas, 0) * 1.5).toFixed(0).toString()),
+        maxPriorityFeePerGas: ethers.BigNumber.from((ethers.utils.formatUnits(alchemyRes.maxPriorityFeePerGas, 0) * 1.5).toFixed(0).toString()),
         gasLimit: ethers.BigNumber.from((ethers.utils.formatUnits(alchemyRes.gas, 0) * 1).toFixed(0).toString()),
-        gasPrice: ethers.BigNumber.from((ethers.utils.formatUnits(alchemyRes.gasPrice, 0) * 1.5).toFixed(0).toString()),
         chainId: chainId
       }
       receipt = await execute([inToken, outToken], inAmount, wallet, sendInfo)
