@@ -60,13 +60,13 @@ const getProvider = () => {
 }
 
 const getApproveAddress = () => {
-  // let chainId = trigger.value.chainId || 5
-  // if (chainId == 5) {
-  //   return '0xf91bb752490473b8342a3e964e855b9f9a2a668e'
-  // } else {
-  //   return '0xE592427A0AEce92De3Edee1F18E0157C05861564'
-  // }
-  return ethers.utils.getAddress('0x4648a43b2c14da09fdf82b161150d3f634f40491')
+  let chainId = trigger.value.chainId || 5
+  if (chainId == 5) {
+    return '0xf91bb752490473b8342a3e964e855b9f9a2a668e'
+  } else {
+    return '0xE592427A0AEce92De3Edee1F18E0157C05861564'
+  }
+  // return ethers.utils.getAddress('0x4648a43b2c14da09fdf82b161150d3f634f40491')
 }
 
 const getConditionsName = (val) => {

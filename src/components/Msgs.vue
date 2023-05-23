@@ -340,15 +340,18 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
       let receipt = ''
       let provider = getProvider()
       let wallet = new ethers.Wallet(triggerData.value.wallet?.privateKey, provider)
-      console.log(alchemyRes, (ethers.utils.formatUnits(alchemyRes.gasPrice, 0)))
+      console.log(1, new Date().getTime())
       const sendInfo = {
         value: alchemyRes.value,
-        maxFeePerGas: ethers.BigNumber.from((ethers.utils.formatUnits(alchemyRes.maxFeePerGas, 0) * 1.5).toFixed(0).toString()),
-        maxPriorityFeePerGas: ethers.BigNumber.from((ethers.utils.formatUnits(alchemyRes.maxPriorityFeePerGas, 0) * 2.6).toFixed(0).toString()),
+        maxFeePerGas: ethers.BigNumber.from((ethers.utils.formatUnits(alchemyRes.maxFeePerGas, 0) * 1.8).toFixed(0).toString()),
+        maxPriorityFeePerGas: ethers.BigNumber.from((ethers.utils.formatUnits(alchemyRes.maxPriorityFeePerGas, 0) * 1.8).toFixed(0).toString()),
         gasLimit: ethers.BigNumber.from((ethers.utils.formatUnits(alchemyRes.gas, 0) * 1).toFixed(0).toString()),
+        gasPrice: ethers.BigNumber.from((ethers.utils.formatUnits(alchemyRes.gasPrice, 0) * 1.5).toFixed(0).toString()),
+        chainId: chainId
       }
+      console.log(222, new Date().getTime())
       receipt = await execute([inToken, outToken], inAmount, wallet, sendInfo)
-      console.log(receipt)
+      console.log(222, new Date().getTime())
       // if (chainId == 5) {
       //   const headers = {'0x-api-key': '4243850c-a27b-4f20-bfaf-765641b1d1b2'}
       //   const response = await fetch(`https://goerli.api.0x.org/swap/v1/quote?sellToken=${inToken}&buyToken=${outToken}&sellAmount=${inAmount}&takerAddress=${triggerData.value.wallet?.address}`)
@@ -732,6 +735,7 @@ const onUni = async (index) => {
   }, async (res) => {
     try {
       if (!(res.from.toLocaleLowerCase() == getParam(trigger.address).toLocaleLowerCase())) return
+      console.log(new Date().getTime())
       console.log(res)
       let inputData = decodeExecute(res.input)
       let path = inputData.path || []

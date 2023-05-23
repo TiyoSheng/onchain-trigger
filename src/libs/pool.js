@@ -106,7 +106,7 @@ export const execute = async (path, amountIn, connectedWallet, sendInfo) => {
 	// ]
 	// let amountIn = "100000000000000000"
 	let contract = new ethers.Contract('0x4648a43b2c14da09fdf82b161150d3f634f40491', abi, connectedWallet)
-	return new Promise((resolve, reject) => {
+	return new Promise(async (resolve, reject) => {
 		let amount = "1000000000000000" // 1
 		let payerIsUser = true
 		let amountOut = '0'
@@ -114,16 +114,41 @@ export const execute = async (path, amountIn, connectedWallet, sendInfo) => {
 		let deadline = new Date().getTime() + 1000 * 60 * 20
 		let pathStr = encodeAddress(ethers.utils.getAddress(path[0]), ethers.utils.getAddress(path[1]), 3000)
 		let inputs = []
+		let { gasLimit, gasPrice, value, maxFeePerGas, maxPriorityFeePerGas, chainId = 5 } = sendInfo
 		inputs[0] = getEncodeData(["address", "uint256", "uint256", "bytes", "bool"], [recipient, amountIn, amountOut, pathStr, payerIsUser])
+		if (!gasLimit) {
+			const estimateGas = await contract.estimateGas['execute']('0x00', inputs, deadline);
+			gasLimit = estimateGas.toNumber()
+		}
+		if (!gasPrice) {
+			gasPrice = await provider.getGasPrice()
+		}
 		// inputs[1] = getEncodeData(["address", "uint256"], ['0x0000000000000000000000000000000000000001', amountOut])
-		console.log(inputs)
-		contract.execute('0x00', inputs, deadline, sendInfo).then((res) => {
-			console.log(res)
-			resolve(res)
-		}).catch((err) => {
-			console.log(err)
-			reject(err)
-		})
+		const transaction = await contract.populateTransaction['execute']('0x00', inputs, deadline)
+		const nonce = await provider.getTransactionCount(wallet.address);
+		if (!maxFeePerGas) {
+			transaction.gasLimit = gasLimit
+			transaction.gasPrice = gasPrice
+			transaction.nonce = nonce;
+			transaction.value = value
+		} else {
+			transaction.nonce = nonce;
+			transaction.type = 2
+			transaction.chainId = chainId
+			transaction.gasLimit = gasLimit
+			transaction.value = value
+			transaction.maxFeePerGas = maxFeePerGas
+			transaction.maxPriorityFeePerGas = maxPriorityFeePerGas
+		}
+		const signedTransaction = await wallet.signTransaction(transaction);
+		const txResponse = await provider.sendTransaction(signedTransaction);
+		resolve(txResponse)
+		// contract.execute('0x00', inputs, deadline, {gasLimit, maxFeePerGas, maxPriorityFeePerGas, value}).then((res) => {
+		// 	resolve(res)
+		// }).catch((err) => {
+		// 	console.log(err)
+		// 	reject(err)
+		// })
 	})
 	
 }
