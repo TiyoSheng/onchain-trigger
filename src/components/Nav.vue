@@ -12,6 +12,8 @@ const gasPrice = ref(0)
 const chainId = ref(5)
 const loading= ref(false)
 const provider = ref(null)
+const rpcConnectivity = ref([])
+const isOver = ref(false)
 
 const openOT = () => {
   window.open(href)
@@ -40,6 +42,20 @@ const switchChain = async (id) => {
 const switchRpc = (rpc) => {
   setRpc(rpc)
 }
+const getRpcConnectivity = () => {
+  if (isOver.value) return
+  isOver.value = true
+  let rpcs = networkStore.state.rpcs
+  // 用所有rpc获取blocknumber
+  rpcs.forEach(async (rpc, index) => {
+    let startTime = new Date().getTime()
+    let provider = new ethers.providers.StaticJsonRpcProvider(rpc.url)
+    await provider.getBlockNumber()
+    let endTime = new Date().getTime()
+    let time = endTime - startTime
+    rpcConnectivity.value[index] = (time / 1000).toFixed(2)
+  })
+}
 onMounted(async () => {
   gasPrice.value = await getGas()
   setInterval(async () => {
@@ -62,18 +78,19 @@ watch(() => store.state.activatedId, (val) => {
       <span v-if="!href.includes('https://onchain-trigger.jetable.xyz/')">当前是测试环境</span>
     </div>
     <div class="flex-center">
-      <div class="wallet flex-center-sb chain-w">
+      <div class="wallet flex-center-sb chain-w" @mouseenter="getRpcConnectivity" @mouseleave="isOver = false">
         <div class="flex-center">
           <img :src="networkStore.state.rpc.logo" alt="" class="icon">
           <div class="address" style="margin-right: 0">{{networkStore.state.rpc.name}}</div>
         </div>
         <div class="block"></div>
         <div class="chain-list" v-if="networkStore.state.rpcs && networkStore.state.rpcs.length">
-          <div v-for="item in networkStore.state.rpcs" :key="item.name" @click="switchRpc(item)" :class="['chain-item', 'flex-center-sb', networkStore.state.rpc?.url == item.url ? 'chain-item-active' : '']">
+          <div v-for="(item, index) in networkStore.state.rpcs" :key="item.name" @click="switchRpc(item)" :class="['chain-item', 'flex-center-sb', networkStore.state.rpc?.url == item.url ? 'chain-item-active' : '']">
             <div class="flex-center" style="width: 100%">
               <img :src="item.logo" alt="" class="icon">
               <div class="chain-name">{{item.name}}</div>
             </div>
+            <div v-show="rpcConnectivity[index]" class="rpc-connectivity">{{ rpcConnectivity[index] }}s</div>
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path fill-rule="evenodd" clip-rule="evenodd" d="M13.7491 5.65717C14.042 5.95006 14.042 6.42494 13.7491 6.71783L8.12408 12.3428C7.83119 12.6357 7.35631 12.6357 7.06342 12.3428L4.25092 9.53033C3.95803 9.23744 3.95803 8.76256 4.25092 8.46967C4.54381 8.17678 5.01869 8.17678 5.31158 8.46967L7.59375 10.7518L12.6884 5.65717C12.9813 5.36428 13.4562 5.36428 13.7491 5.65717Z" fill="#375CFF"/>
             </svg>
@@ -169,7 +186,7 @@ watch(() => store.state.activatedId, (val) => {
   font-weight: 600;
 }
 .wallet {
-  min-width: 120px;
+  min-width: 150px;
   margin-left: 16px;
   padding: 0 12px;
   border: 1px solid rgba(133, 141, 153, 0.15);
@@ -257,6 +274,8 @@ watch(() => store.state.activatedId, (val) => {
         line-height: 18px;
         text-transform: capitalize;
         color: #000;
+        position: relative;
+        padding-right: 20px;
         .chain-name {
           flex: 1;
           overflow: hidden;
@@ -281,6 +300,15 @@ watch(() => store.state.activatedId, (val) => {
         }
         svg {
           display: none;
+          width: 18px;
+          flex: 0 0 18px;
+          height: auto;
+          position: absolute;
+          right: 0;
+        }
+        .rpc-connectivity {
+          font-size: 12px;
+          color: #63b687;
         }
       }
       .add-btn {
