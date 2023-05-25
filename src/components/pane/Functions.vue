@@ -2,10 +2,12 @@
 import { ref, watch } from 'vue'
 import AddFunction from '../form/AddFunction.vue'
 import { useGlobalStore } from '../../hooks/globalStore'
+import { useNetwork } from "../../hooks/network"
 import { ethers } from 'ethers'
 import { useMessage } from 'naive-ui'
 
 const { store } = useGlobalStore()
+const { getProvider } = useNetwork()
 const message = useMessage()
 
 const emit = defineEmits(['setFunctions', 'setMessage'])
@@ -75,7 +77,7 @@ const setContract = async (contractId) => {
   let wallets = store.state.wallets
   wallets.forEach(async (el) => {
     if (el.address == walletAddress.value) {
-      let provider = new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/xQr0n2BqF1Hkkuw5_0YiEXeyQdSYoW1u')
+      let provider = getProvider()
       wallet = new ethers.Wallet(el.privateKey, provider)
     }
   })
