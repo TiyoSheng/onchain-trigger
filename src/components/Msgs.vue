@@ -5,16 +5,15 @@ import { useMessage } from "naive-ui"
 import { ethers } from 'ethers'
 import "vue3-json-viewer/dist/index.css"
 import { useGlobalStore } from "../hooks/globalStore"
+import { useUtils } from '../hooks/utils'
 import { useNetwork } from "../hooks/network"
 import { decodeExecute } from '../libs/universalDecoder'
 import { defaultChains } from '../libs/chains'
 import { execute } from '../libs/pool'
 import { Alchemy, Network, AlchemySubscription } from "alchemy-sdk"
-import SwapRouterABI from '@uniswap/v3-periphery/artifacts/contracts/interfaces/ISwapRouter.sol/ISwapRouter.json'
-const erc20abi = [{ "inputs": [ { "internalType": "string", "name": "name", "type": "string" }, { "internalType": "string", "name": "symbol", "type": "string" }, { "internalType": "uint256", "name": "max_supply", "type": "uint256" } ], "stateMutability": "nonpayable", "type": "constructor" }, { "anonymous": false, "inputs": [ { "indexed": true, "internalType": "address", "name": "owner", "type": "address" }, { "indexed": true, "internalType": "address", "name": "spender", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "value", "type": "uint256" } ], "name": "Approval", "type": "event" }, { "anonymous": false, "inputs": [ { "indexed": true, "internalType": "address", "name": "from", "type": "address" }, { "indexed": true, "internalType": "address", "name": "to", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "value", "type": "uint256" } ], "name": "Transfer", "type": "event" }, { "inputs": [ { "internalType": "address", "name": "owner", "type": "address" }, { "internalType": "address", "name": "spender", "type": "address" } ], "name": "allowance", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "spender", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "approve", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "account", "type": "address" } ], "name": "balanceOf", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "burn", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "account", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "burnFrom", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [], "name": "decimals", "outputs": [ { "internalType": "uint8", "name": "", "type": "uint8" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "spender", "type": "address" }, { "internalType": "uint256", "name": "subtractedValue", "type": "uint256" } ], "name": "decreaseAllowance", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "spender", "type": "address" }, { "internalType": "uint256", "name": "addedValue", "type": "uint256" } ], "name": "increaseAllowance", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [], "name": "name", "outputs": [ { "internalType": "string", "name": "", "type": "string" } ], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "symbol", "outputs": [ { "internalType": "string", "name": "", "type": "string" } ], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "totalSupply", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "recipient", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "transfer", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "sender", "type": "address" }, { "internalType": "address", "name": "recipient", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "transferFrom", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }]
-const SWAP_ROUTER_ADDRESS = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
 const { store, setTriggrts, setCountdownDuration, setGasPrice } = useGlobalStore()
 const { getProvider } = useNetwork()
+const { resetGlobalParams } = useUtils()
 const message = useMessage()
 
 const activatedId = ref('')
@@ -29,13 +28,6 @@ let loopInterval = null
 let gasInterval = null
 let alchemies = []
 let eventContract = []
-
-// const getProvider = () => {
-//   let chainId = triggerData.value.chainId || 5
-//   let rpc = defaultChains.find(item => item.chainId === chainId).rpcUrl
-//   return new ethers.providers.JsonRpcProvider(rpc)
-//   // new ethers.providers.JsonRpcProvider('https://eth-goerli.g.alchemy.com/v2/xQr0n2BqF1Hkkuw5_0YiEXeyQdSYoW1u')
-// }
 
 const getAlchemy = () => {
   let chainId = triggerData.value.chainId || 5
@@ -874,23 +866,7 @@ const getTriggerData = () => {
   let triggers = store.state.triggers
   let trigger = triggers.find(e => e.id == triggerData.value.id)
   trigger = JSON.parse(JSON.stringify(trigger))
-  let globalParams = JSON.parse(JSON.stringify(trigger.globalParams))
-  let address = trigger.wallet?.address
-  if (address) {
-    globalParams.push({key: 'currentWalletAddress', value: address})
-  }
-  globalParams = globalParams.map(e => {
-    let value = e.value
-    if (value.length > 24) {
-      value = `${value.slice(0, 6)}...${value.slice(-4)}`
-    }
-    return {
-      key: e.key,
-      value: e.value,
-      label: `${e.key == 'currentWalletAddress' ? '当前钱包地址' : e.key} (${value})`,
-      type: 'param'
-    }
-  })
+  let globalParams = resetGlobalParams()
   if (!trigger.message) trigger.message = []
   triggerData.value = trigger
   params.value = globalParams || []

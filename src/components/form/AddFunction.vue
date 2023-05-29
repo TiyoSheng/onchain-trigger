@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useGlobalStore } from '../../hooks/globalStore'
 import AddContract from '../../components/form/AddContract.vue'
+import ParamsSelect from '../ParamsSelect.vue'
 
 const { store } = useGlobalStore()
 
@@ -118,15 +119,9 @@ defineExpose({
         <div v-for="(val, key, index) in funItem.args" :key="index" class="input-item flex-center" >
           <p>{{key}}：</p>
           <div>
-            <n-select 
-              v-model:value="val.value"
-              filterable 
-              tag 
-              :options="params" 
-              label-field="label" 
-              value-field="key"
-              @update:value="argsChange(key, val.value)"
-            />
+            <ParamsSelect :value="val.value" :params="params"
+              @update="(e) => funItem.args[key] = e" @addParamsSuccess="(e) => params = e">
+            </ParamsSelect>
           </div>
         </div>
       </div>

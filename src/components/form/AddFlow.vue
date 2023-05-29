@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue'
 import { useGlobalStore } from '../../hooks/globalStore'
 import AddContract from '../../components/form/AddContract.vue'
+import ParamsSelect from '../ParamsSelect.vue'
 import { ethers } from 'ethers'
 
 const { store } = useGlobalStore()
@@ -381,16 +382,8 @@ defineExpose({
               placeholder="变量列表"
               style="margin-left:12px;width: 120px;flex: 0 0 120px;"
             />
-            <n-select 
-              v-model:value="filter.value"
-              :options="getParams(index)"
-              filterable tag
-              label-field="label"
-              value-field="key"
-              placeholder="变量列表"
-              style="margin-left:12px;flex: 0 0 200px;width:200px"
-              @update:value="paramChange('filters',index, i)"
-            />
+            <ParamsSelect :value="filter.value" :params="getParams(index)"
+            @update="(e) => flowItem.handdleList[index].filters[i] = Object.assign(filter, e)" @addParamsSuccess="(e) => params = e"></ParamsSelect>
             <div class="icon" @click="delParams(index, i, 'filters')">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9.33325 6.66663L9.33325 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
@@ -413,26 +406,14 @@ defineExpose({
       </n-form-item>
       <div v-if="item.type == 'uni'">
         <n-form-item label="输入代币：">
-          <n-select 
-            v-model:value="item.inAddress.value"
-            filterable tag
-            :options="getParams(index)"
-            label-field="label"
-            value-field="key"
-            placeholder="输入变量"
-            @update:value="uniParamChange('inAddress', index)"
-          />
+          <ParamsSelect :value="item.inAddress.value" :params="getParams(index)"
+            @update="(e) => flowItem.handdleList[index].inAddress = Object.assign(item.inAddress, e)" @addParamsSuccess="(e) => params = e">
+          </ParamsSelect>
         </n-form-item>
         <n-form-item label="输出代币：">
-          <n-select 
-            v-model:value="item.outAddress.value"
-            filterable tag
-            :options="getParams(index)"
-            label-field="label"
-            value-field="key"
-            placeholder="输入变量"
-            @update:value="uniParamChange('outAddress', index)"
-          />
+          <ParamsSelect :value="item.outAddress.value" :params="getParams(index)"
+            @update="(e) => flowItem.handdleList[index].outAddress = Object.assign(item.outAddress, e)" @addParamsSuccess="(e) => params = e">
+          </ParamsSelect>
         </n-form-item>
         <div style="position: relative;">
           <div class="handdle-item-del" @click="showConvert(index)" style="top: 36px;z-index: 99;right: 34px;">
@@ -445,16 +426,9 @@ defineExpose({
           </div>
           <n-form-item label="输入数量：">
             <div style="width:100%">
-              <n-select 
-                v-model:value="item.inAmount.value"
-                filterable tag
-                :options="getParams(index)"
-                label-field="label"
-                value-field="key"
-                placeholder="输入变量"
-                @update:value="uniParamChange('inAmount', index)"
-                style="width:100%"
-              />
+              <ParamsSelect :value="item.inAmount.value" :params="getParams(index)"
+                @update="(e) => flowItem.handdleList[index].inAmount = Object.assign(item.inAmount, e)" @addParamsSuccess="(e) => params = e">
+              </ParamsSelect>
               <div v-if="item.inAmount.value" class="flex-center" style="margin-top:12px">
                 <div class="btn" style="width: 100px;height:32px" @click="convert(index, 18)">toWei(10^18)</div>
                 <div class="btn" style="width: 100px;height:32px;margin-left:12px" @click="convert(index, 9)">toGWei(10^9)</div>
@@ -482,15 +456,9 @@ defineExpose({
             <div v-for="(param, i) in item.params" :key="index" class="param-item flex-center"  >
               <n-input v-model:value="param.key" placeholder="输入变量名" autocomplete="off" class="param-name" />
               <div style="margin: 8px">=</div>
-              <n-select 
-                v-model:value="param.value"
-                filterable tag
-                :options="getParams(index)"
-                label-field="label"
-                value-field="key"
-                placeholder="输入变量"
-                @update:value="paramChange('params', index, i)"
-              />
+              <ParamsSelect :value="param.value" :params="getParams(index)"
+                @update="(e) => flowItem.handdleList[index].params[i] = Object.assign(param, e)" @addParamsSuccess="(e) => params = e">
+              </ParamsSelect>
               <n-input style="margin-left: 12px" v-if="param.type == 'http'" v-model:value="param.var" placeholder="输入返回值变量名" autocomplete="off" />
               <div class="icon" @click="addParams(index, 'params')">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -516,15 +484,9 @@ defineExpose({
             <div v-for="(header, i) in item.headers" :key="index" class="param-item flex-center"  >
               <n-input v-model:value="header.key" placeholder="输入变量名" autocomplete="off" class="param-name" />
               <div style="margin: 8px">=</div>
-              <n-select 
-                v-model:value="header.value"
-                filterable tag
-                :options="getParams(index)"
-                label-field="label"
-                value-field="key"
-                placeholder="输入变量"
-                @update:value="paramChange('headers', index, i)"
-              />
+              <ParamsSelect :value="header.value" :params="getParams(index)"
+                @update="(e) => flowItem.handdleList[index].headers[i] = Object.assign(header, e)" @addParamsSuccess="(e) => params = e">
+              </ParamsSelect>
               <n-input style="margin-left: 12px" v-if="header.type == 'http'" v-model:value="header.var" placeholder="输入返回值变量名" autocomplete="off" />
               <div class="icon" @click="addParams(index, 'headers')">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -578,15 +540,9 @@ defineExpose({
           <div v-for="(val, key, i) in item.args" :key="i" class="input-item flex-center" >
             <p>{{key}}：</p>
             <div>
-              <n-select 
-                v-model:value="val.value"
-                filterable 
-                tag 
-                :options="getParams(index)" 
-                label-field="label" 
-                value-field="key"
-                @update:value="argsChange(key, val.value, index)"
-              />
+              <ParamsSelect :value="val.value" :params="getParams(index)"
+                @update="(e) => flowItem.handdleList[index].args[key] = Object.assign(val, e)" @addParamsSuccess="(e) => params = e">
+              </ParamsSelect>
             </div>
             <n-input style="margin-left:12px" v-if="val.type == 'http'" v-model:value="val.var" placeholder="输入返回值变量名" autocomplete="off" />
           </div>

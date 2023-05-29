@@ -1,11 +1,13 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useGlobalStore } from '../../hooks/globalStore'
+import { useUtils } from '../../hooks/utils'
 import { useMessage } from "naive-ui"
 import AddTrigger from '../../components/form/AddTrigger.vue'
 
 const { store } = useGlobalStore()
 const message = useMessage()
+const { resetGlobalParams, getParamLabel } = useUtils()
 
 const emit = defineEmits(['setTrigger', 'setMessage', 'setError'])
 const props = defineProps({
@@ -122,22 +124,6 @@ const getConditionsName = (val) => {
   return name
 }
 
-const getParamLabel = (item) => {
-  if (item.type == 'param') {
-    let param = params.value.find(param => param.key === item.value)
-    console.log(param)
-    if (param) {
-      return param.label
-    } else {
-      if (item.value == 'currentWalletAddress' && !triggerData?.wallet?.address) {
-        return '请设置钱包'
-      }
-    }
-  } else {
-    return item.value
-  }
-}
-
 const setTrigger = () => {
   emit('setTrigger', triggers.value)
 }
@@ -189,25 +175,8 @@ watch(() => props.trigger, (val) => {
     let trigger = JSON.parse(JSON.stringify(val))
     console.log(trigger.triggers)
     triggers.value = JSON.parse(JSON.stringify(trigger.triggers))
-    let globalParams = JSON.parse(JSON.stringify(trigger.globalParams))
-    let address = trigger.wallet?.address
-    if (address) {
-      globalParams.push({key: 'currentWalletAddress', value: address})
-    }
-    globalParams = globalParams.map(e => {
-      let value = e.value
-      if (value.length > 24) {
-        value = `${value.slice(0, 6)}...${value.slice(-4)}`
-      }
-      return {
-        key: e.key,
-        value: e.value,
-        label: `${e.key == 'currentWalletAddress' ? '当前钱包地址' : e.key} (${value})`,
-        type: 'param'
-      }
-    })
+    let globalParams = resetGlobalParams(trigger)
     triggerData.value = trigger
-    console.log(trigger)
     params.value = globalParams || []
   }
 }, {immediate: true, deep: true})
@@ -240,7 +209,7 @@ watch(() => store.state.countdownDuration, (val) => {
           <div v-for="(condition, index) in item.conditions" :key="index" class="flex-center mt12">
             <div class="fun flex-center">
               <div class="name flex-center">{{getCcondition(condition.condition)}}</div>
-              <div class="function-name flex-center">{{getParamLabel(condition)}}</div>
+              <div class="function-name flex-center">{{getParamLabel(condition, params)}}</div>
             </div>
           </div>
           
@@ -264,7 +233,7 @@ watch(() => store.state.countdownDuration, (val) => {
               <div class="params mt12" v-if="Object.keys(handdle.args).length">
                 <div class="params-item flex-center" v-for="(val, key) in handdle.args" :key="key">
                   <div class="params-item-key flex-center">{{key}}</div>
-                  <div class="params-item-value flex-center">{{getParamLabel(val)}}</div>
+                  <div class="params-item-value flex-center">{{getParamLabel(val, params)}}</div>
                 </div>
               </div>
             </div>
@@ -292,20 +261,20 @@ watch(() => store.state.countdownDuration, (val) => {
           <div class="flex-center mt12">
             <div class="fun flex-center">
               <div class="name flex-center">监控账户地址：</div>
-              <div class="function-name flex-center">{{ getParamLabel(item.address) }}</div>
+              <div class="function-name flex-center">{{ getParamLabel(item.address, params) }}</div>
             </div>
           </div>
           <div class="flex-center mt12">
             <div class="fun flex-center">
               <div class="name flex-center">监控代币地址：</div>
-              <div class="function-name flex-center">{{ getParamLabel(item.daiAddress) }}</div>
+              <div class="function-name flex-center">{{ getParamLabel(item.daiAddress, params) }}</div>
             </div>
           </div>
           <div class="mt16 sub-title">触发后执行</div>
           <div v-if="item.applyType == 'flow'" class="mt12">
             <div class="fun flex-center">
               <div class="name flex-center">执行流程</div>
-              <div class="function-name flex-center" v-html="getFlowName(item.flowId)"></div>
+              <div class="function-name flex-center" v-html="getFlowName(item.flowId, params)"></div>
             </div>
           </div>
           <div v-else>
@@ -321,7 +290,7 @@ watch(() => store.state.countdownDuration, (val) => {
               <div class="params mt12" v-if="Object.keys(handdle.args).length">
                 <div class="params-item flex-center" v-for="(val, key) in handdle.args" :key="key">
                   <div class="params-item-key flex-center">{{key}}</div>
-                  <div class="params-item-value flex-center">{{getParamLabel(val)}}</div>
+                  <div class="params-item-value flex-center">{{getParamLabel(val, params)}}</div>
                 </div>
               </div>
             </div>
@@ -377,7 +346,7 @@ watch(() => store.state.countdownDuration, (val) => {
               <div class="params mt12" v-if="Object.keys(handdle.args).length">
                 <div class="params-item flex-center" v-for="(val, key) in handdle.args" :key="key">
                   <div class="params-item-key flex-center">{{key}}</div>
-                  <div class="params-item-value flex-center">{{getParamLabel(val)}}</div>
+                  <div class="params-item-value flex-center">{{getParamLabel(val, params)}}</div>
                 </div>
               </div>
             </div>
@@ -424,7 +393,7 @@ watch(() => store.state.countdownDuration, (val) => {
               <div class="params mt12" v-if="Object.keys(handdle.args).length">
                 <div class="params-item flex-center" v-for="(val, key) in handdle.args" :key="key">
                   <div class="params-item-key flex-center">{{key}}</div>
-                  <div class="params-item-value flex-center">{{getParamLabel(val)}}</div>
+                  <div class="params-item-value flex-center">{{getParamLabel(val, params)}}</div>
                 </div>
               </div>
             </div>
@@ -456,7 +425,7 @@ watch(() => store.state.countdownDuration, (val) => {
             <div v-for="(filter, i) in item.filter" :key="i" class="filter flex-center">
               <div class="filter-name flex-center">{{filter.name}}</div>
               <div class="filter-condition flex-center-center">{{getConditionsName(filter.condition)}}</div>
-              <div class="filter-value flex-center">{{getParamLabel(filter)}}</div>
+              <div class="filter-value flex-center">{{getParamLabel(filter, params)}}</div>
             </div>
           </div>
           <div class="mt16 sub-title">触发后执行</div>
@@ -480,7 +449,7 @@ watch(() => store.state.countdownDuration, (val) => {
                 <div class="params-item flex-center" v-for="(val, key) in handdle.args" :key="key">
                   <div class="params-item-key flex-center">{{key}}</div>
                   <div class="params-item-type flex-center-center" :style="{color: val.condition == '$eq' ? '#31C48D' : '#FF8A4C', background:  val.condition == '$eq' ? '#EFFAF5' : '#FFF6EB'}">{{getInputConditionsName(val.condition)}}</div>
-                  <div class="params-item-value flex-center">{{getParamLabel(val)}}</div>
+                  <div class="params-item-value flex-center">{{getParamLabel(val, params)}}</div>
                 </div>
               </div>
             </div>

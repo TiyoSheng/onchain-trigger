@@ -3,11 +3,13 @@ import { ref, watch } from 'vue'
 import AddFunction from '../form/AddFunction.vue'
 import { useGlobalStore } from '../../hooks/globalStore'
 import { useNetwork } from "../../hooks/network"
+import { useUtils } from '../../hooks/utils'
 import { ethers } from 'ethers'
 import { useMessage } from 'naive-ui'
 
 const { store } = useGlobalStore()
 const { getProvider } = useNetwork()
+const { resetGlobalParams, getParams } = useUtils()
 const message = useMessage()
 
 const emit = defineEmits(['setFunctions', 'setMessage'])
@@ -110,22 +112,7 @@ const apply = async (item) => {
   let p = []
   let res = null
   if (inputs) {
-    inputs.forEach(e => {
-      if (item.args[e.name]) {
-        let val = item.args[e.name].value
-        if (item.args[e.name].type == 'param') {
-          for (let i = 0; i < params.value.length; i++) {
-            let param = params.value[i]
-            if (param.key == item.args[e.name].value) {
-              val = param.value
-            }
-          }
-        }
-        p.push(val)
-      } else {
-        p.push('')
-      }
-    })
+    p = getParams(item, inputs, params.value)
   }
   try {
     res = await C[item.functionName](...p)
@@ -154,23 +141,8 @@ const apply = async (item) => {
 watch(() => props.triggerData, (val) => {
   let trigger = JSON.parse(JSON.stringify(val))
   let funs = trigger.functions
-  let globalParams = trigger.globalParams
   let address = trigger.wallet?.address
-  if (address) {
-    globalParams.push({key: 'currentWalletAddress', value: address})
-  }
-  globalParams = globalParams.map(e => {
-    let value = e.value
-    if (value.length > 24) {
-      value = `${value.slice(0, 6)}...${value.slice(-4)}`
-    }
-    return {
-      key: e.key,
-      value: e.value,
-      label: `${e.key == 'currentWalletAddress' ? '当前钱包地址' : e.key} (${value})`,
-      type: 'param'
-    }
-  })
+  let globalParams = resetGlobalParams(trigger)
   walletAddress.value = address
   params.value = globalParams || []
   functions.value = funs || []

@@ -3,9 +3,7 @@ import { ref } from 'vue'
 import { useGlobalStore } from '../../hooks/globalStore'
 import AddContract from '../../components/form/AddContract.vue'
 import AddFlow from '../../components/form/AddFlow.vue'
-import AddParams from '../../components/form/AddParams.vue'
-
-let paramsName = ''
+import ParamsSelect from '../ParamsSelect.vue'
 
 const { store, setTriggrts } = useGlobalStore()
 
@@ -264,31 +262,6 @@ const getFitlerParams = (id ,name) => {
   })
 }
 
-const uniParamsChange = (name) => {
-  let val = triggerItem.value[name].value
-  if (val) {
-    let param = params.value.find(item => item.key === val)
-    if (param) {
-      triggerItem.value[name].type = param.type
-    } else {
-      triggerItem.value[name].type = 'var'
-    }
-  }
-}
-
-const argsChange = (key, val, index) => {
-  let handdle = triggerItem.value.handdleList[index]
-  console.log(handdle)
-  if (val) {
-    let param = params.value.find(item => item.key === val)
-    if (param) {
-      handdle.args[key].type = param.type
-    } else {
-      handdle.args[key].type = 'var'
-    }
-  }
-}
-
 const functionChange = (index) => {
   let handdle = triggerItem.value.handdleList[index]
   let fun = getAbi(handdle.contractId).find(item => item.name === handdle.functionName)
@@ -312,34 +285,6 @@ const functionChange = (index) => {
         type: ''
       }
     })
-  }
-}
-
-const filterValueChange = (index) => {
-  let filter = triggerItem.value.filter[index]
-  let param = params.value.find(item => item.key === filter.value)
-  if (param) {
-    filter.type = param.type
-  } else {
-    filter.type = 'var'
-  }
-}
-
-const addCondition = () => {
-  triggerItem.value.conditions.push({
-    condition: '$eq',
-    value: '',
-    type: ''
-  })
-}
-
-const conditionChange = (index) => {
-  let condition = triggerItem.value.conditions[index]
-  let param = params.value.find(item => item.key === condition.value)
-  if (param) {
-    condition.type = param.type
-  } else {
-    condition.type = 'var'
   }
 }
 
@@ -376,40 +321,7 @@ const radioUpdate = () => {
 }
 
 const addParamsSuccess = async (e) => {
-  console.log(e)
-  let triggrts = store.state.triggers
-  let activatedId = store.state.activatedId
-  let triggerData = triggrts.find(item => item.id === activatedId)
-  let index = triggrts.findIndex(item => item.id === activatedId)
-  triggerData.globalParams = e
-  triggrts[index] = triggerData
-  await setTriggrts(triggrts)
-  let item = e[e.length - 1]
-  item.label = `${item.key} (${item.value})`
-  item.type = 'param'
-  params.value.splice(-1, 0, item)
-  if (paramsName) {
-    triggerItem.value[paramsName].value = item.key
-    triggerItem.value[paramsName].type = item.type
-    paramsName = ''
-  }
-
-}
-
-const addParamsFun = (name) => {
-  addParams.value.showAddModal = true
-  paramsName = name
-}
-
-const getOutParams = () => {
-  let p = JSON.parse(JSON.stringify(params.value))
-  p.push({
-    key: 'any',
-    label: '任意',
-    type: 'val'
-  })
-  return p
-  
+  params.value = e
 }
 
 defineExpose({
@@ -476,38 +388,14 @@ defineExpose({
         </n-form-item>
         <n-form-item label="监控账户地址：">
           <div style="width: 100%">
-            <n-select 
-              v-model:value="triggerItem.address.value"
-              filterable 
-              tag 
-              :options="params" 
-              label-field="label" 
-              value-field="key"
-              placeholder="Input or Select"
-              @update:value="uniParamsChange('address')"
-            >
-              <template #action>
-                <p @click="addParamsFun('address')" class="add-new-btn">新增全局变量</p>
-              </template>
-            </n-select>
+            <ParamsSelect :value="triggerItem.address.value" :params="params"
+            @update="(e) => triggerItem.address = e" @addParamsSuccess="addParamsSuccess"></ParamsSelect>
           </div>
         </n-form-item>
         <n-form-item label="监控代币地址：">
           <div style="width: 100%">
-            <n-select 
-              v-model:value="triggerItem.daiAddress.value"
-              filterable 
-              tag 
-              :options="params" 
-              label-field="label" 
-              value-field="key"
-              placeholder="Input or Select"
-              @update:value="uniParamsChange('daiAddress')"
-            >
-              <template #action>
-                <p @click="addParamsFun('daiAddress')" class="add-new-btn">新增全局变量</p>
-              </template>
-            </n-select>
+            <ParamsSelect :value="triggerItem.daiAddress.value" :params="params"
+            @update="(e) => triggerItem.daiAddress = e" @addParamsSuccess="addParamsSuccess"></ParamsSelect>
           </div>
         </n-form-item>
       </div>
@@ -521,19 +409,9 @@ defineExpose({
                 label-field="label" 
                 value-field="value"
               />
-              <n-select 
-                v-model:value="condition.value"
-                filterable 
-                tag 
-                :options="params" 
-                label-field="label" 
-                value-field="key"
-                placeholder="Input or Select"
-                @update:value="conditionChange(index)"
-                style="margin-left: 12px"
-              />
+              <ParamsSelect :value="condition.value" :params="params"
+              @update="(e) => triggerItem.conditions[index] = Object.assign(condition, e)" @addParamsSuccess="addParamsSuccess"></ParamsSelect>
             </div>
-            <!-- <div class="btn" @click="addCondition">添加触发条件</div> -->
           </div>
         </n-form-item>
       </div>
@@ -624,16 +502,8 @@ defineExpose({
             <div v-for="(val, key, i) in item.args" :key="i" class="input-item flex-center" >
               <p>{{key}}：</p>
               <div>
-                <n-select 
-                  v-model:value="val.value"
-                  filterable 
-                  tag 
-                  :options="params" 
-                  label-field="label" 
-                  value-field="key"
-                  placeholder="Input or Select"
-                  @update:value="argsChange(key, val.value, index)"
-                />
+                <ParamsSelect :value="val.value" :params="params"
+                @update="(e) => triggerItem.handdleList[index].args[key] = e" @addParamsSuccess="addParamsSuccess"></ParamsSelect>
               </div>
             </div>
           </div>
@@ -685,16 +555,9 @@ defineExpose({
               value-field="value"
               style="margin: 0 12px;width: 100px;flex:0 0 100px"
             />
-            <n-select
-              v-model:value="filter.value"
-              filterable 
-              tag 
-              placeholder="选择过滤值"
-              :options="params"
-              label-field="label" 
-              value-field="key"
-              @update:value="filterValueChange(index)"
-            />
+            <ParamsSelect :value="filter.value" :params="params"
+              @update="(e) => triggerItem.filter[index] = e" @addParamsSuccess="addParamsSuccess">
+            </ParamsSelect>
             <div class="del" @click="delFilter(index)">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9.33325 6.66663L9.33325 11.3333" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round"/>
@@ -779,18 +642,9 @@ defineExpose({
                   value-field="value"
                   style="flex:0 0 100px"
                 />
-                <n-select 
-                  v-if="val.condition == '$ne'"
-                  v-model:value="val.value"
-                  filterable 
-                  tag 
-                  :options="params" 
-                  label-field="label" 
-                  value-field="key"
-                  placeholder="Input or Select"
-                  @update:value="argsChange(key, val.value, index)"
-                  style="margin-left: 12px"
-                />
+                <ParamsSelect v-if="val.condition == '$ne'" :value="val.value" :params="params"
+                  @update="(e) => triggerItem.handdleList[index].args[key] = e" @addParamsSuccess="addParamsSuccess">
+                </ParamsSelect>
                 <n-input style="margin-left:12px" v-if="val.type == 'http'" v-model:value="val.var" placeholder="输入返回值变量名" autocomplete="off" />
               </div>
             </div>
@@ -806,7 +660,6 @@ defineExpose({
   </n-modal>
   <AddContract ref="addContractRef" @success="addContractSuccess" />
   <AddFlow ref="addFlowRef" @handleOk="addFlowSuccess" />
-  <AddParams ref="addParams" @handleOk="addParamsSuccess" />
 </template>
 <style lang="scss" scoped>
 .filter-item {

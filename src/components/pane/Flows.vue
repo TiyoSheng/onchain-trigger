@@ -2,20 +2,16 @@
 import { ref, watch } from 'vue'
 import { useGlobalStore } from '../../hooks/globalStore'
 import { useNetwork } from "../../hooks/network"
-import { ethers, BigNumber } from 'ethers'
+import { useUtils } from '../../hooks/utils'
+import { ethers } from 'ethers'
 import { useMessage } from 'naive-ui'
 import AddFlow from '../form/AddFlow.vue'
-import { defaultChains } from '../../libs/chains'
 import { execute } from '../../libs/pool'
 
-import SwapRouterABI from '@uniswap/v3-periphery/artifacts/contracts/interfaces/ISwapRouter.sol/ISwapRouter.json'
-
-import { get } from '../../http/axios'
-
 const erc20abi = [{ "inputs": [ { "internalType": "string", "name": "name", "type": "string" }, { "internalType": "string", "name": "symbol", "type": "string" }, { "internalType": "uint256", "name": "max_supply", "type": "uint256" } ], "stateMutability": "nonpayable", "type": "constructor" }, { "anonymous": false, "inputs": [ { "indexed": true, "internalType": "address", "name": "owner", "type": "address" }, { "indexed": true, "internalType": "address", "name": "spender", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "value", "type": "uint256" } ], "name": "Approval", "type": "event" }, { "anonymous": false, "inputs": [ { "indexed": true, "internalType": "address", "name": "from", "type": "address" }, { "indexed": true, "internalType": "address", "name": "to", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "value", "type": "uint256" } ], "name": "Transfer", "type": "event" }, { "inputs": [ { "internalType": "address", "name": "owner", "type": "address" }, { "internalType": "address", "name": "spender", "type": "address" } ], "name": "allowance", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "spender", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "approve", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "account", "type": "address" } ], "name": "balanceOf", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "burn", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "account", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "burnFrom", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [], "name": "decimals", "outputs": [ { "internalType": "uint8", "name": "", "type": "uint8" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "spender", "type": "address" }, { "internalType": "uint256", "name": "subtractedValue", "type": "uint256" } ], "name": "decreaseAllowance", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "spender", "type": "address" }, { "internalType": "uint256", "name": "addedValue", "type": "uint256" } ], "name": "increaseAllowance", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [], "name": "name", "outputs": [ { "internalType": "string", "name": "", "type": "string" } ], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "symbol", "outputs": [ { "internalType": "string", "name": "", "type": "string" } ], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "totalSupply", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "recipient", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "transfer", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "sender", "type": "address" }, { "internalType": "address", "name": "recipient", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" } ], "name": "transferFrom", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }]
-const SWAP_ROUTER_ADDRESS = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
 const { store } = useGlobalStore()
 const { getProvider } = useNetwork()
+const { resetGlobalParams, getParamLabel } = useUtils()
 const message = useMessage()
 
 const emit = defineEmits(['setFlows', 'setMessage'])
@@ -74,22 +70,6 @@ const getApproveAddress = () => {
 const getConditionsName = (val) => {
   let name = filterConditions.find(item => item.value === val).label
   return name
-}
-
-const getParamLabel = (item) => {
-  if (item.type == 'param') {
-    let param = params.value.find(param => param.key === item.value)
-    console.log(param)
-    if (param) {
-      return param.label
-    } else {
-      if (item.value == 'currentWalletAddress' && !triggerData?.wallet?.address) {
-        return '请设置钱包'
-      }
-    }
-  } else {
-    return item.value
-  }
 }
 
 const showModal = (item) => {
@@ -530,23 +510,7 @@ const apply = (item) => {
 const init = (val) => {
   let triggerData = store.state.triggers.find(item => item.id === val)
   trigger.value = JSON.parse(JSON.stringify(triggerData))
-  let globalParams = trigger.value.globalParams
-  let address = trigger.value.wallet?.address
-  if (address && !globalParams.find(item => item.key === 'currentWalletAddress')) {
-    globalParams.push({key: 'currentWalletAddress', value: address})
-  }
-  globalParams = globalParams.map(e => {
-    let value = e.value
-    if (value.length > 24) {
-      value = `${value.slice(0, 6)}...${value.slice(-4)}`
-    }
-    return {
-      key: e.key,
-      value: e.value,
-      label: `${e.key == 'currentWalletAddress' ? '当前钱包地址' : e.key} (${value})`,
-      type: 'param'
-    }
-  })
+  let globalParams = resetGlobalParams(trigger.value)
   params.value = globalParams || []
   let fl = trigger.value.flows
   if (trigger.value.wallet?.address) {
@@ -559,13 +523,11 @@ const init = (val) => {
       })
     })
   }
-  console.log('fl', fl)
   flows.value = fl
 }
 
 watch(() => props.triggerData, (val) => {
   if (val) {
-    console.log('val', val)
     init(val.id)
   }
 }, {immediate: true, deep: true})
@@ -607,19 +569,19 @@ watch(() => props.triggerData, (val) => {
             <div class="flex-center">
               <div class="fun flex-center">
                 <div class="name flex-center">输入代币</div>
-                <div class="function-name flex-center">{{getParamLabel(handdle.inAddress)}}</div>
+                <div class="function-name flex-center">{{getParamLabel(handdle.inAddress, params)}}</div>
               </div>
             </div>
             <div class="flex-center">
               <div class="fun flex-center">
                 <div class="name flex-center">输出代币</div>
-                <div class="function-name flex-center">{{getParamLabel(handdle.outAddress)}}</div>
+                <div class="function-name flex-center">{{getParamLabel(handdle.outAddress, params)}}</div>
               </div>
             </div>
             <div class="flex-center">
               <div class="fun flex-center">
                 <div class="name flex-center">输入数量</div>
-                <div class="function-name flex-center">{{getParamLabel(handdle.inAmount)}}</div>
+                <div class="function-name flex-center">{{getParamLabel(handdle.inAmount, params)}}</div>
               </div>
             </div>
             <div class="flex-center-sb mt12" v-if="handdle.isAppove == 2">
@@ -637,7 +599,7 @@ watch(() => props.triggerData, (val) => {
             <div v-for="(filter, i) in handdle.filters" :key="i" class="filter flex-center">
               <div class="filter-name flex-center">{{filter.key}} <span v-if="filter.var">({{filter.var}})</span></div>
               <div class="filter-condition flex-center-center">{{getConditionsName(filter.condition)}}</div>
-              <div class="filter-value flex-center">{{getParamLabel(filter)}}</div>
+              <div class="filter-value flex-center">{{getParamLabel(filter, params)}}</div>
             </div>
           </div>
         </div>
