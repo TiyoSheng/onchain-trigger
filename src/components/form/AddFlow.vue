@@ -434,8 +434,8 @@ defineExpose({
                 <div class="btn" style="width: 100px;height:32px;margin-left:12px" @click="convert(index, 9)">toGWei(10^9)</div>
               </div>
             </div>
-            
           </n-form-item>
+          <p style="font-size: 12px;color: red;">* 当前操作将会支付Trigger 0.005ETH 手续费</p>
         </div>
       </div>
       <div v-else-if="item.type == 'http'">

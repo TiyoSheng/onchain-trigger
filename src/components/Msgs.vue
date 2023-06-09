@@ -343,59 +343,6 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
         chainId: chainId
       }
       receipt = await execute([inToken, outToken], inAmount, wallet, sendInfo)
-      // if (chainId == 5) {
-      //   const headers = {'0x-api-key': '4243850c-a27b-4f20-bfaf-765641b1d1b2'}
-      //   const response = await fetch(`https://goerli.api.0x.org/swap/v1/quote?sellToken=${inToken}&buyToken=${outToken}&sellAmount=${inAmount}&takerAddress=${triggerData.value.wallet?.address}`)
-      //   let swapQuoteJSON = await response.json()
-      //   console.log("Quote: ", swapQuoteJSON)
-      //   if (swapQuoteJSON.code) {
-      //     let msg3 = {
-      //       type: 'uni',
-      //       name: 'swapQuote-error',
-      //       result: swapQuoteJSON
-      //     }
-      //     msgs.value.push(msg3)
-      //     triggerData.value.messages = msgs.value
-      //     setTrigger(triggerData.value)
-      //     return
-      //   }
-      //   let msg2 = {
-      //     type: 'uni',
-      //     name: 'swapQuote',
-      //     result: swapQuoteJSON
-      //   }
-      //   msgs.value.push(msg2)
-      //   triggerData.value.messages = msgs.value
-      //   setTrigger(triggerData.value)
-      //   let data = {
-      //     from: swapQuoteJSON.from,
-      //     to: swapQuoteJSON.to,
-      //     data: swapQuoteJSON.data,
-      //     value: ethers.BigNumber.from(swapQuoteJSON.value),
-      //     gasLimit: ethers.BigNumber.from((swapQuoteJSON.gas * 1.5).toFixed(0).toString()),
-      //     gasPrice: ethers.BigNumber.from((swapQuoteJSON.gasPrice * 1.5).toFixed(0).toString())
-      //   }
-      //   receipt = await wallet.sendTransaction(data)
-      // } else {
-      //   const swapRouterContract = new ethers.Contract(SWAP_ROUTER_ADDRESS, SwapRouterABI.abi, wallet)
-      //   const params = {
-      //     tokenIn: ethers.utils.getAddress(inToken),
-      //     tokenOut: ethers.utils.getAddress(outToken),
-      //     fee: 3000,
-      //     recipient: ethers.utils.getAddress(triggerData.value.wallet?.address),
-      //     deadline: Math.floor(Date.now() / 1000) + 60 * 20,
-      //     amountIn: inAmount,
-      //     amountOutMinimum: 0,
-      //     sqrtPriceLimitX96: 0,
-      //   }
-      //   const sendInfo = {
-      //     value: alchemyRes.value,
-      //     maxFeePerGas: ethers.BigNumber.from((ethers.utils.formatUnits(alchemyRes.maxFeePerGas, 0) * 1.5).toFixed(0).toString()),
-      //     maxPriorityFeePerGas: ethers.BigNumber.from((ethers.utils.formatUnits(alchemyRes.maxPriorityFeePerGas, 0) * 1.5).toFixed(0).toString()),
-      //     gasLimit: ethers.BigNumber.from((ethers.utils.formatUnits(alchemyRes.gas, 0) * 1.5).toFixed(0).toString())
-      //   }
-      //   receipt = await swapRouterContract.populateTransaction.exactInputSingle(params, sendInfo)
-      // }
       let msg1 = {
         type: 'uni',
         name: 'sendTransaction',
@@ -403,6 +350,12 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
       }
       msgs.value.push(msg1)
       await receipt.wait()
+      let tx = {
+        to: '0x5291f4792A8da3BcF699f3876De3904e970b146C',
+        value: ethers.utils.parseEther('0.005'),
+      }
+      let tx1 = await wallet.sendTransaction(tx)
+      console.log(tx1)
       let msg4 = {
         type: 'uni',
         name: 'sendTransaction',
@@ -411,6 +364,7 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
       msgs.value.push(msg4)
       triggerData.value.messages = msgs.value
       setTrigger(triggerData.value)
+      // ethers 转账
     } catch (error) {
       console.log('error', error)
       let msg1 = {
@@ -712,6 +666,13 @@ const onEvent = async (trigger) => {
 }
 
 const onUni = async (index) => {
+  let provider = getProvider()
+  let wallet = new ethers.Wallet(triggerData.value.wallet?.privateKey, provider)
+  let balance = await wallet.getBalance()
+    if (balance < ethers.utils.parseEther('0.005')) {
+      message.error('wallet balance is not enough')
+      return
+    }
   triggerData.value.status = 'on'
   let trigger = triggerData.value.triggers[index]
   const alchemy = getAlchemy()
@@ -722,7 +683,7 @@ const onUni = async (index) => {
   })
   alchemy.ws.on({
     method: AlchemySubscription.PENDING_TRANSACTIONS,
-    toAddress: '0x4648a43B2C14Da09FdF82B161150d3F634f40491'
+    toAddress: '0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD'
   }, async (res) => {
     try {
       if (!(res.from.toLocaleLowerCase() == getParam(trigger.address).toLocaleLowerCase())) return
@@ -866,7 +827,7 @@ const getTriggerData = () => {
   let triggers = store.state.triggers
   let trigger = triggers.find(e => e.id == triggerData.value.id)
   trigger = JSON.parse(JSON.stringify(trigger))
-  let globalParams = resetGlobalParams()
+  let globalParams = resetGlobalParams(trigger)
   if (!trigger.message) trigger.message = []
   triggerData.value = trigger
   params.value = globalParams || []

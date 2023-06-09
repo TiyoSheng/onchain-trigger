@@ -9,7 +9,7 @@ const abi = [{"inputs":[{"components":[{"internalType":"address","name":"permit2
 let provider = new ethers.providers.WebSocketProvider('wss://goerli.infura.io/ws/v3/f2d8df49b1da46f49db541f7e66a74bb')
 // let wallet = new ethers.Wallet('df598c29fc5ac0c71a55919012f44cb4d6d849ddbb11501036856c9e973854e5', provider)
 // let connectedWallet = wallet.connect(provider)
-// let contract = new ethers.Contract('0x4648a43b2c14da09fdf82b161150d3f634f40491', abi, connectedWallet)
+// let contract = new ethers.Contract('0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD', abi, connectedWallet)
 
 const toFixHex = (num, n) => {
   var end = (num).toString(16)
@@ -105,7 +105,7 @@ export const execute = async (path, amountIn, wallet, sendInfo) => {
 	// 	ethers.utils.getAddress("0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6")
 	// ]
 	// let amountIn = "100000000000000000"
-	let contract = new ethers.Contract('0x4648a43b2c14da09fdf82b161150d3f634f40491', abi, wallet)
+	let contract = new ethers.Contract('0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD', abi, wallet)
 	return new Promise(async (resolve, reject) => {
 		let amount = "1000000000000000" // 1
 		let payerIsUser = true
