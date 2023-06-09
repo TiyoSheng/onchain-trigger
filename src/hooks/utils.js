@@ -30,7 +30,7 @@ export const useUtils = () => {
       globalParams.push({key: 'currentWalletBalance', value: balance})
     }
     globalParams = globalParams.map(e => {
-      let value = e.value
+      let value = e.value || ''
       if (value.length > 24) {
         value = `${value.slice(0, 6)}...${value.slice(-4)}`
       }
