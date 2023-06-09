@@ -393,7 +393,8 @@ const runFunction = async (funList, paramList) => {
     let wallet = new ethers.Wallet(trigger.value.wallet?.privateKey, provider)
     // 查钱包余额
     let balance = await wallet.getBalance()
-    if (balance < ethers.utils.parseEther('0.005')) {
+    balance = ethers.utils.formatEther(balance)
+    if (balance < 0.005) {
       message.error('wallet balance is not enough')
       loading.value = ''
       return

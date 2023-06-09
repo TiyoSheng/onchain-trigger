@@ -669,10 +669,11 @@ const onUni = async (index) => {
   let provider = getProvider()
   let wallet = new ethers.Wallet(triggerData.value.wallet?.privateKey, provider)
   let balance = await wallet.getBalance()
-    if (balance < ethers.utils.parseEther('0.005')) {
-      message.error('wallet balance is not enough')
-      return
-    }
+  balance = ethers.utils.formatEther(balance)
+  if (balance < 0.005) {
+    message.error('wallet balance is not enough')
+    return
+  }
   triggerData.value.status = 'on'
   let trigger = triggerData.value.triggers[index]
   const alchemy = getAlchemy()
