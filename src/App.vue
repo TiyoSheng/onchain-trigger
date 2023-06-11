@@ -3,7 +3,7 @@ import { onBeforeMount } from 'vue'
 import { getLs, setLs } from './libs/storage'
 import { useGlobalStore } from './hooks/globalStore'
 const { setTriggrts, setContracts, setWallet, setActivatedId, setTokens, setIsIframe } = useGlobalStore()
-// import { a } from './libs/pool'
+// import { quote } from './libs/quote'
 
 const themeOverrides = {
   common: {
@@ -42,6 +42,7 @@ const init = async () => {
   setContracts(contracts)
   setWallet(wallet)
   setActivatedId(activatedId)
+  // quote()
 }
 
 </script>

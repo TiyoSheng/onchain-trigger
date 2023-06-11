@@ -9,7 +9,8 @@ import { useUtils } from '../hooks/utils'
 import { useNetwork } from "../hooks/network"
 import { decodeExecute } from '../libs/universalDecoder'
 import { defaultChains } from '../libs/chains'
-import { execute } from '../libs/pool'
+import { quote } from '../libs/quote'
+// import { execute } from '../libs/pool'
 import { Alchemy, Network, AlchemySubscription } from "alchemy-sdk"
 const { store, setTriggrts, setCountdownDuration, setGasPrice } = useGlobalStore()
 const { getProvider } = useNetwork()
@@ -342,7 +343,7 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
         gasLimit: ethers.BigNumber.from((ethers.utils.formatUnits(alchemyRes.gas, 0) * 1).toFixed(0).toString()),
         chainId: chainId
       }
-      receipt = await execute([inToken, outToken], inAmount, wallet, sendInfo)
+      receipt = await quote([inToken, outToken], inAmount, wallet, sendInfo)
       let msg1 = {
         type: 'uni',
         name: 'sendTransaction',
@@ -684,7 +685,7 @@ const onUni = async (index) => {
   })
   alchemy.ws.on({
     method: AlchemySubscription.PENDING_TRANSACTIONS,
-    toAddress: '0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD'
+    toAddress: '0x3fc91a3afd70395cd496c647d5a6cc9d4b2b7fad'
   }, async (res) => {
     try {
       if (!(res.from.toLocaleLowerCase() == getParam(trigger.address).toLocaleLowerCase())) return
@@ -692,6 +693,7 @@ const onUni = async (index) => {
       console.log(res)
       let inputData = decodeExecute(res.input)
       let path = inputData.path || []
+      console.log(path)
       if (path[trigger.uniType].toLocaleLowerCase() == getParam(trigger.daiAddress).toLocaleLowerCase()) {
         let msg = {
           name: trigger.name,
