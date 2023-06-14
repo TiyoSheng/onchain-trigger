@@ -327,6 +327,18 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
     triggerData.value.messages = msgs.value
     setTrigger(triggerData.value)
   } else if (item.type == 'uni') {
+    if (triggerData.value.wallet?.balance < 0.005) {
+      message.error('wallet balance is not enough')
+      let m = {
+        type: 'uni',
+        name: 'uni',
+        result: 'wallet balance is not enough'
+      }
+      msgs.value.push(m)
+      triggerData.value.messages = msgs.value
+      setTrigger(triggerData.value)
+      return
+    }
     let inToken = getParam(item.inAddress, paramList)
     let outToken = getParam(item.outAddress, paramList)
     let inAmount = getParam(item.inAmount, paramList)
@@ -671,11 +683,7 @@ const onUni = async (index) => {
   let wallet = new ethers.Wallet(triggerData.value.wallet?.privateKey, provider)
   let balance = await wallet.getBalance()
   balance = ethers.utils.formatEther(balance)
-  if (balance < 0.005) {
-    message.error('wallet balance is not enough')
-    return
-  }
-  triggerData.value.status = 'on'
+  triggerData.value.wallet.balance = balance
   let trigger = triggerData.value.triggers[index]
   const alchemy = getAlchemy()
   alchemies.push(alchemy)
