@@ -62,16 +62,8 @@ watch(() => props.value, (val) => {
 </script>
 
 <template>
-  <n-select 
-    v-model:value="selectValue"
-    filterable 
-    tag
-    :options="props.params" 
-    label-field="label" 
-    value-field="key"
-    placeholder="Input or Select"
-    @update:value="update"
-  >
+  <n-select v-model:value="selectValue" filterable tag :options="props.params" label-field="label" value-field="key"
+    placeholder="Input or Select" @update:value="update">
     <template #action>
       <p @click="addParamsFun('daiAddress')" class="add-new-btn">新增全局变量</p>
     </template>

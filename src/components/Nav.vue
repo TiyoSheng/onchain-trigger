@@ -10,7 +10,7 @@ const { networkStore, setChainId, setRpc } = useNetwork()
 const href = window.location.href
 const gasPrice = ref(0)
 const chainId = ref(5)
-const loading= ref(false)
+const loading = ref(false)
 const provider = ref(null)
 const rpcConnectivity = ref([])
 const isOver = ref(false)
@@ -69,7 +69,7 @@ watch(() => store.state.activatedId, (val) => {
   switchChain(cId)
   setChainId(cId)
 
-}, {immediate: true, deep: true})
+}, { immediate: true, deep: true })
 </script>
 <template>
   <div class="nav flex-center">
@@ -81,42 +81,52 @@ watch(() => store.state.activatedId, (val) => {
       <div class="wallet flex-center-sb chain-w" @mouseenter="getRpcConnectivity" @mouseleave="isOver = false">
         <div class="flex-center">
           <img :src="networkStore.state.rpc.logo" alt="" class="icon">
-          <div class="address" style="margin-right: 0">{{networkStore.state.rpc.name}}</div>
+          <div class="address" style="margin-right: 0">{{ networkStore.state.rpc.name }}</div>
         </div>
         <div class="block"></div>
         <div class="chain-list" v-if="networkStore.state.rpcs && networkStore.state.rpcs.length">
-          <div v-for="(item, index) in networkStore.state.rpcs" :key="item.name" @click="switchRpc(item)" :class="['chain-item', 'flex-center-sb', networkStore.state.rpc?.url == item.url ? 'chain-item-active' : '']">
+          <div v-for="(item, index) in networkStore.state.rpcs" :key="item.name" @click="switchRpc(item)"
+            :class="['chain-item', 'flex-center-sb', networkStore.state.rpc?.url == item.url ? 'chain-item-active' : '']">
             <div class="flex-center" style="width: 100%">
               <img :src="item.logo" alt="" class="icon">
-              <div class="chain-name">{{item.name}}</div>
+              <div class="chain-name">{{ item.name }}</div>
             </div>
             <div v-show="rpcConnectivity[index]" class="rpc-connectivity">{{ rpcConnectivity[index] }}s</div>
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path fill-rule="evenodd" clip-rule="evenodd" d="M13.7491 5.65717C14.042 5.95006 14.042 6.42494 13.7491 6.71783L8.12408 12.3428C7.83119 12.6357 7.35631 12.6357 7.06342 12.3428L4.25092 9.53033C3.95803 9.23744 3.95803 8.76256 4.25092 8.46967C4.54381 8.17678 5.01869 8.17678 5.31158 8.46967L7.59375 10.7518L12.6884 5.65717C12.9813 5.36428 13.4562 5.36428 13.7491 5.65717Z" fill="#375CFF"/>
+              <path fill-rule="evenodd" clip-rule="evenodd"
+                d="M13.7491 5.65717C14.042 5.95006 14.042 6.42494 13.7491 6.71783L8.12408 12.3428C7.83119 12.6357 7.35631 12.6357 7.06342 12.3428L4.25092 9.53033C3.95803 9.23744 3.95803 8.76256 4.25092 8.46967C4.54381 8.17678 5.01869 8.17678 5.31158 8.46967L7.59375 10.7518L12.6884 5.65717C12.9813 5.36428 13.4562 5.36428 13.7491 5.65717Z"
+                fill="#375CFF" />
             </svg>
           </div>
         </div>
       </div>
       <div class="wallet flex-center-sb chain-w">
         <div class="flex-center">
-          <img :src="chain && icons[chainId] ? `https://icons.llamao.fi/icons/chains/rsz_${icons[chainId]}.jpg` : 'https://chainlist.org/unknown-logo.png'" alt="" class="icon">
-          <div class="address">{{getChainName()}}</div>
+          <img
+            :src="chain && icons[chainId] ? `https://icons.llamao.fi/icons/chains/rsz_${icons[chainId]}.jpg` : 'https://chainlist.org/unknown-logo.png'"
+            alt="" class="icon">
+          <div class="address">{{ getChainName() }}</div>
         </div>
         <n-spin :show="loading">
           <div class="flex-center-center gas-price">
             <img src="../assets/images/gas.gif" alt="">
-            <p>{{gasPrice}}</p>
+            <p>{{ gasPrice }}</p>
           </div>
         </n-spin>
         <div class="block"></div>
         <div class="chain-list" v-if="defaultChains && defaultChains.length">
-          <div v-for="item in defaultChains" :key="item.chainId" @click="switchChain(item.chainId)" :class="['chain-item', 'flex-center-sb', chainId == item.chainId ? 'chain-item-active' : '']">
+          <div v-for="item in defaultChains" :key="item.chainId" @click="switchChain(item.chainId)"
+            :class="['chain-item', 'flex-center-sb', chainId == item.chainId ? 'chain-item-active' : '']">
             <div class="flex-center" style="width: 100%">
-              <img :src="icons[item.chainId] ? `https://icons.llamao.fi/icons/chains/rsz_${icons[item.chainId]}.jpg` : 'https://chainlist.org/unknown-logo.png'" alt="" class="icon">
-              <div class="chain-name">{{item.name}}</div>
+              <img
+                :src="icons[item.chainId] ? `https://icons.llamao.fi/icons/chains/rsz_${icons[item.chainId]}.jpg` : 'https://chainlist.org/unknown-logo.png'"
+                alt="" class="icon">
+              <div class="chain-name">{{ item.name }}</div>
             </div>
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path fill-rule="evenodd" clip-rule="evenodd" d="M13.7491 5.65717C14.042 5.95006 14.042 6.42494 13.7491 6.71783L8.12408 12.3428C7.83119 12.6357 7.35631 12.6357 7.06342 12.3428L4.25092 9.53033C3.95803 9.23744 3.95803 8.76256 4.25092 8.46967C4.54381 8.17678 5.01869 8.17678 5.31158 8.46967L7.59375 10.7518L12.6884 5.65717C12.9813 5.36428 13.4562 5.36428 13.7491 5.65717Z" fill="#375CFF"/>
+              <path fill-rule="evenodd" clip-rule="evenodd"
+                d="M13.7491 5.65717C14.042 5.95006 14.042 6.42494 13.7491 6.71783L8.12408 12.3428C7.83119 12.6357 7.35631 12.6357 7.06342 12.3428L4.25092 9.53033C3.95803 9.23744 3.95803 8.76256 4.25092 8.46967C4.54381 8.17678 5.01869 8.17678 5.31158 8.46967L7.59375 10.7518L12.6884 5.65717C12.9813 5.36428 13.4562 5.36428 13.7491 5.65717Z"
+                fill="#375CFF" />
             </svg>
           </div>
         </div>
@@ -127,7 +137,7 @@ watch(() => store.state.activatedId, (val) => {
       </div>
       <div v-else class="btn" @click="openOT">Open In Jetable OS</div>
     </div>
-    
+
   </div>
 </template>
 <style lang="scss" scoped>
@@ -136,21 +146,26 @@ watch(() => store.state.activatedId, (val) => {
   height: 64px;
   border-bottom: 1px solid rgb(239, 239, 245);
   box-sizing: border-box;
+
   .logo {
     flex: 1;
     height: 100%;
+
     img {
       height: 92px;
       height: auto;
     }
+
     span {
       font-size: 12px;
       margin-left: 12px;
     }
   }
+
   .menu {
     flex: 1;
     justify-content: flex-end;
+
     .menu-item {
       margin-left: 24px;
       font-size: 14px;
@@ -158,9 +173,11 @@ watch(() => store.state.activatedId, (val) => {
       font-weight: 500;
       color: #262C33;
       cursor: pointer;
+
       &:hover {
         color: #2152Ec;
       }
+
       a {
         text-decoration: none;
         color: inherit;
@@ -168,6 +185,7 @@ watch(() => store.state.activatedId, (val) => {
     }
   }
 }
+
 .btn {
   margin-left: 16px;
   padding: 0 12px;
@@ -185,6 +203,7 @@ watch(() => store.state.activatedId, (val) => {
   justify-content: center;
   font-weight: 600;
 }
+
 .wallet {
   min-width: 150px;
   margin-left: 16px;
@@ -196,37 +215,44 @@ watch(() => store.state.activatedId, (val) => {
   line-height: 18px;
   height: 34px;
   cursor: pointer;
+
   &.wallet-btn {
     &:hover {
       background: rgba(133, 141, 153, 0.3);
     }
   }
+
   .line {
     height: 12px;
     width: 1px;
     margin: 0 12px;
     background: #000;
   }
+
   .avatar {
     margin-right: 6px;
     width: 14px;
     height: 14px;
   }
+
   .address {
     font-weight: 500;
     margin-right: 24px;
   }
+
   .icon {
     width: 20px;
     height: 20px;
     border-radius: 10px;
     margin-right: 6px;
   }
+
   .gas-price {
     img {
       width: 18px;
       height: 18px;
     }
+
     p {
       font-weight: 500;
       font-size: 13px;
@@ -234,13 +260,16 @@ watch(() => store.state.activatedId, (val) => {
       margin-left: 8px;
     }
   }
+
   &.chain-w {
     position: relative;
+
     &:hover {
       .chain-list {
         display: block;
       }
     }
+
     .block {
       position: absolute;
       top: 34px;
@@ -249,6 +278,7 @@ watch(() => store.state.activatedId, (val) => {
       height: 10px;
       font-size: 0;
     }
+
     .chain-list {
       display: none;
       position: absolute;
@@ -265,6 +295,7 @@ watch(() => store.state.activatedId, (val) => {
       padding: 5px;
       box-sizing: border-box;
       z-index: 99;
+
       .chain-item {
         padding: 0 12px;
         height: 34px;
@@ -276,28 +307,34 @@ watch(() => store.state.activatedId, (val) => {
         color: #000;
         position: relative;
         padding-right: 20px;
+
         .chain-name {
           flex: 1;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
         }
+
         &:hover {
           background: rgba(133, 141, 153, 0.15);
         }
+
         &.chain-item-active {
           background: rgba(55, 92, 255, 0.15);
           color: #375CFF;
+
           svg {
             display: inline-block;
           }
         }
+
         img {
           width: 18px;
           height: 18px;
           border-radius: 10px;
           margin-right: 6px;
         }
+
         svg {
           display: none;
           width: 18px;
@@ -306,19 +343,23 @@ watch(() => store.state.activatedId, (val) => {
           position: absolute;
           right: 0;
         }
+
         .rpc-connectivity {
           font-size: 12px;
           color: #63b687;
         }
       }
+
       .add-btn {
         background: rgba(133, 141, 153, 0.3);
         border-radius: 6px;
         height: 34px;
         cursor: pointer;
+
         &:hover {
           background: #375CFF;
         }
+
         span {
           font-weight: 400;
           font-size: 15px;
@@ -328,5 +369,4 @@ watch(() => store.state.activatedId, (val) => {
       }
     }
   }
-}
-</style>
+}</style>

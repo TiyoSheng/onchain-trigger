@@ -31,7 +31,7 @@ const init = async () => {
   // let response = await fetch('https://tokens.coingecko.com/uniswap/all.json');
   // let tokenListJSON = await response.json()
   // let tokens = tokenListJSON.tokens
-  console.log('isV2',isV2)
+  console.log('isV2', isV2)
   if (!isV2) {
     setLs('isV2', true)
     setLs('triggers', [])
@@ -56,6 +56,4 @@ const init = async () => {
   </n-config-provider>
 </template>
 
-<style lang="scss" scoped>
-
-</style>
+<style lang="scss" scoped></style>

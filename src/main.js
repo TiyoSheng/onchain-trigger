@@ -27,11 +27,13 @@ VMdPreview.use(githubTheme, {
   Hljs: hljs,
 });
 
-import { create, NButton, NLayout, NLayoutHeader, NLayoutFooter, NH2, NLayoutSider,
+import {
+  create, NButton, NLayout, NLayoutHeader, NLayoutFooter, NH2, NLayoutSider,
   NAnchor, NAnchorLink, NMessageProvider, NConfigProvider, NDialogProvider, NInput,
   NFormItem, NModal, NPopconfirm, NPopover, NSelect, NSpin, NDivider, NDatePicker,
   NRadioGroup, NRadioButton, NAffix, NEmpty, NCard, NGrid, NGridItem, NResult, NInputNumber,
-  NCountdown, NCollapse, NCollapseItem } from 'naive-ui'
+  NCountdown, NCollapse, NCollapseItem
+} from 'naive-ui'
 const naive = create({
   components: [NButton, NLayout, NLayoutHeader, NLayoutFooter, NH2, NLayoutSider,
     NAnchor, NAnchorLink, NMessageProvider, NConfigProvider, NDialogProvider, NInput,

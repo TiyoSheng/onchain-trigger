@@ -24,31 +24,32 @@ const getTrigger = (id) => {
 </script>
 <template>
   <div class="playground">
-      <Nav />
-      <div class="content">
-        <n-spin :show="showSpin">
-          <div class="title">Select a template.</div>
-          <div class="sub-title">Jumpstart your trigger with our pre-built solutions.</div>
-          <n-grid :x-gap="14" :y-gap="8" :cols="4">
-            <n-grid-item v-for="item in triggerList" :key="item.trigger_id">
-              <div class="card" @click="getTrigger(item.trigger_id)">
-                <div class="cover-img">
-                  <img v-if="item.cover" :src="item.cover" alt="">
-                  <div v-else class="cover flex-center-center">Trigger</div>
-                </div>
-                <div class="card-title">{{item.name}}</div>
-                <p class="card-note">{{item.note}}</p>
+    <Nav />
+    <div class="content">
+      <n-spin :show="showSpin">
+        <div class="title">Select a template.</div>
+        <div class="sub-title">Jumpstart your trigger with our pre-built solutions.</div>
+        <n-grid :x-gap="14" :y-gap="8" :cols="4">
+          <n-grid-item v-for="item in triggerList" :key="item.trigger_id">
+            <div class="card" @click="getTrigger(item.trigger_id)">
+              <div class="cover-img">
+                <img v-if="item.cover" :src="item.cover" alt="">
+                <div v-else class="cover flex-center-center">Trigger</div>
               </div>
-            </n-grid-item>
-          </n-grid>
-        </n-spin>
-      </div>
+              <div class="card-title">{{ item.name }}</div>
+              <p class="card-note">{{ item.note }}</p>
+            </div>
+          </n-grid-item>
+        </n-grid>
+      </n-spin>
+    </div>
   </div>
 </template>
 <style lang="scss" scoped>
 .playground {
   height: 100vh;
 }
+
 .content {
   padding: 24px;
   box-sizing: border-box;
@@ -59,11 +60,13 @@ const getTrigger = (id) => {
   bottom: 0;
   max-width: 1298px;
   margin: auto;
+
   .title {
     font-size: 40px;
     font-weight: 600;
     color: #000;
   }
+
   .sub-title {
     font-size: 14px;
     line-height: 16px;
@@ -71,6 +74,7 @@ const getTrigger = (id) => {
     margin-bottom: 96px;
     margin-top: 8px;
   }
+
   .card {
     border: 1px solid rgb(239, 239, 245);
     border-radius: 8px;
@@ -79,19 +83,23 @@ const getTrigger = (id) => {
     padding-bottom: 24px;
     box-sizing: border-box;
     cursor: pointer;
+
     &:hover {
-      box-shadow: 0 8px 30px rgba(0,0,0,.12);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, .12);
     }
+
     .cover-img {
       width: 100%;
       height: 180px;
       overflow: hidden;
       border-radius: 8px 8px 0 0;
+
       img {
         width: 100%;
         height: 100%;
         object-fit: cover;
       }
+
       .cover {
         width: 100%;
         height: 100%;
@@ -101,6 +109,7 @@ const getTrigger = (id) => {
         font-size: 36px;
       }
     }
+
     .card-title {
       font-size: 14px;
       font-weight: 600;
@@ -113,6 +122,7 @@ const getTrigger = (id) => {
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+
     .card-note {
       overflow: hidden;
       text-overflow: ellipsis;
@@ -126,5 +136,4 @@ const getTrigger = (id) => {
       padding-right: 16px;
     }
   }
-}
-</style>
+}</style>

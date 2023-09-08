@@ -8,7 +8,8 @@
       <div class="input">
         <input type="password" placeholder="Type your password" v-model="password">
       </div>
-      <div :class="['btn', 'flex-center-center', password && email ? 'btn-activated' : '']" @click="startFun">Create Account</div>
+      <div :class="['btn', 'flex-center-center', password && email ? 'btn-activated' : '']" @click="startFun">Create
+        Account</div>
       <div class="hint">
         <router-link to="/login">Already have an account? Log in</router-link>
       </div>
@@ -29,7 +30,7 @@ export default {
     const password = ref('')
     const type = ref(0)
     const loginFun = () => {
-      login({email: email.value, password: password.value}).then(res => {
+      login({ email: email.value, password: password.value }).then(res => {
         console.log(res)
         if (res.code == 0) {
           localStorage.setItem('token', res.access_token)
@@ -40,7 +41,7 @@ export default {
       })
     }
     const registerFun = () => {
-      regist({email: email.value, password: password.value}).then(res => {
+      regist({ email: email.value, password: password.value }).then(res => {
         console.log(res)
         if (res.code == 0) {
           loginFun()
@@ -67,11 +68,13 @@ export default {
 .login {
   height: calc(100vh - 60px);
   width: 100vw;
+
   .login-from {
     width: 100%;
     height: 100%;
     flex-direction: column;
   }
+
   .title {
     font-weight: 500;
     font-size: 30px;
@@ -79,9 +82,11 @@ export default {
     color: #262C33;
     text-align: center;
   }
+
   .input {
     text-align: center;
     margin-top: 32px;
+
     input {
       border: none;
       background: none;
@@ -96,11 +101,13 @@ export default {
       padding: 0 24px;
       box-sizing: border-box;
       outline: none;
+
       &:focus {
         border-color: #2152EC;
       }
     }
   }
+
   .btn {
     margin-top: 32px;
     width: 390px;
@@ -112,14 +119,17 @@ export default {
     line-height: 19px;
     color: #FFFFFF;
     cursor: no-drop;
+
     &.btn-activated {
       background: #2152EC;
       cursor: pointer;
+
       &:hover {
         background: #426DF4;
       }
     }
   }
+
   .hint {
     width: 390px;
     font-size: 15px;
@@ -130,14 +140,15 @@ export default {
     color: #4C4F53;
     margin-top: 16px;
     font-weight: 300;
+
     a {
       color: #4C4F53;
       text-decoration: none;
+
       &:hover {
         cursor: pointer;
         text-decoration: underline;
       }
     }
   }
-}
-</style>
+}</style>

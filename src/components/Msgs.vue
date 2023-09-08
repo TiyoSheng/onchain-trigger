@@ -21,7 +21,7 @@ const activatedId = ref('')
 const msgsRef = ref(null)
 const msgs = ref([])
 const params = ref([])
-const triggerData = ref({triggers: []})
+const triggerData = ref({ triggers: [] })
 
 let contractData = []
 let interval = null
@@ -106,7 +106,7 @@ const filterFun = (args, filters) => {
         val = param.value
       }
       console.log(argsValue, val, filter.condition)
-      switch(filter.condition) {
+      switch (filter.condition) {
         case '$gt':
           if (!(+argsValue > +val)) {
             r = false
@@ -151,7 +151,7 @@ const filterFun = (args, filters) => {
 const runFilter = (keyValue, val, condition) => {
   let r = true
   console.log(keyValue, val, condition)
-  switch(condition) {
+  switch (condition) {
     case '$lt':
       if (!((+keyValue) < (+val))) {
         r = false
@@ -301,13 +301,13 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
         dataStr = dataStr.substr(0, dataStr.lastIndexOf('&'));
         item.url = item.url + '?' + dataStr;
       }
-      const response = await fetch(item.url, {headers});
+      const response = await fetch(item.url, { headers });
       res = await response.json()
       console.log(res, response)
     } else {
       const response = await fetch(item.url, {
         method: item.method,
-        headers: Object.assign({'Content-Type': 'application/json'}, headers),
+        headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
         body: JSON.stringify(body)
       })
       res = await response.json()
@@ -429,9 +429,9 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
     try {
       console.log(p)
       res = await C[item.functionName](...p)
-        if (res._isBigNumber) {
-          res = ethers.utils.formatUnits(res, 0)
-        }
+      if (res._isBigNumber) {
+        res = ethers.utils.formatUnits(res, 0)
+      }
       if (res.hash) {
         let tx = await res.wait()
         res = tx
@@ -536,7 +536,7 @@ const gasFilter = (conditions, gasPrice) => {
     }
     value = value * 1
     gasPrice = gasPrice * 1
-    switch(condition) {
+    switch (condition) {
       case '$lt':
         if (!(gasPrice < value)) {
           r = false
@@ -705,7 +705,7 @@ const onUni = async (index) => {
       if (path[trigger.uniType].toLocaleLowerCase() == getParam(trigger.daiAddress).toLocaleLowerCase()) {
         let msg = {
           name: trigger.name,
-          result: {'钱包地址': getParam(trigger.address), '方向': trigger.uniType == 0 ? '卖出' : '买入', '代币': getParam(trigger.daiAddress), '数量': trigger.uniType == 0 ? inputData.amountIn : inputData.amounOut},
+          result: { '钱包地址': getParam(trigger.address), '方向': trigger.uniType == 0 ? '卖出' : '买入', '代币': getParam(trigger.daiAddress), '数量': trigger.uniType == 0 ? inputData.amountIn : inputData.amounOut },
           type: 'trigger',
         }
         msgs.value.push(msg)
@@ -906,8 +906,8 @@ const on = (index) => {
   }, async (res) => {
     try {
       const iface = new ethers.utils.Interface(contractAbi)
-      let args = iface.decodeFunctionData(res.input.slice(0,10), res.input)
-      let functionName = iface.getFunction(res.input.slice(0,10)).name
+      let args = iface.decodeFunctionData(res.input.slice(0, 10), res.input)
+      let functionName = iface.getFunction(res.input.slice(0, 10)).name
       if (functionName == trigger.functionName && filterFun(args, trigger.filter) && res.from.toLocaleLowerCase() != triggerData.value.wallet.address.toLocaleLowerCase()) {
         let msg = {
           name: trigger.name,
@@ -929,7 +929,7 @@ const on = (index) => {
             let list = JSON.parse(JSON.stringify(trigger.handdleList))
             handdleFun(list, res, args, 0)
           }
-          
+
         } catch (error) {
           console.log(error)
         }
@@ -968,7 +968,7 @@ watch(() => store.state.activatedId, (val) => {
     triggerData.value = JSON.parse(JSON.stringify(trigger))
   }
   off()
-}, {immediate: true})
+}, { immediate: true })
 
 watch(() => store.state.triggers, (val) => {
   if (val && store.state.activatedId) {
@@ -977,7 +977,7 @@ watch(() => store.state.triggers, (val) => {
     msgs.value = trigger.messages || []
     triggerData.value = JSON.parse(JSON.stringify(trigger))
   }
-}, {immediate: true, deep: true})
+}, { immediate: true, deep: true })
 
 watch(() => msgs.value, (val) => {
   if (val) {
@@ -985,27 +985,29 @@ watch(() => msgs.value, (val) => {
       msgsRef.value.scrollTop = msgsRef.value.scrollHeight
     }, 50);
   }
-}, {immediate: true, deep: true})
+}, { immediate: true, deep: true })
 </script>
 <template>
   <div class="msgs" ref="msgsRef">
     <div class="msg-list">
       <div class="msg-item" v-for="(item, index) in msgs" :key="index">
-        <div class="msg-title">{{getType(item.type)}}-{{item.name}}</div>
+        <div class="msg-title">{{ getType(item.type) }}-{{ item.name }}</div>
         <JsonViewer :value="item.result" />
       </div>
     </div>
     <div class="ft flex-center-sb">
       <div class="ft-l flex-center">
-        <div class="status" :style="{background: triggerData.status == 'on' ? '#31C48D' : '#F98080'}"></div>
-        <div class="status-text">{{triggerData.status == 'on' ? '监听中' : '未监听'}}</div>
+        <div class="status" :style="{ background: triggerData.status == 'on' ? '#31C48D' : '#F98080' }"></div>
+        <div class="status-text">{{ triggerData.status == 'on' ? '监听中' : '未监听' }}</div>
         <div class="line"></div>
-        <div>日志数量：{{msgs.length}}</div>
+        <div>日志数量：{{ msgs.length }}</div>
       </div>
       <div class="ft-r flex-center">
         <div class="ft-btn-clear flex-center-center" @click="clear">Clear</div>
-        <div v-show="triggerData.status == 'on'" class="ft-btn flex-center-center" style="background:#F98080" @click="off">停止监听</div>
-        <div v-show="triggerData.status != 'on'" class="ft-btn flex-center-center" style="background:#2152EC" @click="runOn">立即监听</div>
+        <div v-show="triggerData.status == 'on'" class="ft-btn flex-center-center" style="background:#F98080"
+          @click="off">停止监听</div>
+        <div v-show="triggerData.status != 'on'" class="ft-btn flex-center-center" style="background:#2152EC"
+          @click="runOn">立即监听</div>
       </div>
     </div>
   </div>
@@ -1022,28 +1024,32 @@ watch(() => msgs.value, (val) => {
   position: relative;
   display: flex;
   flex-direction: column;
+
   .msg-list {
     flex: 1;
     margin-bottom: 10px;
   }
+
   .msg-item {
     background: rgb(41, 44, 51);
     padding: 16px;
     box-sizing: border-box;
     margin-bottom: 16px;
     border-radius: 8px;
+
     .msg-title {
       font-size: 12px;
-      color:rgba(255, 255, 255, 0.9);
+      color: rgba(255, 255, 255, 0.9);
       margin-bottom: 8px;
       margin-bottom: 12px;
     }
   }
 }
+
 .ft {
   width: 100%;
   height: 52px;
-  flex:  0 0 52px;
+  flex: 0 0 52px;
   position: sticky;
   bottom: 0;
   background: rgba(255, 255, 255, 0.9);
@@ -1055,6 +1061,7 @@ watch(() => msgs.value, (val) => {
   color: #262C33;
   padding: 0 16px;
   box-sizing: border-box;
+
   .status {
     width: 10px;
     height: 10px;
@@ -1062,12 +1069,14 @@ watch(() => msgs.value, (val) => {
     margin-right: 4px;
     background: #F98080;
   }
+
   .line {
     width: 1px;
     height: 14px;
     background: #C9D1DC;
     margin: 0 12px;
   }
+
   .ft-btn-clear {
     width: 56px;
     height: 28px;
@@ -1075,6 +1084,7 @@ watch(() => msgs.value, (val) => {
     border-radius: 6px;
     cursor: pointer;
   }
+
   .ft-btn {
     background: #F98080;
     border-radius: 6px;
@@ -1084,5 +1094,4 @@ watch(() => msgs.value, (val) => {
     color: #FCFCFC;
     cursor: pointer;
   }
-}
-</style>
+}</style>
