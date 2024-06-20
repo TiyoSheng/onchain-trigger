@@ -81,7 +81,7 @@ export const defaultChains = [{
   name: 'Ethereum Mainnet',
   alchemyKey: 'jN8fV_NMTGZqSGr89H1--BhcSK_2DS7B',
   network: 'eth-mainnet',
-  rpcUrl: "https://mainnet.infura.io/v3/f2d8df49b1da46f49db541f7e66a74bb",
+  rpcUrl: "https://mainnet.infura.io/v3/d10c4ff706c546c485a8d9d92d1e5096",
   explorer: 'https://etherscan.io',
   symbol: 'ETH',
 }, {
@@ -89,7 +89,7 @@ export const defaultChains = [{
   name: 'Ethereum Goerli',
   alchemyKey: 'xQr0n2BqF1Hkkuw5_0YiEXeyQdSYoW1u',
   network: 'eth-goerli',
-  rpcUrl: "https://goerli.infura.io/v3/f2d8df49b1da46f49db541f7e66a74bb",
+  rpcUrl: "https://goerli.infura.io/v3/d10c4ff706c546c485a8d9d92d1e5096",
   explorer: 'https://goerli.etherscan.io',
   symbol: 'ETH',
 }, {
