@@ -5,7 +5,7 @@ import infura from '../assets/images/infura.png'
 export const rpcs = [{
   chainId: 1,
   infuraRpc: {
-    url: 'https://mainnet.infura.io/v3/f2d8df49b1da46f49db541f7e66a74bb',
+    url: 'https://mainnet.infura.io/v3/d10c4ff706c546c485a8d9d92d1e5096',
     name: 'Infura',
     logo: infura
   },
@@ -22,7 +22,7 @@ export const rpcs = [{
 }, {
   chainId: 5,
   infuraRpc: {
-    url: 'https://goerli.infura.io/v3/f2d8df49b1da46f49db541f7e66a74bb',
+    url: 'https://goerli.infura.io/v3/d10c4ff706c546c485a8d9d92d1e5096',
     name: 'Infura',
     logo: infura
   },
