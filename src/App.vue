@@ -1,8 +1,8 @@
 <script setup>
-import { onBeforeMount } from 'vue'
+import { onBeforeMount, watch } from 'vue'
 import { getLs, setLs } from './libs/storage'
 import { useGlobalStore } from './hooks/globalStore'
-const { setTriggrts, setContracts, setWallet, setActivatedId, setTokens, setIsIframe } = useGlobalStore()
+const { store, setTriggrts, setContracts, setWallet, setActivatedId, setTokens, setIsIframe, setNonce } = useGlobalStore()
 // import { quote } from './libs/quote'
 
 const themeOverrides = {
@@ -44,6 +44,21 @@ const init = async () => {
   setActivatedId(activatedId)
   // quote()
 }
+
+watch(() => store.state.activatedId, async (val) => {
+  if (val) {
+    // 获取trigger
+    const trigger = store.state.triggers.find(item => item.id === val)
+    setNonce(trigger)
+  }
+}, {immediate: true})
+
+watch(() => store.state.triggers, async (val) => {
+  if (store.state.activatedId) {
+    const trigger = store.state.triggers.find(item => item.id === store.state.activatedId)
+    setNonce(trigger)
+  }
+}, {immediate: true, deep: true})
 
 </script>
 <template>

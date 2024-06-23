@@ -127,7 +127,8 @@ const handleOk = () => {
         contractId: e.contractId,
         functionName: e.functionName,
         args: e.args,
-        filters: e.filters
+        filters: e.filters,
+        sendInfo: e.sendInfo
       }
     } else if (e.type == 'http') {
       return {
@@ -182,12 +183,29 @@ const functionChange = (index) => {
   let handdle = flowItem.value.handdleList[index]
   let fun = getAbi(handdle.contractId).find(item => item.name === handdle.functionName)
   handdle.args = {}
+  handdle.sendInfo = {}
   fun.inputs.forEach(item => {
     handdle.args[item.name] = {
       value: '',
       type: ''
     }
   })
+  if (fun.stateMutability == 'nonpayable' || fun.stateMutability == 'payable') {
+    handdle.sendInfo.gasPrice = {
+      value: '',
+      type: ''
+    }
+    handdle.sendInfo.gasLimit = {
+      value: '',
+      type: ''
+    }
+  }
+  if (fun.stateMutability == 'payable') {
+      handdle.sendInfo.value = {
+        value: '',
+        type: ''
+      }
+    }
 }
 
 const argsChange = (key, val, index) => {
@@ -215,6 +233,7 @@ const addHanddle = () => {
     contractId: '',
     functionName: '',
     args: {},
+    sendInfo: {},
     headers: [],
     params: [],
     url: '',
@@ -318,6 +337,7 @@ const radioUpdate = (index) => {
   handdle.functionName = ''
   handdle.abi = []
   handdle.args = {}
+  handdle.sendInfo = {}
   handdle.url = ''
   handdle.method = ''
   handdle.headers = []
@@ -542,6 +562,17 @@ defineExpose({
             <div>
               <ParamsSelect :value="val.value" :params="getParams(index)"
                 @update="(e) => flowItem.handdleList[index].args[key] = Object.assign(val, e)" @addParamsSuccess="(e) => params = e">
+              </ParamsSelect>
+            </div>
+            <n-input style="margin-left:12px" v-if="val.type == 'http'" v-model:value="val.var" placeholder="输入返回值变量名" autocomplete="off" />
+          </div>
+        </div>
+        <div v-if="item.sendInfo">
+          <div v-for="(val, key, i) in item.sendInfo" :key="i" class="input-item flex-center" >
+            <p>{{key}} (gwei)：</p>
+            <div>
+              <ParamsSelect :value="val.value" :params="getParams(index)"
+                @update="(e) => flowItem.handdleList[index].sendInfo[key] = Object.assign(val, e)" @addParamsSuccess="(e) => params = e">
               </ParamsSelect>
             </div>
             <n-input style="margin-left:12px" v-if="val.type == 'http'" v-model:value="val.var" placeholder="输入返回值变量名" autocomplete="off" />

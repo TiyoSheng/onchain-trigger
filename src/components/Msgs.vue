@@ -12,7 +12,7 @@ import { defaultChains } from '../libs/chains'
 import { quote } from '../libs/quote'
 // import { execute } from '../libs/pool'
 import { Alchemy, Network, AlchemySubscription } from "alchemy-sdk"
-const { store, setTriggrts, setCountdownDuration, setGasPrice } = useGlobalStore()
+const { store, setTriggrts, setCountdownDuration, setGasPrice, setNonce } = useGlobalStore()
 const { getProvider } = useNetwork()
 const { resetGlobalParams } = useUtils()
 const message = useMessage()
@@ -189,6 +189,47 @@ const runFilter = (keyValue, val, condition) => {
       break
   }
   return r
+}
+
+const getVal = (item) => {
+  console.log(item)
+  let val = item.value
+  if (item.type == 'param') {
+    for (let i = 0; i < paramList.length; i++) {
+      let param = paramList[i]
+      if (param.key == item.value && param.type == 'param') {
+        val = param.value
+      }
+    }
+  } else if (item.type == 'http') {
+    for (let i = 0; i < paramList.length; i++) {
+      let param = paramList[i]
+      if (param.key == item.value && param.type == 'http') {
+        val = param.value[item.var]
+      }
+    }
+  } else if (item.type == 'contract') {
+    for (let i = 0; i < paramList.length; i++) {
+      let param = paramList[i]
+      if (param.key == item.value && param.type == 'contract') {
+        val = param.value
+      }
+    }
+  }
+  return val
+}
+
+const getParams = (inputs, item) => {
+  let p = []
+  inputs.forEach(e => {
+    if (item.args[e.name]) {
+      let val = getVal(item.args[e.name])
+      p.push(val)
+    } else {
+      p.push('')
+    }
+  })
+  return p
 }
 
 const applyFun = async (list, paramList, time, alchemyRes) => {
@@ -393,42 +434,31 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
     let inputs = getContract(item.contractId, 'input', item.functionName)
     let C = await setContract(item.contractId)
     let p = []
+    let sendInfo = {}
     let res = null
     if (inputs) {
-      inputs.forEach(e => {
-        if (item.args[e.name]) {
-          let val = item.args[e.name].value
-          if (item.args[e.name].type == 'param') {
-            for (let i = 0; i < paramList.length; i++) {
-              let param = paramList[i]
-              if (param.key == item.args[e.name].value && param.type == 'param') {
-                val = param.value
-              }
-            }
-          } else if (item.args[e.name].type == 'http') {
-            for (let i = 0; i < paramList.length; i++) {
-              let param = paramList[i]
-              if (param.key == item.args[e.name].value && param.type == 'http') {
-                val = param.value[item.args[e.name].var]
-              }
-            }
-          } else if (item.args[e.name].type == 'contract') {
-            for (let i = 0; i < paramList.length; i++) {
-              let param = paramList[i]
-              if (param.key == item.args[e.name].value && param.type == 'contract') {
-                val = param.value
-              }
-            }
-          }
-          p.push(val)
-        } else {
-          p.push('')
-        }
-      })
+      p = getParams(inputs, item)
+    }
+    if (item.sendInfo) {
+      const gasLimit = item.sendInfo.gasLimit ? getVal(item.sendInfo.gasLimit) : null
+      const gasPrice = item.sendInfo.gasPrice ? getVal(item.sendInfo.gasPrice) : null
+      const value = item.sendInfo.value ? getVal(item.sendInfo.value) : null
+      sendInfo = {
+        nonce: store.state.nonce,
+      }
+      if (gasLimit) {
+        sendInfo.gasLimit = gasLimit
+      }
+      if (gasPrice) {
+        sendInfo.gasPrice = gasPrice
+      }
+      if (value) {
+        sendInfo.value = value
+      }
     }
     try {
       console.log(p)
-      res = await C[item.functionName](...p)
+      res = await C[item.functionName](...p, sendInfo)
       if (res._isBigNumber) {
         res = ethers.utils.formatUnits(res, 0)
       }
@@ -642,6 +672,7 @@ const onEvent = async (trigger) => {
   let wallet = new ethers.Wallet(triggerData.value.wallet?.privateKey, provider)
   let contract = await new ethers.Contract(cd.address, cd.abi, wallet)
   let abi = JSON.parse(cd.abi)
+  triggerData.value.status = 'on'
   abi.forEach(e => {
     if (e.name == functionName) {
       let inputs = e.inputs
@@ -847,6 +878,7 @@ const getTriggerData = () => {
 const runOn = () => {
   off()
   let triggers = triggerData.value.triggers
+  console.log(triggers)
   triggers.forEach((e, index) => {
     on(index)
   })
@@ -958,6 +990,10 @@ const clear = async () => {
   setTrigger(triggerData.value)
 }
 
+const resetNonce = async () => {
+  setNonce(triggerData.value)
+}
+
 watch(() => store.state.activatedId, (val) => {
   if (val) {
     activatedId.value = val
@@ -1003,6 +1039,7 @@ watch(() => msgs.value, (val) => {
         <div>日志数量：{{ msgs.length }}</div>
       </div>
       <div class="ft-r flex-center">
+        <div class="ft-btn-clear flex-center-center" @click="resetNonce">刷新Nonce</div>
         <div class="ft-btn-clear flex-center-center" @click="clear">Clear</div>
         <div v-show="triggerData.status == 'on'" class="ft-btn flex-center-center" style="background:#F98080"
           @click="off">停止监听</div>
@@ -1078,17 +1115,18 @@ watch(() => msgs.value, (val) => {
   }
 
   .ft-btn-clear {
-    width: 56px;
     height: 28px;
     border: 1px solid #C9D1DC;
     border-radius: 6px;
     cursor: pointer;
+    padding: 0 12px;
+    box-sizing: border-box;
+    margin-right: 12px;
   }
 
   .ft-btn {
     background: #F98080;
     border-radius: 6px;
-    margin-left: 12px;
     width: 76px;
     height: 28px;
     color: #FCFCFC;
