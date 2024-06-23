@@ -961,7 +961,6 @@ const on = (index) => {
             let list = JSON.parse(JSON.stringify(trigger.handdleList))
             handdleFun(list, res, args, 0)
           }
-
         } catch (error) {
           console.log(error)
         }
