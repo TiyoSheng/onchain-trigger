@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useGlobalStore } from '../../hooks/globalStore'
 import { useMessage } from "naive-ui"
 
@@ -10,7 +10,12 @@ const emit = defineEmits(['success'])
 
 const showAddModal = ref(false)
 const isEdit = ref(false)
-const contractData = ref({chain: {chainId: 5, name: 'Goerli'}})
+const contractData = ref({})
+const chainId = ref('')
+const chainList = [
+  { label: 'Mainnet', value: 1, data: {chainId: 1, name: 'Mainnet'} },
+  { label: 'Goerli', value: 5, data: {chainId: 5, name: 'Goerli'} },
+]
 const handleCreatedContractData = async () => {
   if (!contractData.value.name) {
     message.error('请输入合约名称')
@@ -49,8 +54,12 @@ const handleCreatedContractData = async () => {
 const cancel = () => {
   showAddModal.value = false
   isEdit.value = false
-  contractData.value= {chain: {chainId: 5, name: 'Goerli'}}
+  contractData.value= {}
 }
+
+watch(() => chainId.value, (val) => {
+  contractData.value.chain = chainList.find(item => item.value === val).data
+})
 defineExpose({
   isEdit,
   showAddModal,
@@ -74,7 +83,8 @@ defineExpose({
         <n-input v-model:value="contractData.address" placeholder="输入合约地址" />
       </n-form-item>
       <n-form-item label="网络：">
-        <n-input v-model:value="contractData.chain.name" disabled />
+        <n-select v-model:value="chainId" :options="chainList" />
+        <!-- <n-input v-model:value="contractData.chain.name" disabled /> -->
       </n-form-item>
       <n-form-item label="合约ABI：">
         <n-input v-model:value="contractData.abi" type="textarea" placeholder="输入abi" />
