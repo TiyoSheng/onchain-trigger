@@ -11,7 +11,7 @@ const emit = defineEmits(['success'])
 const showAddModal = ref(false)
 const isEdit = ref(false)
 const contractData = ref({})
-const chainId = ref('')
+const chainId = ref(null)
 const chainList = [
   { label: 'Mainnet', value: 1, data: {chainId: 1, name: 'Mainnet'} },
   { label: 'Goerli', value: 5, data: {chainId: 5, name: 'Goerli'} },
@@ -83,7 +83,7 @@ defineExpose({
         <n-input v-model:value="contractData.address" placeholder="输入合约地址" />
       </n-form-item>
       <n-form-item label="网络：">
-        <n-select v-model:value="chainId" :options="chainList" />
+        <n-select v-model:value="chainId" :options="chainList" placeholder="选择网络" />
         <!-- <n-input v-model:value="contractData.chain.name" disabled /> -->
       </n-form-item>
       <n-form-item label="合约ABI：">
