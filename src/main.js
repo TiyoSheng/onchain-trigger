@@ -32,13 +32,13 @@ import {
   NAnchor, NAnchorLink, NMessageProvider, NConfigProvider, NDialogProvider, NInput,
   NFormItem, NModal, NPopconfirm, NPopover, NSelect, NSpin, NDivider, NDatePicker,
   NRadioGroup, NRadioButton, NAffix, NEmpty, NCard, NGrid, NGridItem, NResult, NInputNumber,
-  NCountdown, NCollapse, NCollapseItem
+  NCountdown, NCollapse, NCollapseItem, NPopselect
 } from 'naive-ui'
 const naive = create({
   components: [NButton, NLayout, NLayoutHeader, NLayoutFooter, NH2, NLayoutSider,
     NAnchor, NAnchorLink, NMessageProvider, NConfigProvider, NDialogProvider, NInput,
     NFormItem, NModal, NPopconfirm, NPopover, NSelect, NSpin, NDivider, NDatePicker,
     NRadioGroup, NRadioButton, NAffix, NEmpty, NCard, NGrid, NGridItem, NResult, NInputNumber,
-    NCountdown, NCollapseItem, NCollapse]
+    NCountdown, NCollapseItem, NCollapse, NPopselect]
 })
 createApp(App).use(naive).use(VMdEditor).use(VMdPreview).use(router).mount('#app')
