@@ -212,7 +212,8 @@ const handleOk = () => {
     data = {
       type: 'event',
       contractId: trigger.contractId,
-      functionName: trigger.functionName
+      functionName: trigger.functionName,
+      filter: trigger.filter
     }
   } else if (trigger.type == 'uni') {
     if (!trigger.address.value || !trigger.daiAddress.value) {
@@ -407,6 +408,35 @@ defineExpose({
           <n-select v-model:value="triggerItem.functionName" placeholder="选择Event"
             :options="getAbi(triggerItem?.contractId, 'event')" filterable label-field="name" value-field="name" />
         </n-form-item>
+        <n-form-item label="过滤逻辑：">
+        <div style="width: 100%">
+          <div v-for="(filter, index) in triggerItem.filter" class="flex-center filter-item">
+            <n-select v-model:value="filter.name" placeholder="选择过滤参数"
+              :options="getFitlerParams(triggerItem?.contractId, triggerItem?.functionName)" label-field="label"
+              value-field="value" style="flex:0 0 180px" />
+            <n-select v-model:value="filter.condition" placeholder="选择过滤条件" :options="filterConditions"
+              label-field="label" value-field="value" style="margin: 0 12px;width: 100px;flex:0 0 100px" />
+            <ParamsSelect :value="filter.value" :params="params" @update="(e) => {triggerItem.filter[index].value = e.value; triggerItem.filter[index].type = e.type}"
+              @addParamsSuccess="addParamsSuccess">
+            </ParamsSelect>
+            <div class="del" @click="delFilter(index)">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9.33325 6.66663L9.33325 11.3333" stroke="#4C4F53" stroke-linecap="round"
+                  stroke-linejoin="round" />
+                <path d="M6.66675 6.66663L6.66675 11.3333" stroke="#4C4F53" stroke-linecap="round"
+                  stroke-linejoin="round" />
+                <path d="M12 4H4V13.3333C4 13.7015 4.29848 14 4.66667 14H11.3333C11.7015 14 12 13.7015 12 13.3333V4Z"
+                  stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M2.66675 4H13.3334" stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round" />
+                <path
+                  d="M9.99992 2H5.99992C5.63173 2 5.33325 2.29848 5.33325 2.66667V4H10.6666V2.66667C10.6666 2.29848 10.3681 2 9.99992 2Z"
+                  stroke="#4C4F53" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </div>
+          </div>
+          <div class="btn" @click="addFilter">添加过滤条件</div>
+        </div>
+      </n-form-item>
       </div>
       <div v-if="triggerItem.type == 'uni'">
         <n-form-item label="方向判断：">
@@ -550,7 +580,7 @@ defineExpose({
               value-field="value" style="flex:0 0 180px" />
             <n-select v-model:value="filter.condition" placeholder="选择过滤条件" :options="filterConditions"
               label-field="label" value-field="value" style="margin: 0 12px;width: 100px;flex:0 0 100px" />
-            <ParamsSelect :value="filter.value" :params="params" @update="(e) => triggerItem.filter[index] = e"
+            <ParamsSelect :value="filter.value" :params="params" @update="(e) => {triggerItem.filter[index].value = e.value; triggerItem.filter[index].type = e.type}"
               @addParamsSuccess="addParamsSuccess">
             </ParamsSelect>
             <div class="del" @click="delFilter(index)">

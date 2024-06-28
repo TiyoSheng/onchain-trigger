@@ -191,7 +191,7 @@ const runFilter = (keyValue, val, condition) => {
   return r
 }
 
-const getVal = (item) => {
+const getVal = (item, paramList) => {
   console.log(item)
   let val = item.value
   if (item.type == 'param') {
@@ -219,11 +219,11 @@ const getVal = (item) => {
   return val
 }
 
-const getParams = (inputs, item) => {
+const getParams = (inputs, item, paramList) => {
   let p = []
   inputs.forEach(e => {
     if (item.args[e.name]) {
-      let val = getVal(item.args[e.name])
+      let val = getVal(item.args[e.name], paramList)
       p.push(val)
     } else {
       p.push('')
@@ -437,7 +437,7 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
     let sendInfo = {}
     let res = null
     if (inputs) {
-      p = getParams(inputs, item)
+      p = getParams(inputs, item, paramList)
     }
     if (item.sendInfo) {
       const gasLimit = item.sendInfo.gasLimit ? getVal(item.sendInfo.gasLimit) : null
@@ -691,6 +691,12 @@ const onEvent = async (trigger) => {
     msgs.value.push(msg)
     triggerData.value.messages = msgs.value
     setTrigger(triggerData.value)
+
+    //argsData 是args 最后一个元素
+    const argsData = args[args.length - 1]
+    if (trigger.filter && !filterFun(argsData.args, trigger.filter)) {
+      return
+    }
     let paramList = JSON.parse(JSON.stringify(params.value))
     let list = []
     if (trigger.applyType == 'flow') {
