@@ -4,6 +4,7 @@ import { ethers } from 'ethers'
 import { useGlobalStore } from '../hooks/globalStore'
 import { useNetwork } from '../hooks/network'
 import { defaultChains, icons } from '../libs/chains'
+import Tools from './tools/Tools.vue'
 const { store } = useGlobalStore()
 const { networkStore, setChainId, setRpc } = useNetwork()
 
@@ -14,6 +15,7 @@ const loading = ref(false)
 const provider = ref(null)
 const rpcConnectivity = ref([])
 const isOver = ref(false)
+const toolsRef = ref(null)
 
 const openOT = () => {
   window.open(href)
@@ -78,6 +80,7 @@ watch(() => store.state.activatedId, (val) => {
       <span v-if="!href.includes('https://onchain-trigger.jetable.xyz/')">当前是测试环境</span>
     </div>
     <div class="flex-center">
+      <div class="btn" style="width: 80px;font-weight: 400;" @click="toolsRef.showToolsModal = true">换算工具</div>
       <div class="wallet flex-center-sb chain-w" @mouseenter="getRpcConnectivity" @mouseleave="isOver = false">
         <div class="flex-center">
           <img :src="networkStore.state.rpc.logo" alt="" class="icon">
@@ -137,7 +140,7 @@ watch(() => store.state.activatedId, (val) => {
       </div>
       <div v-else class="btn" @click="openOT">Open In Jetable OS</div>
     </div>
-
+    <Tools ref="toolsRef" />
   </div>
 </template>
 <style lang="scss" scoped>
