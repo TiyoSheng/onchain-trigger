@@ -54,7 +54,9 @@ const setWallerSuccess = async (val) => {
 }
 
 const toScan = (address) => {
-  let url = `https://goerli.etherscan.io/address/${address}`
+  const chainId = triggerData.value.chainId
+  const chain = defaultChains.find(item => item.chainId === chainId)
+  const url = `${chain.explorer}/address/${address}`
   window.open(url)
 }
 
