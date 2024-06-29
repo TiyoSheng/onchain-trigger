@@ -683,6 +683,11 @@ const onEvent = async (trigger) => {
   eventContract.push(contract)
   contract.on(functionName, (...args) => {
     console.log('Received event:', args)
+    //argsData 是args 最后一个元素
+    const argsData = args[args.length - 1]
+    if (trigger.filter.length && !filterFun(argsData.args, trigger.filter)) {
+      return
+    }
     let msg = {
       name: functionName,
       result: args,
@@ -691,12 +696,6 @@ const onEvent = async (trigger) => {
     msgs.value.push(msg)
     triggerData.value.messages = msgs.value
     setTrigger(triggerData.value)
-
-    //argsData 是args 最后一个元素
-    const argsData = args[args.length - 1]
-    if (trigger.filter && !filterFun(argsData.args, trigger.filter)) {
-      return
-    }
     let paramList = JSON.parse(JSON.stringify(params.value))
     let list = []
     if (trigger.applyType == 'flow') {
