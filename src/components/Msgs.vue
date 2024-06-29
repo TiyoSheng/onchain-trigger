@@ -1,4 +1,4 @@
-<script setup >
+<script setup>
 import { ref, watch } from 'vue'
 import { JsonViewer } from "vue3-json-viewer"
 import { useMessage } from "naive-ui"
@@ -22,6 +22,8 @@ const msgsRef = ref(null)
 const msgs = ref([])
 const params = ref([])
 const triggerData = ref({ triggers: [] })
+const audioRef = ref(null)
+const openAudio = ref(false)
 
 let contractData = []
 let interval = null
@@ -484,6 +486,9 @@ const applyFun = async (list, paramList, time, alchemyRes) => {
     msgs.value.push(msg)
     triggerData.value.messages = msgs.value
     setTrigger(triggerData.value)
+    if (openAudio.value) {
+      audioRef.value.play()
+    }
   }
   applyFun(list, paramList, time)
 }
@@ -1043,6 +1048,7 @@ watch(() => msgs.value, (val) => {
         <div>日志数量：{{ msgs.length }}</div>
       </div>
       <div class="ft-r flex-center">
+        <div class="ft-btn-clear flex-center-center" @click="openAudio = !openAudio">音效{{ openAudio ? '开' : '关' }}</div>
         <div class="ft-btn-clear flex-center-center" @click="resetNonce">刷新Nonce</div>
         <div class="ft-btn-clear flex-center-center" @click="clear">Clear</div>
         <div v-show="triggerData.status == 'on'" class="ft-btn flex-center-center" style="background:#F98080"
@@ -1051,6 +1057,7 @@ watch(() => msgs.value, (val) => {
           @click="runOn">立即监听</div>
       </div>
     </div>
+    <audio src="/media/y.wav" style="display: none" ref="audioRef"></audio>
   </div>
 </template>
 <style lang="scss" scoped>
@@ -1136,4 +1143,5 @@ watch(() => msgs.value, (val) => {
     color: #FCFCFC;
     cursor: pointer;
   }
-}</style>
+}
+</style>
