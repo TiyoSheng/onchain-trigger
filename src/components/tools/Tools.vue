@@ -34,22 +34,22 @@ const computed = () => {
 
 const computedWei = () => {
   if (eth.value.wei) {
-    eth.value.gwei = ethers.utils.formatUnits(eth.value.wei, 'gwei')
-    eth.value.ethers = ethers.utils.formatUnits(eth.value.wei, 'ether')
+    eth.value.gwei = ethers.utils.formatUnits(eth.value.wei, 'gwei') >= 1 ? Number(ethers.utils.formatUnits(eth.value.wei, 'gwei')).toString() : ethers.utils.formatUnits(eth.value.wei, 'gwei')
+    eth.value.ethers = ethers.utils.formatUnits(eth.value.wei, 'ether') >= 1 ? Number(ethers.utils.formatUnits(eth.value.wei, 'ether')).toString() : ethers.utils.formatUnits(eth.value.wei, 'ether')
   }
 }
 
 const computedGwei = () => {
   if (eth.value.gwei) {
     eth.value.wei = ethers.utils.parseUnits(eth.value.gwei, 'gwei').toString()
-    eth.value.ethers = ethers.utils.formatUnits(eth.value.wei, 'ether')
+    eth.value.ethers = ethers.utils.formatUnits(eth.value.wei, 'ether') >= 1 ? Number(ethers.utils.formatUnits(eth.value.wei, 'ether')).toString() : ethers.utils.formatUnits(eth.value.wei, 'ether')
   }
 }
 
 const computedEth = () => {
   if (eth.value.ethers) {
     eth.value.wei = ethers.utils.parseUnits(eth.value.ethers, 'ether').toString()
-    eth.value.gwei = ethers.utils.formatUnits(eth.value.wei, 'gwei')
+    eth.value.gwei = ethers.utils.formatUnits(eth.value.wei, 'gwei') >= 1 ? Number(ethers.utils.formatUnits(eth.value.wei, 'gwei')).toString() : ethers.utils.formatUnits(eth.value.wei, 'gwei')
   }
 }
 
