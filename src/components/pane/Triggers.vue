@@ -205,7 +205,7 @@ watch(() => store.state.countdownDuration, (val) => {
               </n-popconfirm>
             </div>
           </div>
-          <div class="mt16 sub-title">触发条件 （当前Gas: {{store.state.gasPrice}}）</div>
+          <div class="mt16 sub-title">触发条件 （当前Gas: {{store?.state?.gasPrice}}）</div>
           <div v-for="(condition, index) in item.conditions" :key="index" class="flex-center mt12">
             <div class="fun flex-center">
               <div class="name flex-center">{{getCcondition(condition.condition)}}</div>
@@ -230,7 +230,7 @@ watch(() => store.state.countdownDuration, (val) => {
                 <div class="type">（{{getContract(handdle.contractId, 'type', handdle.functionName)}}）</div>
               </div>
               <div class="mt16 sub-title">参数</div>
-              <div class="params mt12" v-if="Object.keys(handdle.args).length">
+              <div class="params mt12" v-if="Object.keys(handdle.args || {}).length">
                 <div class="params-item flex-center" v-for="(val, key) in handdle.args" :key="key">
                   <div class="params-item-key flex-center">{{key}}</div>
                   <div class="params-item-value flex-center">{{getParamLabel(val, params)}}</div>
@@ -322,7 +322,7 @@ watch(() => store.state.countdownDuration, (val) => {
             <div class="fun flex-center">
               <div class="name flex-center">循环触发</div>
               <div class="function-name flex-center">间隔时间：{{item.interval}} {{getUnit(item.unit)}}</div>
-              <div class="type">（<n-countdown ref="countdownRef" :duration="store.state.countdownDuration" :active="true" />）</div>
+              <div class="type">（<n-countdown ref="countdownRef" :duration="store?.state?.countdownDuration" :active="true" />）</div>
             </div>
           </div>
           
@@ -390,7 +390,7 @@ watch(() => store.state.countdownDuration, (val) => {
                 <div class="type">（{{getContract(handdle.contractId, 'type', handdle.functionName)}}）</div>
               </div>
               <div class="mt16 sub-title">参数</div>
-              <div class="params mt12" v-if="Object.keys(handdle.args).length">
+              <div class="params mt12" v-if="Object.keys(handdle.args || {}).length">
                 <div class="params-item flex-center" v-for="(val, key) in handdle.args" :key="key">
                   <div class="params-item-key flex-center">{{key}}</div>
                   <div class="params-item-value flex-center">{{getParamLabel(val, params)}}</div>
