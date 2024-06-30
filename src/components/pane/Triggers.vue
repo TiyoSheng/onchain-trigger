@@ -154,6 +154,7 @@ const showModal = (item) => {
 }
 
 const getContract = (id, type, funName) => {
+  if (!id) return ''
   let contract = store.state.contracts.find(item => item.id === id)
   if (type == 'type') {
     let abi = JSON.parse(contract.abi)
@@ -194,14 +195,14 @@ watch(() => store.state.countdownDuration, (val) => {
       <div v-for="(item, index) in triggers" :key="item.id" class="trigger-item mt16">
         <div v-if="item.type == 'gas'">
           <div class="flex-center-sb">
-            <div class="name">Gas触发器 - {{item.name}}</div>
+            <div class="name">Gas触发器 - {{item?.name}}</div>
             <div class="flex-center">
               <div class="edit-btn" @click="showModal(item)">编辑</div>
               <n-popconfirm :show-icon="false" positive-text="确认" negative-text="取消" @positiveClick="del(index)">
                 <template #trigger>
                   <div class="edit-btn">删除</div>
                 </template>
-                <p style="margin: 10px 0">是否确认删除{{item.name}}?</p>
+                <p style="margin: 10px 0">是否确认删除{{item?.name}}?</p>
               </n-popconfirm>
             </div>
           </div>
@@ -241,14 +242,14 @@ watch(() => store.state.countdownDuration, (val) => {
         </div>
         <div v-else-if="item.type == 'uni'">
           <div class="flex-center-sb">
-            <div class="name">Uni触发器 - {{item.name}}</div>
+            <div class="name">Uni触发器 - {{item?.name}}</div>
             <div class="flex-center">
               <div class="edit-btn" @click="showModal(item)">编辑</div>
               <n-popconfirm :show-icon="false" positive-text="确认" negative-text="取消" @positiveClick="del(index)">
                 <template #trigger>
                   <div class="edit-btn">删除</div>
                 </template>
-                <p style="margin: 10px 0">是否确认删除{{item.name}}?</p>
+                <p style="margin: 10px 0">是否确认删除{{item?.name}}?</p>
               </n-popconfirm>
             </div>
           </div>
@@ -298,14 +299,14 @@ watch(() => store.state.countdownDuration, (val) => {
         </div>
         <div v-else-if="item.type == 'time'">
           <div class="flex-center-sb">
-            <div class="name">时间触发器 - {{item.name}}</div>
+            <div class="name">时间触发器 - {{item?.name}}</div>
             <div class="flex-center">
               <div class="edit-btn" @click="showModal(item)">编辑</div>
               <n-popconfirm :show-icon="false" positive-text="确认" negative-text="取消" @positiveClick="del(index)">
                 <template #trigger>
                   <div class="edit-btn">删除</div>
                 </template>
-                <p style="margin: 10px 0">是否确认删除{{item.name}}?</p>
+                <p style="margin: 10px 0">是否确认删除{{item?.name}}?</p>
               </n-popconfirm>
             </div>
           </div>
@@ -354,14 +355,14 @@ watch(() => store.state.countdownDuration, (val) => {
         </div>
         <div v-else-if="item.type == 'event'">
           <div class="flex-center-sb">
-            <div class="name">Event触发器 - {{item.name}}</div>
+            <div class="name">Event触发器 - {{item?.name}}</div>
             <div class="flex-center">
               <div class="edit-btn" @click="showModal(item)">编辑</div>
               <n-popconfirm :show-icon="false" positive-text="确认" negative-text="取消" @positiveClick="del(index)">
                 <template #trigger>
                   <div class="edit-btn">删除</div>
                 </template>
-                <p style="margin: 10px 0">是否确认删除{{item.name}}?</p>
+                <p style="margin: 10px 0">是否确认删除{{item?.name}}?</p>
               </n-popconfirm>
             </div>
           </div>
@@ -401,14 +402,14 @@ watch(() => store.state.countdownDuration, (val) => {
         </div>
         <div v-else>
           <div class="flex-center-sb">
-            <div class="name">合约触发器 - {{item.name}}</div>
+            <div class="name">合约触发器 - {{item?.name}}</div>
             <div class="flex-center">
               <div class="edit-btn" @click="showModal(item)">编辑</div>
               <n-popconfirm :show-icon="false" positive-text="确认" negative-text="取消" @positiveClick="del(index)">
                 <template #trigger>
                   <div class="edit-btn">删除</div>
                 </template>
-                <p style="margin: 10px 0">是否确认删除{{item.name}}?</p>
+                <p style="margin: 10px 0">是否确认删除{{item?.name}}?</p>
               </n-popconfirm>
             </div>
           </div>
@@ -423,8 +424,8 @@ watch(() => store.state.countdownDuration, (val) => {
           <div class="mt16 sub-title">过滤条件</div>
           <div class="mt12 flex-center">
             <div v-for="(filter, i) in item.filter" :key="i" class="filter flex-center">
-              <div class="filter-name flex-center">{{filter.name}}</div>
-              <div class="filter-condition flex-center-center">{{getConditionsName(filter.condition)}}</div>
+              <div class="filter-name flex-center">{{filter?.name}}</div>
+              <div class="filter-condition flex-center-center">{{getConditionsName(filter?.condition)}}</div>
               <div class="filter-value flex-center">{{getParamLabel(filter, params)}}</div>
             </div>
           </div>
